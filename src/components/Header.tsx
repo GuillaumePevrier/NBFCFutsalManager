@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, ShieldCheck, Users } from "lucide-react";
+import { Menu, ShieldCheck } from "lucide-react";
+import Image from "next/image";
 
 interface HeaderProps {
     onCoachClick: () => void;
@@ -11,8 +12,15 @@ interface HeaderProps {
 export default function Header({ onCoachClick }: HeaderProps) {
   return (
     <header className="flex items-center justify-between p-2 border-b bg-card">
-      <div className="flex items-center gap-2">
-        <Users className="text-primary h-6 w-6" />
+      <div className="flex items-center gap-3">
+        <Image 
+            src="https://placehold.co/40x40.png" 
+            alt="Club Logo" 
+            width={40} 
+            height={40} 
+            data-ai-hint="logo"
+            className="rounded-sm"
+        />
         <h1 className="text-lg font-semibold">FutsalTactics Board</h1>
       </div>
       <DropdownMenu>
