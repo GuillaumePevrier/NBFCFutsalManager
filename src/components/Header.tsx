@@ -14,11 +14,10 @@ export default function Header({ onCoachClick }: HeaderProps) {
     <header className="flex items-center justify-between p-2 border-b bg-card">
       <div className="flex items-center gap-3">
         <Image 
-            src="https://placehold.co/40x40.png" 
+            src="/logo.png" 
             alt="Club Logo" 
             width={40} 
             height={40} 
-            data-ai-hint="logo"
             className="rounded-sm"
         />
         <h1 className="text-lg font-semibold">FutsalTactics Board</h1>
