@@ -8,48 +8,48 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 243 79% 62%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 200 89% 53%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 243 79% 62%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 215 39% 23%;
+    --background: 220 10% 10%;
     --foreground: 210 40% 98%;
-    --card: 215 28% 17%;
+    --card: 220 10% 15%;
     --card-foreground: 210 40% 98%;
-    --popover: 215 39% 23%;
+    --popover: 220 10% 10%;
     --popover-foreground: 210 40% 98%;
-    --primary: 243 79% 62%;
+    --primary: 260 80% 65%;
     --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 217.2 32.6% 25%;
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 200 89% 53%;
     --accent-foreground: 210 40% 9.8%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
-    --border: 217.2 32.6% 25%;
+    --border: 217.2 32.6% 35%;
     --input: 217.2 32.6% 25%;
-    --ring: 243 79% 62%;
+    --ring: 260 80% 65%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 220 10% 10%;
+    --foreground: 210 40% 98%;
+    --card: 220 10% 15%;
+    --card-foreground: 210 40% 98%;
+    --popover: 220 10% 10%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 260 80% 65%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 25%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 200 89% 53%;
+    --accent-foreground: 210 40% 9.8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 217.2 32.6% 35%;
+    --input: 217.2 32.6% 25%;
+    --ring: 260 80% 65%;
   }
 }
 
@@ -59,5 +59,14 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  .main-bg {
+    background-color: #1a1a1a;
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    position: relative;
   }
 }

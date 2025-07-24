@@ -8,15 +8,17 @@ interface PlayerTokenProps {
   onMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
   isDraggable: boolean;
   isDragging: boolean;
+  isSubstitute: boolean;
 }
 
-const PlayerToken = ({ player, onMouseDown, isDraggable, isDragging }: PlayerTokenProps) => {
+const PlayerToken = ({ player, onMouseDown, isDraggable, isDragging, isSubstitute }: PlayerTokenProps) => {
   return (
     <div
       onMouseDown={onMouseDown}
       className={cn(
         'absolute w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white font-bold text-lg select-none transition-all duration-150 ease-in-out',
-        'border-2 border-white/50 bg-primary shadow-lg',
+        'border-2 border-white/50 shadow-lg',
+        isSubstitute ? 'bg-secondary' : 'bg-primary',
         isDraggable ? 'cursor-grab' : 'cursor-default',
         isDragging ? 'cursor-grabbing scale-110 shadow-2xl z-10' : 'hover:scale-105'
       )}

@@ -5,6 +5,8 @@ import type { Player, PlayerPosition, Role } from '@/lib/types';
 import ControlPanel from '@/components/ControlPanel';
 import FutsalCourt from '@/components/FutsalCourt';
 import PlayerToken from '@/components/PlayerToken';
+import CoachAuthDialog from '@/components/CoachAuthDialog';
+import Header from '@/components/Header';
 
 const allPlayers: Player[] = [
   { id: '1', name: 'Ricardinho', avatar: 'R' },
@@ -17,52 +19,70 @@ const allPlayers: Player[] = [
   { id: '8', name: 'Gadeia', avatar: 'G' },
   { id: '9', name: 'Leandro Lino', avatar: 'LL' },
   { id: '10', name: 'Vinícius Rocha', avatar: 'VR' },
+  { id: '11', name: 'Player 11', avatar: 'P11' },
+  { id: '12', name: 'Player 12', avatar: 'P12' },
 ];
 
+const MAX_ON_FIELD = 5;
 
 export default function Home() {
   const [team, setTeam] = useState<PlayerPosition[]>([]);
-  const [role, setRole] = useState<Role>('coach');
+  const [substitutes, setSubstitutes] = useState<PlayerPosition[]>([]);
+  const [role, setRole] = useState<Role>('player');
   const [draggingPlayer, setDraggingPlayer] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const courtRef = useRef<HTMLDivElement>(null);
+  const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+
+  const getFullTeam = useCallback(() => [...team, ...substitutes], [team, substitutes]);
 
   useEffect(() => {
     try {
       const savedTeam = localStorage.getItem('futsal_team_composition');
+      const savedSubs = localStorage.getItem('futsal_substitutes');
       if (savedTeam) {
         setTeam(JSON.parse(savedTeam));
       }
+      if (savedSubs) {
+        setSubstitutes(JSON.parse(savedSubs));
+      }
     } catch (error) {
-      console.error("Failed to parse team composition from localStorage", error);
+      console.error("Failed to parse from localStorage", error);
     }
   }, []);
 
   const saveComposition = useCallback(() => {
     localStorage.setItem('futsal_team_composition', JSON.stringify(team));
-  }, [team]);
+    localStorage.setItem('futsal_substitutes', JSON.stringify(substitutes));
+  }, [team, substitutes]);
 
   useEffect(() => {
     if (role === 'coach') {
       saveComposition();
     }
-  }, [team, role, saveComposition]);
+  }, [team, substitutes, role, saveComposition]);
 
   const handleAddPlayer = (playerId: string) => {
-    if (team.length < 5 && !team.find(p => p.id === playerId)) {
-      const playerToAdd = allPlayers.find(p => p.id === playerId);
-      if (playerToAdd) {
-        setTeam([...team, { ...playerToAdd, position: { x: 50, y: 85 } }]);
-      }
+    const playerToAdd = allPlayers.find(p => p.id === playerId);
+    if (!playerToAdd) return;
+    
+    if (team.length < MAX_ON_FIELD) {
+      setTeam([...team, { ...playerToAdd, position: { x: 50, y: 85 } }]);
+    } else {
+      const subIndex = substitutes.length;
+      setSubstitutes([...substitutes, { ...playerToAdd, position: { x: 5 + (subIndex * 10) , y: -15 } }]);
     }
   };
 
   const handleRemovePlayer = (playerId: string) => {
     setTeam(team.filter(p => p.id !== playerId));
+    setSubstitutes(substitutes.filter(p => p.id !== playerId));
   };
   
   const handleReset = () => {
     setTeam([]);
+    setSubstitutes([]);
     localStorage.removeItem('futsal_team_composition');
+    localStorage.removeItem('futsal_substitutes');
   };
 
   const handleDragStart = (e: React.MouseEvent<HTMLDivElement>, id: string) => {
@@ -85,18 +105,50 @@ export default function Home() {
 
     // Convert to percentage and clamp
     const newX = Math.max(0, Math.min(100, (x / courtRect.width) * 100));
-    const newY = Math.max(0, Math.min(100, (y / courtRect.height) * 100));
+    const newY = Math.max(-20, Math.min(100, (y / courtRect.height) * 100)); // Allow y to go slightly above
     
-    setTeam(prevTeam =>
-      prevTeam.map(p =>
+    const isSub = substitutes.some(p => p.id === draggingPlayer.id);
+
+    const updatePosition = (playerList: PlayerPosition[]) => playerList.map(p => 
         p.id === draggingPlayer.id ? { ...p, position: { x: newX, y: newY } } : p
-      )
     );
-  }, [draggingPlayer]);
+
+    if (isSub) {
+      setSubstitutes(updatePosition);
+    } else {
+      setTeam(updatePosition);
+    }
+  }, [draggingPlayer, substitutes]);
 
   const handleMouseUp = useCallback(() => {
+    if (!draggingPlayer || !courtRef.current) {
+        setDraggingPlayer(null);
+        return;
+    }
+
+    const draggedPlayer = [...team, ...substitutes].find(p => p.id === draggingPlayer.id);
+    if (!draggedPlayer) {
+        setDraggingPlayer(null);
+        return;
+    }
+
+    const { y } = draggedPlayer.position;
+
+    // Check if moving from court to bench
+    if (y < 0 && team.some(p => p.id === draggedPlayer.id)) {
+        setTeam(t => t.filter(p => p.id !== draggedPlayer.id));
+        setSubstitutes(s => [...s, draggedPlayer]);
+    }
+    // Check if moving from bench to court
+    else if (y >= 0 && substitutes.some(p => p.id === draggedPlayer.id)) {
+        if (team.length < MAX_ON_FIELD) {
+            setSubstitutes(s => s.filter(p => p.id !== draggedPlayer.id));
+            setTeam(t => [...t, draggedPlayer]);
+        }
+    }
+
     setDraggingPlayer(null);
-  }, []);
+  }, [draggingPlayer, team, substitutes]);
 
   useEffect(() => {
     if (draggingPlayer) {
@@ -112,32 +164,42 @@ export default function Home() {
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [draggingPlayer, handleMouseMove, handleMouseUp]);
+  
+  const onCoachLogin = () => {
+    setRole('coach');
+    setIsCoachAuthOpen(false);
+  }
 
   return (
-    <main className="flex flex-col md:flex-row h-screen bg-background text-foreground font-body overflow-hidden">
-      <div className="flex-grow flex items-center justify-center p-2 md:p-4 lg:p-8 relative">
-        <FutsalCourt ref={courtRef}>
-          {team.map(player => (
-            <PlayerToken
-              key={player.id}
-              player={player}
-              onMouseDown={e => handleDragStart(e, player.id)}
-              isDraggable={role === 'coach'}
-              isDragging={draggingPlayer?.id === player.id}
-            />
-          ))}
-        </FutsalCourt>
-      </div>
-      <ControlPanel
-        allPlayers={allPlayers}
-        team={team}
-        role={role}
-        onAddPlayer={handleAddPlayer}
-        onRemovePlayer={handleRemovePlayer}
-        onReset={handleReset}
-        onSetRole={setRole}
-        onSave={saveComposition}
-      />
-    </main>
+    <div className="flex h-screen bg-background text-foreground flex-col">
+       <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
+       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
+      <main className="flex flex-col md:flex-row flex-grow font-body overflow-hidden main-bg">
+        <div className="flex-grow flex items-center justify-center p-2 md:p-4 lg:p-8 relative">
+          <FutsalCourt ref={courtRef}>
+            {[...team, ...substitutes].map(player => (
+              <PlayerToken
+                key={player.id}
+                player={player}
+                onMouseDown={e => handleDragStart(e, player.id)}
+                isDraggable={role === 'coach'}
+                isDragging={draggingPlayer?.id === player.id}
+                isSubstitute={substitutes.some(p => p.id === player.id)}
+              />
+            ))}
+          </FutsalCourt>
+        </div>
+        <ControlPanel
+          allPlayers={allPlayers}
+          team={team}
+          substitutes={substitutes}
+          role={role}
+          onAddPlayer={handleAddPlayer}
+          onRemovePlayer={handleRemovePlayer}
+          onReset={handleReset}
+          onSave={saveComposition}
+        />
+      </main>
+    </div>
   );
 }
