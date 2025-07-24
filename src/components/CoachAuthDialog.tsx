@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
 
-const COACH_PASSWORD = "coach"; // Simple password for demonstration
+const COACH_PASSWORD = "NbfcFutsal2026";
 
 interface CoachAuthDialogProps {
   isOpen: boolean;
