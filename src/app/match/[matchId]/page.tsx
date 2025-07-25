@@ -74,22 +74,23 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
 
   useEffect(() => {
     try {
-      const savedMatchesJSON = localStorage.getItem('futsal_matches');
-      if (savedMatchesJSON) {
-        const savedMatches: Match[] = JSON.parse(savedMatchesJSON);
-        const currentMatch = savedMatches.find(m => m.id === matchId);
-        if (currentMatch) {
-          setMatch(currentMatch);
+        const savedMatchesJSON = localStorage.getItem('futsal_matches');
+        if (savedMatchesJSON) {
+            const savedMatches: Match[] = JSON.parse(savedMatchesJSON);
+            const currentMatch = savedMatches.find(m => m.id === matchId);
+            if (currentMatch) {
+                setMatch(currentMatch);
+            } else {
+                console.warn(`Match with ID ${matchId} not found. Redirecting.`);
+                router.push('/');
+            }
         } else {
-          // Handle case where match is not found, maybe redirect
-          router.push('/');
+            console.warn("No matches found in localStorage. Redirecting.");
+            router.push('/');
         }
-      } else {
-        router.push('/');
-      }
     } catch (error) {
-      console.error("Failed to parse matches from localStorage", error);
-      router.push('/');
+        console.error("Failed to parse matches from localStorage", error);
+        router.push('/');
     }
   }, [matchId, router]);
 
