@@ -9,3 +9,11 @@ export interface PlayerPosition extends Player {
 }
 
 export type Role = 'coach' | 'player';
+
+export interface MatchDetails {
+  opponent: string;
+  date: string;
+  time: string;
+  location: string;
+  remarks: string;
+}

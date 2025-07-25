@@ -2,12 +2,13 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Player, PlayerPosition, Role } from '@/lib/types';
+import type { Player, PlayerPosition, Role, MatchDetails as MatchDetailsType } from '@/lib/types';
 import ControlPanel from '@/components/ControlPanel';
 import FutsalCourt from '@/components/FutsalCourt';
 import PlayerToken from '@/components/PlayerToken';
 import CoachAuthDialog from '@/components/CoachAuthDialog';
 import Header from '@/components/Header';
+import MatchDetails from '@/components/MatchDetails';
 
 const allPlayers: Player[] = [
     { id: '1', name: 'Leo Briantais', avatar: 'LB' },
@@ -43,6 +44,13 @@ export default function Home() {
   const [draggingPlayer, setDraggingPlayer] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const courtRef = useRef<HTMLDivElement>(null);
   const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+  const [matchDetails, setMatchDetails] = useState<MatchDetailsType>({
+    opponent: '',
+    date: '',
+    time: '',
+    location: '',
+    remarks: '',
+  });
 
   const getFullTeam = useCallback(() => [...team, ...substitutes], [team, substitutes]);
 
@@ -50,11 +58,15 @@ export default function Home() {
     try {
       const savedTeam = localStorage.getItem('futsal_team_composition');
       const savedSubs = localStorage.getItem('futsal_substitutes');
+      const savedDetails = localStorage.getItem('futsal_match_details');
       if (savedTeam) {
         setTeam(JSON.parse(savedTeam));
       }
       if (savedSubs) {
         setSubstitutes(JSON.parse(savedSubs));
+      }
+      if (savedDetails) {
+        setMatchDetails(JSON.parse(savedDetails));
       }
     } catch (error) {
       console.error("Failed to parse from localStorage", error);
@@ -65,6 +77,11 @@ export default function Home() {
     localStorage.setItem('futsal_team_composition', JSON.stringify(team));
     localStorage.setItem('futsal_substitutes', JSON.stringify(substitutes));
   }, [team, substitutes]);
+  
+  const saveMatchDetails = useCallback((details: MatchDetailsType) => {
+    setMatchDetails(details);
+    localStorage.setItem('futsal_match_details', JSON.stringify(details));
+  }, []);
 
   useEffect(() => {
     if (role === 'coach') {
@@ -186,7 +203,12 @@ export default function Home() {
        <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
        <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex flex-col md:flex-row flex-grow font-body overflow-hidden main-bg">
-        <div className="flex-grow flex items-center justify-center p-2 md:p-4 lg:p-8 relative">
+        <div className="flex-grow flex flex-col items-center justify-center p-2 md:p-4 lg:p-8 relative gap-4">
+          <MatchDetails 
+            details={matchDetails}
+            onDetailsChange={saveMatchDetails}
+            isCoach={role === 'coach'}
+          />
           <FutsalCourt ref={courtRef}>
             {[...team, ...substitutes].map(player => (
               <PlayerToken
