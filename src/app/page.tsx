@@ -199,10 +199,10 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-background text-foreground flex-col">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
        <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
        <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
-      <main className="flex flex-col md:flex-row flex-grow font-body overflow-hidden main-bg">
+      <main className="flex flex-col md:flex-row flex-grow font-body main-bg">
         <div className="flex-grow flex flex-col items-center justify-center p-2 md:p-4 lg:p-8 relative gap-4">
           <FutsalCourt ref={courtRef}>
             {[...team, ...substitutes].map(player => (
