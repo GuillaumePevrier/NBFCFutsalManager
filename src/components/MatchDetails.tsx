@@ -57,6 +57,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
                 <Input
                     id={name}
                     name={name}
+                    type={name === 'date' ? 'date' : name === 'time' ? 'time' : 'text'}
                     value={value}
                     onChange={handleInputChange}
                     placeholder={placeholder}

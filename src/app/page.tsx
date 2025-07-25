@@ -2,13 +2,14 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Player, PlayerPosition, Role, MatchDetails as MatchDetailsType } from '@/lib/types';
+import type { Player, PlayerPosition, Role, MatchDetails as MatchDetailsType, Scoreboard as ScoreboardType } from '@/lib/types';
 import ControlPanel from '@/components/ControlPanel';
 import FutsalCourt from '@/components/FutsalCourt';
 import PlayerToken from '@/components/PlayerToken';
 import CoachAuthDialog from '@/components/CoachAuthDialog';
 import Header from '@/components/Header';
 import MatchDetails from '@/components/MatchDetails';
+import Scoreboard from '@/components/Scoreboard';
 
 const allPlayers: Player[] = [
     { id: '1', name: 'Leo Briantais', avatar: 'LB' },
@@ -36,6 +37,7 @@ const allPlayers: Player[] = [
 ];
 
 const MAX_ON_FIELD = 5;
+const FUTSAL_PERIOD_DURATION = 20 * 60; // 20 minutes in seconds
 
 export default function Home() {
   const [team, setTeam] = useState<PlayerPosition[]>([]);
@@ -45,11 +47,20 @@ export default function Home() {
   const courtRef = useRef<HTMLDivElement>(null);
   const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
   const [matchDetails, setMatchDetails] = useState<MatchDetailsType>({
-    opponent: '',
+    opponent: 'Adversaire',
     date: '',
     time: '',
     location: '',
     remarks: '',
+  });
+  const [scoreboard, setScoreboard] = useState<ScoreboardType>({
+    homeScore: 0,
+    awayScore: 0,
+    homeFouls: 0,
+    awayFouls: 0,
+    time: FUTSAL_PERIOD_DURATION,
+    isRunning: false,
+    period: 1,
   });
 
   const getFullTeam = useCallback(() => [...team, ...substitutes], [team, substitutes]);
@@ -59,15 +70,13 @@ export default function Home() {
       const savedTeam = localStorage.getItem('futsal_team_composition');
       const savedSubs = localStorage.getItem('futsal_substitutes');
       const savedDetails = localStorage.getItem('futsal_match_details');
-      if (savedTeam) {
-        setTeam(JSON.parse(savedTeam));
-      }
-      if (savedSubs) {
-        setSubstitutes(JSON.parse(savedSubs));
-      }
-      if (savedDetails) {
-        setMatchDetails(JSON.parse(savedDetails));
-      }
+      const savedScoreboard = localStorage.getItem('futsal_scoreboard');
+
+      if (savedTeam) setTeam(JSON.parse(savedTeam));
+      if (savedSubs) setSubstitutes(JSON.parse(savedSubs));
+      if (savedDetails) setMatchDetails(JSON.parse(savedDetails));
+      if (savedScoreboard) setScoreboard(JSON.parse(savedScoreboard));
+
     } catch (error) {
       console.error("Failed to parse from localStorage", error);
     }
@@ -82,6 +91,12 @@ export default function Home() {
     setMatchDetails(details);
     localStorage.setItem('futsal_match_details', JSON.stringify(details));
   }, []);
+
+  const saveScoreboard = useCallback((newScoreboard: ScoreboardType) => {
+    setScoreboard(newScoreboard);
+    localStorage.setItem('futsal_scoreboard', JSON.stringify(newScoreboard));
+  }, []);
+
 
   useEffect(() => {
     if (role === 'coach') {
@@ -138,7 +153,7 @@ export default function Home() {
     const isSub = substitutes.some(p => p.id === draggingPlayer.id);
 
     const updatePosition = (playerList: PlayerPosition[]) => playerList.map(p => 
-        p.id === draggingPlayer.id ? { ...p, position: { x: newX, y: newY } } : p
+        p.id === draggingPlayer.id ? { ...p, position: { ...p.position, x: newX, y: newY } } : p
     );
 
     if (isSub) {
@@ -165,13 +180,13 @@ export default function Home() {
     // Check if moving from court to bench
     if (y < 0 && team.some(p => p.id === draggedPlayer.id)) {
         setTeam(t => t.filter(p => p.id !== draggedPlayer.id));
-        setSubstitutes(s => [...s, draggedPlayer]);
+        setSubstitutes(s => [...s, { ...draggedPlayer, position: { x: 5 + (s.length * 10), y: -15 } }]);
     }
     // Check if moving from bench to court
     else if (y >= 0 && substitutes.some(p => p.id === draggedPlayer.id)) {
         if (team.length < MAX_ON_FIELD) {
             setSubstitutes(s => s.filter(p => p.id !== draggedPlayer.id));
-            setTeam(t => [...t, draggedPlayer]);
+            setTeam(t => [...t, { ...draggedPlayer, position: { x: draggedPlayer.position.x, y: Math.max(0, draggedPlayer.position.y) } }]);
         }
     }
 
@@ -204,6 +219,12 @@ export default function Home() {
        <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex flex-col md:flex-row flex-grow font-body main-bg">
         <div className="flex-grow flex flex-col items-center justify-center p-2 md:p-4 lg:p-8 relative gap-4">
+          <Scoreboard 
+            scoreboard={scoreboard}
+            onScoreboardChange={saveScoreboard}
+            opponentName={matchDetails.opponent}
+            isCoach={role === 'coach'}
+          />
           <FutsalCourt ref={courtRef}>
             {[...team, ...substitutes].map(player => (
               <PlayerToken

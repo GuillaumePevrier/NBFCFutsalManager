@@ -17,3 +17,13 @@ export interface MatchDetails {
   location: string;
   remarks: string;
 }
+
+export interface Scoreboard {
+  homeScore: number;
+  awayScore: number;
+  homeFouls: number;
+  awayFouls: number;
+  time: number; // in seconds
+  isRunning: boolean;
+  period: number;
+}
