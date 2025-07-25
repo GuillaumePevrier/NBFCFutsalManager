@@ -21,7 +21,6 @@ export default function Header({ onCoachClick, children }: HeaderProps) {
             height={40} 
             className="rounded-sm"
         />
-        <h1 className="text-lg font-semibold">FutsalTactics Board</h1>
       </div>
       <div className="flex items-center gap-2">
       {children}
