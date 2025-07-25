@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -9,18 +10,28 @@ import CoachAuthDialog from '@/components/CoachAuthDialog';
 import Header from '@/components/Header';
 
 const allPlayers: Player[] = [
-  { id: '1', name: 'Ricardinho', avatar: 'R' },
-  { id: '2', name: 'Falcao', avatar: 'F' },
-  { id: '3', name: 'Amandinha', avatar: 'A' },
-  { id: '4', name: 'Ferrão', avatar: 'FE' },
-  { id: '5', name: 'Bateria', avatar: 'B' },
-  { id: '6', name: 'Pito', avatar: 'P' },
-  { id: '7', name: 'Dyego Zuffo', avatar: 'D' },
-  { id: '8', name: 'Gadeia', avatar: 'G' },
-  { id: '9', name: 'Leandro Lino', avatar: 'LL' },
-  { id: '10', name: 'Vinícius Rocha', avatar: 'VR' },
-  { id: '11', name: 'Player 11', avatar: 'P11' },
-  { id: '12', name: 'Player 12', avatar: 'P12' },
+    { id: '1', name: 'Leo Briantais', avatar: 'LB' },
+    { id: '2', name: 'Kevin Levesque', avatar: 'KL' },
+    { id: '3', name: 'Alexis Genet', avatar: 'AG' },
+    { id: '4', name: 'Nicolas Georgeault', avatar: 'NG' },
+    { id: '5', name: 'Omar Jaddour', avatar: 'OJ' },
+    { id: '6', name: 'Francois Beaudouin', avatar: 'FB' },
+    { id: '7', name: 'Benjamin Bedel', avatar: 'BB' },
+    { id: '8', name: 'Nicolas Gousset', avatar: 'NG' },
+    { id: '9', name: 'Alexandre Seveno', avatar: 'AS' },
+    { id: '10', name: 'Erwan Anfray', avatar: 'EA' },
+    { id: '11', name: 'Florian Arnoult', avatar: 'FA' },
+    { id: '12', name: 'Nicolas Beillard', avatar: 'NB' },
+    { id: '13', name: 'Vincent Bourdoiseau', avatar: 'VB' },
+    { id: '14', name: 'Julien Durand', avatar: 'JD' },
+    { id: '15', name: 'Kevin Mahe', avatar: 'KM' },
+    { id: '16', name: 'Germain Maquine', avatar: 'GM' },
+    { id: '17', name: 'Anousack Ouanesavady', avatar: 'AO' },
+    { id: '18', name: 'Vincent Poilvet', avatar: 'VP' },
+    { id: '19', name: 'Yoann Poulain', avatar: 'YP' },
+    { id: '20', name: 'Amine Rhidane', avatar: 'AR' },
+    { id: '21', name: 'Antoine Le Cam', avatar: 'AL' },
+    { id: '22', name: 'Guillaume Pevrier', avatar: 'GP' }
 ];
 
 const MAX_ON_FIELD = 5;
