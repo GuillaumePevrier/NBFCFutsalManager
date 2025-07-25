@@ -12,8 +12,8 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
       {/* Substitutes Bench Area */}
-      <div className="w-full max-w-2xl h-16 bg-black/20 rounded-t-lg border-x-2 border-t-2 border-white/10 flex items-center px-4 mb-1">
-        <span className="text-white/50 font-semibold text-sm">REMPLAÇANTS</span>
+      <div className="w-full max-w-2xl h-16 bg-card border-2 border-border rounded-t-lg flex items-center justify-center px-4 mb-1 shadow-md">
+        <span className="text-muted-foreground font-semibold text-sm tracking-widest uppercase">Remplaçants</span>
       </div>
 
       {/* Main Court */}
@@ -21,15 +21,7 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
         ref={ref}
         className="relative w-full max-w-2xl aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30"
       >
-        {/* Goals */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-[-18px] w-5 h-20 bg-card border-2 border-white/30 rounded-r-md overflow-hidden">
-            <div className="w-full h-full border-l-4 border-primary"></div>
-        </div>
-        <div className="absolute top-1/2 -translate-y-1/2 right-[-18px] w-5 h-20 bg-card border-2 border-white/30 rounded-l-md overflow-hidden">
-            <div className="w-full h-full border-r-4 border-primary"></div>
-        </div>
-
-        {/* Court Markings */}
+        {/* Court Markings first, so they are in the background */}
         <div className="absolute inset-0">
           {/* Center Line */}
           <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-white/30 -translate-x-1/2" />
@@ -52,6 +44,15 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
            {/* Away second penalty spot */}
           <div className="absolute top-1/2 right-[25%] w-1.5 h-1.5 bg-white/30 rounded-full translate-x-1/2 -translate-y-1/2" />
         </div>
+        
+        {/* Goals - rendered after markings to be on top */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-[-18px] w-5 h-20 bg-card border-2 border-white/30 rounded-r-md overflow-hidden z-10">
+            <div className="w-full h-full border-l-4 border-primary"></div>
+        </div>
+        <div className="absolute top-1/2 -translate-y-1/2 right-[-18px] w-5 h-20 bg-card border-2 border-white/30 rounded-l-md overflow-hidden z-10">
+            <div className="w-full h-full border-r-4 border-primary"></div>
+        </div>
+
 
         {children}
       </div>
