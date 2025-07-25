@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Save, Send, Trash2, Users, X } from 'lucide-react';
 import InvitationDialog from './InvitationDialog';
+import { ScrollArea } from './ui/scroll-area';
 
 interface ControlPanelProps {
   allPlayers: Player[];
@@ -36,7 +37,7 @@ const ControlPanel = ({
   const canAddMorePlayers = fullTeam.length < allPlayers.length;
 
   return (
-    <Card className="w-full md:w-80 lg:w-96 bg-card border-l-0 md:border-l flex flex-col h-auto md:h-full rounded-none">
+    <Card className="w-full md:w-80 lg:w-96 bg-card border-l-0 md:border-l flex flex-col h-auto md:h-screen rounded-none">
       <CardHeader className="flex-shrink-0">
         <CardTitle className="flex items-center gap-2">
           <Users className="text-primary" />
@@ -45,85 +46,87 @@ const ControlPanel = ({
         <CardDescription>Mode {role === 'coach' ? 'Coach (activé)' : 'Joueur'}</CardDescription>
       </CardHeader>
 
-      <CardContent className="flex-grow flex flex-col gap-4 overflow-y-auto p-4">
-        {role === 'coach' && (
-          <div className="space-y-4">
-            <Label>Ajouter un joueur</Label>
-            <Select onValueChange={onAddPlayer} disabled={!canAddMorePlayers}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un joueur..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availablePlayers.map(player => (
-                  <SelectItem key={player.id} value={player.id}>
-                    {player.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        
-        <div className="space-y-2">
-          <Label>Titulaires ({team.length}/5)</Label>
-          <div className="space-y-2 min-h-[60px]">
-            {team.length > 0 ? team.map(player => (
-              <div key={player.id} className="flex items-center justify-between bg-muted p-2 rounded-md">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground">{player.avatar}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium">{player.name}</span>
+      <ScrollArea className="flex-grow">
+        <CardContent className="flex-grow flex flex-col gap-4 p-4 h-full">
+          {role === 'coach' && (
+            <div className="space-y-4">
+              <Label>Ajouter un joueur</Label>
+              <Select onValueChange={onAddPlayer} disabled={!canAddMorePlayers}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un joueur..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePlayers.map(player => (
+                    <SelectItem key={player.id} value={player.id}>
+                      {player.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          <div className="space-y-2">
+            <Label>Titulaires ({team.length}/5)</Label>
+            <div className="space-y-2 min-h-[60px]">
+              {team.length > 0 ? team.map(player => (
+                <div key={player.id} className="flex items-center justify-between bg-muted p-2 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary text-primary-foreground">{player.avatar}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{player.name}</span>
+                  </div>
+                  {role === 'coach' && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onRemovePlayer(player.id)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                {role === 'coach' && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onRemovePlayer(player.id)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            )) : <p className="text-sm text-muted-foreground pt-2">Ajoutez des joueurs sur le terrain.</p>}
-          </div>
-        </div>
-
-         <div className="space-y-2">
-          <Label>Remplaçants ({substitutes.length})</Label>
-          <div className="space-y-2 min-h-[60px]">
-            {substitutes.length > 0 ? substitutes.map(player => (
-              <div key={player.id} className="flex items-center justify-between bg-muted p-2 rounded-md">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-secondary text-secondary-foreground">{player.avatar}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium">{player.name}</span>
-                </div>
-                {role === 'coach' && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onRemovePlayer(player.id)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            )) : <p className="text-sm text-muted-foreground pt-2">Les joueurs ajoutés après le 5ème seront ici.</p>}
-          </div>
-        </div>
-        
-        {role === 'coach' && (
-          <div className="mt-auto pt-4 space-y-2 flex-shrink-0">
-            <InvitationDialog team={team}>
-              <Button className="w-full" disabled={team.length === 0}>
-                <Send className="mr-2 h-4 w-4" /> Envoyer une invitation
-              </Button>
-            </InvitationDialog>
-            <div className="flex gap-2">
-               <Button variant="outline" className="w-full" onClick={onSave}>
-                <Save className="mr-2 h-4 w-4" /> Sauvegarder
-              </Button>
-              <Button variant="destructive" className="w-full" onClick={onReset}>
-                <Trash2 className="mr-2 h-4 w-4" /> Réinitialiser
-              </Button>
+              )) : <p className="text-sm text-muted-foreground pt-2">Ajoutez des joueurs sur le terrain.</p>}
             </div>
           </div>
-        )}
-      </CardContent>
+
+          <div className="space-y-2">
+            <Label>Remplaçants ({substitutes.length})</Label>
+            <div className="space-y-2 min-h-[60px]">
+              {substitutes.length > 0 ? substitutes.map(player => (
+                <div key={player.id} className="flex items-center justify-between bg-muted p-2 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-secondary text-secondary-foreground">{player.avatar}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{player.name}</span>
+                  </div>
+                  {role === 'coach' && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onRemovePlayer(player.id)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              )) : <p className="text-sm text-muted-foreground pt-2">Les joueurs ajoutés après le 5ème seront ici.</p>}
+            </div>
+          </div>
+        </CardContent>
+      </ScrollArea>
+      
+      {role === 'coach' && (
+        <div className="mt-auto p-4 space-y-2 flex-shrink-0 border-t">
+          <InvitationDialog team={team}>
+            <Button className="w-full" disabled={team.length === 0}>
+              <Send className="mr-2 h-4 w-4" /> Envoyer une invitation
+            </Button>
+          </InvitationDialog>
+          <div className="flex gap-2">
+              <Button variant="outline" className="w-full" onClick={onSave}>
+              <Save className="mr-2 h-4 w-4" /> Sauvegarder
+            </Button>
+            <Button variant="destructive" className="w-full" onClick={onReset}>
+              <Trash2 className="mr-2 h-4 w-4" /> Réinitialiser
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };
