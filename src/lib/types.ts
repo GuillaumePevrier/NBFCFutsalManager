@@ -27,3 +27,11 @@ export interface Scoreboard {
   isRunning: boolean;
   period: number;
 }
+
+export interface Match {
+  id: string;
+  details: MatchDetails;
+  team: PlayerPosition[];
+  substitutes: PlayerPosition[];
+  scoreboard: Scoreboard;
+}

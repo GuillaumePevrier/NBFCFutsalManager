@@ -7,9 +7,10 @@ import Image from "next/image";
 
 interface HeaderProps {
     onCoachClick: () => void;
+    children?: React.ReactNode;
 }
 
-export default function Header({ onCoachClick }: HeaderProps) {
+export default function Header({ onCoachClick, children }: HeaderProps) {
   return (
     <header className="flex items-center justify-between p-2 border-b bg-card">
       <div className="flex items-center gap-3">
@@ -22,6 +23,8 @@ export default function Header({ onCoachClick }: HeaderProps) {
         />
         <h1 className="text-lg font-semibold">FutsalTactics Board</h1>
       </div>
+      <div className="flex items-center gap-2">
+      {children}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon">
@@ -41,6 +44,7 @@ export default function Header({ onCoachClick }: HeaderProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </header>
   );
 }

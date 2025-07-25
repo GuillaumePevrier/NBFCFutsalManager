@@ -1,259 +1,200 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Player, PlayerPosition, Role, MatchDetails as MatchDetailsType, Scoreboard as ScoreboardType } from '@/lib/types';
-import ControlPanel from '@/components/ControlPanel';
-import FutsalCourt from '@/components/FutsalCourt';
-import PlayerToken from '@/components/PlayerToken';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import type { Match } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import CoachAuthDialog from '@/components/CoachAuthDialog';
 import Header from '@/components/Header';
-import MatchDetails from '@/components/MatchDetails';
-import Scoreboard from '@/components/Scoreboard';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
-const allPlayers: Player[] = [
-    { id: '1', name: 'Leo Briantais', avatar: 'LB' },
-    { id: '2', name: 'Kevin Levesque', avatar: 'KL' },
-    { id: '3', name: 'Alexis Genet', avatar: 'AG' },
-    { id: '4', name: 'Nicolas Georgeault', avatar: 'NG' },
-    { id: '5', name: 'Omar Jaddour', avatar: 'OJ' },
-    { id: '6', name: 'Francois Beaudouin', avatar: 'FB' },
-    { id: '7', name: 'Benjamin Bedel', avatar: 'BB' },
-    { id: '8', name: 'Nicolas Gousset', avatar: 'NG' },
-    { id: '9', name: 'Alexandre Seveno', avatar: 'AS' },
-    { id: '10', name: 'Erwan Anfray', avatar: 'EA' },
-    { id: '11', name: 'Florian Arnoult', avatar: 'FA' },
-    { id: '12', name: 'Nicolas Beillard', avatar: 'NB' },
-    { id: '13', name: 'Vincent Bourdoiseau', avatar: 'VB' },
-    { id: '14', name: 'Julien Durand', avatar: 'JD' },
-    { id: '15', name: 'Kevin Mahe', avatar: 'KM' },
-    { id: '16', name: 'Germain Maquine', avatar: 'GM' },
-    { id: '17', name: 'Anousack Ouanesavady', avatar: 'AO' },
-    { id: '18', name: 'Vincent Poilvet', avatar: 'VP' },
-    { id: '19', name: 'Yoann Poulain', avatar: 'YP' },
-    { id: '20', name: 'Amine Rhidane', avatar: 'AR' },
-    { id: '21', name: 'Antoine Le Cam', avatar: 'AL' },
-    { id: '22', name: 'Guillaume Pevrier', avatar: 'GP' }
-];
-
-const MAX_ON_FIELD = 5;
-const FUTSAL_PERIOD_DURATION = 20 * 60; // 20 minutes in seconds
-
-export default function Home() {
-  const [team, setTeam] = useState<PlayerPosition[]>([]);
-  const [substitutes, setSubstitutes] = useState<PlayerPosition[]>([]);
-  const [role, setRole] = useState<Role>('player');
-  const [draggingPlayer, setDraggingPlayer] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
-  const courtRef = useRef<HTMLDivElement>(null);
+export default function HomePage() {
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [role, setRole] = useState<'player' | 'coach'>('player');
   const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
-  const [matchDetails, setMatchDetails] = useState<MatchDetailsType>({
-    opponent: 'Adversaire',
-    date: '',
-    time: '',
-    location: '',
-    remarks: '',
-  });
-  const [scoreboard, setScoreboard] = useState<ScoreboardType>({
-    homeScore: 0,
-    awayScore: 0,
-    homeFouls: 0,
-    awayFouls: 0,
-    time: FUTSAL_PERIOD_DURATION,
-    isRunning: false,
-    period: 1,
-  });
-
-  const getFullTeam = useCallback(() => [...team, ...substitutes], [team, substitutes]);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newOpponent, setNewOpponent] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     try {
-      const savedTeam = localStorage.getItem('futsal_team_composition');
-      const savedSubs = localStorage.getItem('futsal_substitutes');
-      const savedDetails = localStorage.getItem('futsal_match_details');
-      const savedScoreboard = localStorage.getItem('futsal_scoreboard');
-
-      if (savedTeam) setTeam(JSON.parse(savedTeam));
-      if (savedSubs) setSubstitutes(JSON.parse(savedSubs));
-      if (savedDetails) setMatchDetails(JSON.parse(savedDetails));
-      if (savedScoreboard) setScoreboard(JSON.parse(savedScoreboard));
-
+      const savedMatches = localStorage.getItem('futsal_matches');
+      if (savedMatches) {
+        setMatches(JSON.parse(savedMatches));
+      }
     } catch (error) {
-      console.error("Failed to parse from localStorage", error);
+      console.error("Failed to parse matches from localStorage", error);
     }
   }, []);
 
-  const saveComposition = useCallback(() => {
-    localStorage.setItem('futsal_team_composition', JSON.stringify(team));
-    localStorage.setItem('futsal_substitutes', JSON.stringify(substitutes));
-  }, [team, substitutes]);
-  
-  const saveMatchDetails = useCallback((details: MatchDetailsType) => {
-    setMatchDetails(details);
-    localStorage.setItem('futsal_match_details', JSON.stringify(details));
-  }, []);
-
-  const saveScoreboard = useCallback((newScoreboard: ScoreboardType) => {
-    setScoreboard(newScoreboard);
-    localStorage.setItem('futsal_scoreboard', JSON.stringify(newScoreboard));
-  }, []);
-
-
-  useEffect(() => {
-    if (role === 'coach') {
-      saveComposition();
-    }
-  }, [team, substitutes, role, saveComposition]);
-
-  const handleAddPlayer = (playerId: string) => {
-    const playerToAdd = allPlayers.find(p => p.id === playerId);
-    if (!playerToAdd) return;
-    
-    if (team.length < MAX_ON_FIELD) {
-      setTeam([...team, { ...playerToAdd, position: { x: 50, y: 85 } }]);
-    } else {
-      const subIndex = substitutes.length;
-      setSubstitutes([...substitutes, { ...playerToAdd, position: { x: 5 + (subIndex * 10) , y: -15 } }]);
-    }
-  };
-
-  const handleRemovePlayer = (playerId: string) => {
-    setTeam(team.filter(p => p.id !== playerId));
-    setSubstitutes(substitutes.filter(p => p.id !== playerId));
-  };
-  
-  const handleReset = () => {
-    setTeam([]);
-    setSubstitutes([]);
-    localStorage.removeItem('futsal_team_composition');
-    localStorage.removeItem('futsal_substitutes');
-  };
-
-  const handleDragStart = (e: React.MouseEvent<HTMLDivElement>, id: string) => {
-    if (role !== 'coach') return;
-    const target = e.currentTarget as HTMLDivElement;
-    const rect = target.getBoundingClientRect();
-    setDraggingPlayer({ 
-      id,
-      offsetX: e.clientX - rect.left,
-      offsetY: e.clientY - rect.top,
-    });
-  };
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!draggingPlayer || !courtRef.current) return;
-
-    const courtRect = courtRef.current.getBoundingClientRect();
-    const x = e.clientX - courtRect.left - draggingPlayer.offsetX;
-    const y = e.clientY - courtRect.top - draggingPlayer.offsetY;
-
-    // Convert to percentage and clamp
-    const newX = Math.max(0, Math.min(100, (x / courtRect.width) * 100));
-    const newY = Math.max(-20, Math.min(100, (y / courtRect.height) * 100)); // Allow y to go slightly above
-    
-    const isSub = substitutes.some(p => p.id === draggingPlayer.id);
-
-    const updatePosition = (playerList: PlayerPosition[]) => playerList.map(p => 
-        p.id === draggingPlayer.id ? { ...p, position: { ...p.position, x: newX, y: newY } } : p
-    );
-
-    if (isSub) {
-      setSubstitutes(updatePosition);
-    } else {
-      setTeam(updatePosition);
-    }
-  }, [draggingPlayer, substitutes]);
-
-  const handleMouseUp = useCallback(() => {
-    if (!draggingPlayer || !courtRef.current) {
-        setDraggingPlayer(null);
-        return;
-    }
-
-    const draggedPlayer = [...team, ...substitutes].find(p => p.id === draggingPlayer.id);
-    if (!draggedPlayer) {
-        setDraggingPlayer(null);
-        return;
-    }
-
-    const { y } = draggedPlayer.position;
-
-    // Check if moving from court to bench
-    if (y < 0 && team.some(p => p.id === draggedPlayer.id)) {
-        setTeam(t => t.filter(p => p.id !== draggedPlayer.id));
-        setSubstitutes(s => [...s, { ...draggedPlayer, position: { x: 5 + (s.length * 10), y: -15 } }]);
-    }
-    // Check if moving from bench to court
-    else if (y >= 0 && substitutes.some(p => p.id === draggedPlayer.id)) {
-        if (team.length < MAX_ON_FIELD) {
-            setSubstitutes(s => s.filter(p => p.id !== draggedPlayer.id));
-            setTeam(t => [...t, { ...draggedPlayer, position: { x: draggedPlayer.position.x, y: Math.max(0, draggedPlayer.position.y) } }]);
-        }
-    }
-
-    setDraggingPlayer(null);
-  }, [draggingPlayer, team, substitutes]);
-
-  useEffect(() => {
-    if (draggingPlayer) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [draggingPlayer, handleMouseMove, handleMouseUp]);
-  
   const onCoachLogin = () => {
     setRole('coach');
     setIsCoachAuthOpen(false);
-  }
+  };
+  
+  const createNewMatch = () => {
+    if (!newOpponent.trim()) return;
+
+    const newMatch: Match = {
+      id: new Date().toISOString(),
+      details: {
+        opponent: newOpponent,
+        date: new Date().toISOString().split('T')[0],
+        time: '',
+        location: '',
+        remarks: '',
+      },
+      team: [],
+      substitutes: [],
+      scoreboard: {
+        homeScore: 0,
+        awayScore: 0,
+        homeFouls: 0,
+        awayFouls: 0,
+        time: 20 * 60,
+        isRunning: false,
+        period: 1,
+      },
+    };
+
+    const updatedMatches = [...matches, newMatch];
+    setMatches(updatedMatches);
+    localStorage.setItem('futsal_matches', JSON.stringify(updatedMatches));
+    
+    setIsCreateDialogOpen(false);
+    setNewOpponent('');
+    router.push(`/match/${newMatch.id}`);
+  };
+
+  const deleteMatch = (matchId: string) => {
+    const updatedMatches = matches.filter(m => m.id !== matchId);
+    setMatches(updatedMatches);
+    localStorage.setItem('futsal_matches', JSON.stringify(updatedMatches));
+  };
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-       <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
-       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
-      <main className="flex flex-col md:flex-row flex-grow font-body main-bg">
-        <div className="flex-grow flex flex-col items-center justify-center p-2 md:p-4 lg:p-8 relative gap-4">
-          <Scoreboard 
-            scoreboard={scoreboard}
-            onScoreboardChange={saveScoreboard}
-            opponentName={matchDetails.opponent}
-            isCoach={role === 'coach'}
-          />
-          <FutsalCourt ref={courtRef}>
-            {[...team, ...substitutes].map(player => (
-              <PlayerToken
-                key={player.id}
-                player={player}
-                onMouseDown={e => handleDragStart(e, player.id)}
-                isDraggable={role === 'coach'}
-                isDragging={draggingPlayer?.id === player.id}
-                isSubstitute={substitutes.some(p => p.id === player.id)}
-              />
+      <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
+      <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
+      
+      <main className="flex-grow p-4 md:p-8 main-bg">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">Tableau de bord des Matchs</h1>
+            {role === 'coach' && (
+               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button>
+                        <PlusCircle className="mr-2" /> Créer un match
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                    <DialogTitle>Créer un nouveau match</DialogTitle>
+                    <DialogDescription>
+                        Entrez le nom de l'équipe adverse pour commencer.
+                    </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="opponent-name">Nom de l'adversaire</Label>
+                        <Input 
+                            id="opponent-name"
+                            value={newOpponent}
+                            onChange={(e) => setNewOpponent(e.target.value)}
+                            placeholder="Ex: FC Rive Droite"
+                        />
+                    </div>
+                    <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Annuler</Button>
+                    <Button onClick={createNewMatch}>Créer et configurer</Button>
+                    </DialogFooter>
+                </DialogContent>
+                </Dialog>
+            )}
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {matches.map(match => (
+              <Card key={match.id} className="flex flex-col">
+                <CardHeader>
+                  <CardTitle className="truncate">NBFC vs {match.details.opponent}</CardTitle>
+                  <CardDescription>{match.details.date} {match.details.time && `- ${match.details.time}`}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <div className="text-4xl font-bold text-center">
+                    <span className="text-primary">{match.scoreboard.homeScore}</span> - <span>{match.scoreboard.awayScore}</span>
+                  </div>
+                  <p className="text-center text-muted-foreground mt-2">{match.details.location || 'Lieu non défini'}</p>
+                </CardContent>
+                <CardFooter className="flex justify-end gap-2">
+                    <Link href={`/match/${match.id}`} passHref>
+                        <Button variant="outline" size="sm">
+                            <Edit className="mr-2 h-4 w-4" />
+                            {role === 'coach' ? 'Gérer' : 'Voir'}
+                        </Button>
+                    </Link>
+                    {role === 'coach' && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Cette action est irréversible et supprimera définitivement la fiche de ce match.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteMatch(match.id)}>
+                                    Supprimer
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                </CardFooter>
+              </Card>
             ))}
-          </FutsalCourt>
-          <MatchDetails 
-            details={matchDetails}
-            onDetailsChange={saveMatchDetails}
-            isCoach={role === 'coach'}
-          />
+             {matches.length === 0 && (
+                <div className="md:col-span-2 lg:col-span-3 text-center py-16">
+                    <p className="text-muted-foreground">Aucun match créé pour le moment.</p>
+                    {role === 'coach' && <p className="text-muted-foreground mt-2">Cliquez sur "Créer un match" pour commencer.</p>}
+                </div>
+            )}
+          </div>
         </div>
-        <ControlPanel
-          allPlayers={allPlayers}
-          team={team}
-          substitutes={substitutes}
-          role={role}
-          onAddPlayer={handleAddPlayer}
-          onRemovePlayer={handleRemovePlayer}
-          onReset={handleReset}
-          onSave={saveComposition}
-        />
       </main>
     </div>
   );
 }
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
