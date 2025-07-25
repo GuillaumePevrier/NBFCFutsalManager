@@ -18,7 +18,7 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
       {/* Main Court */}
       <div
         ref={ref}
-        className="relative w-full max-w-2xl aspect-[2/1] bg-[#004d99] rounded-lg shadow-2xl border-4 border-white/30"
+        className="relative w-full max-w-2xl aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30"
       >
         {/* Court Markings */}
         <div className="absolute inset-0">
@@ -49,12 +49,8 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
         </div>
 
         {/* Goals */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-[-20px] w-5 h-20 bg-[#e0e0e0] border-2 border-gray-400 rounded-r-md perspective-[100px]">
-            <div className="absolute w-full h-full backface-hidden transform rotate-y-45 origin-left bg-gray-300" />
-        </div>
-        <div className="absolute top-1/2 -translate-y-1/2 right-[-20px] w-5 h-20 bg-[#e0e0e0] border-2 border-gray-400 rounded-l-md perspective-[100px]">
-            <div className="absolute w-full h-full backface-hidden transform -rotate-y-45 origin-right bg-gray-300" />
-        </div>
+        <div className="absolute top-1/2 -translate-y-1/2 left-[-20px] w-5 h-20 bg-[#e0e0e0] border-2 border-gray-400 rounded-r-md" />
+        <div className="absolute top-1/2 -translate-y-1/2 right-[-20px] w-5 h-20 bg-[#e0e0e0] border-2 border-gray-400 rounded-l-md" />
 
 
         {children}
