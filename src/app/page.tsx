@@ -204,11 +204,6 @@ export default function Home() {
        <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex flex-col md:flex-row flex-grow font-body overflow-hidden main-bg">
         <div className="flex-grow flex flex-col items-center justify-center p-2 md:p-4 lg:p-8 relative gap-4">
-          <MatchDetails 
-            details={matchDetails}
-            onDetailsChange={saveMatchDetails}
-            isCoach={role === 'coach'}
-          />
           <FutsalCourt ref={courtRef}>
             {[...team, ...substitutes].map(player => (
               <PlayerToken
@@ -221,6 +216,11 @@ export default function Home() {
               />
             ))}
           </FutsalCourt>
+          <MatchDetails 
+            details={matchDetails}
+            onDetailsChange={saveMatchDetails}
+            isCoach={role === 'coach'}
+          />
         </div>
         <ControlPanel
           allPlayers={allPlayers}
