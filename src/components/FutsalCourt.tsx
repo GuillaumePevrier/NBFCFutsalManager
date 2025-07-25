@@ -18,26 +18,44 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
       {/* Main Court */}
       <div
         ref={ref}
-        className="relative w-full max-w-2xl aspect-[2/1] bg-[#0A6A46] rounded-lg shadow-2xl border-4 border-white/30"
+        className="relative w-full max-w-2xl aspect-[2/1] bg-[#004d99] rounded-lg shadow-2xl border-4 border-white/30"
       >
         {/* Court Markings */}
         <div className="absolute inset-0">
           {/* Center Line */}
-          <div className="absolute top-0 bottom-0 left-1/2 w-1 bg-white/30 -translate-x-1/2" />
+          <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-white/30 -translate-x-1/2" />
           {/* Center Circle */}
-          <div className="absolute top-1/2 left-1/2 w-[20%] aspect-square border-4 border-white/30 rounded-full -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-white/30 rounded-full -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute top-1/2 left-1/2 w-[20%] aspect-square border-2 border-white/30 rounded-full -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white/30 rounded-full -translate-x-1/2 -translate-y-1/2" />
 
           {/* Home Goal Area */}
-          <div className="absolute top-[20%] bottom-[20%] left-0 w-[15%] border-r-4 border-t-4 border-b-4 border-white/30 rounded-tr-xl rounded-br-xl" />
+          <div className="absolute top-[20%] bottom-[20%] left-0 w-[15%] border-r-2 border-t-2 border-b-2 border-white/30 rounded-tr-lg rounded-br-lg" />
+           {/* Home goal semi-circle */}
+          <div className="absolute top-1/2 left-0 w-[24%] aspect-square border-r-2 border-t-2 border-b-2 border-white/30 rounded-full -translate-y-1/2 -translate-x-[50%]" />
           {/* Home Penalty Spot */}
-          <div className="absolute top-1/2 left-[12%] w-2 h-2 bg-white/30 rounded-full -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute top-1/2 left-[12%] w-1.5 h-1.5 bg-white/30 rounded-full -translate-x-1/2 -translate-y-1/2" />
+          {/* Home second penalty spot */}
+          <div className="absolute top-1/2 left-[25%] w-1.5 h-1.5 bg-white/30 rounded-full -translate-x-1/2 -translate-y-1/2" />
+
 
           {/* Away Goal Area */}
-          <div className="absolute top-[20%] bottom-[20%] right-0 w-[15%] border-l-4 border-t-4 border-b-4 border-white/30 rounded-tl-xl rounded-bl-xl" />
+          <div className="absolute top-[20%] bottom-[20%] right-0 w-[15%] border-l-2 border-t-2 border-b-2 border-white/30 rounded-tl-lg rounded-bl-lg" />
+          {/* Away goal semi-circle */}
+          <div className="absolute top-1/2 right-0 w-[24%] aspect-square border-l-2 border-t-2 border-b-2 border-white/30 rounded-full -translate-y-1/2 translate-x-[50%]" />
           {/* Away Penalty Spot */}
-          <div className="absolute top-1/2 right-[12%] w-2 h-2 bg-white/30 rounded-full translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute top-1/2 right-[12%] w-1.5 h-1.5 bg-white/30 rounded-full translate-x-1/2 -translate-y-1/2" />
+           {/* Away second penalty spot */}
+          <div className="absolute top-1/2 right-[25%] w-1.5 h-1.5 bg-white/30 rounded-full translate-x-1/2 -translate-y-1/2" />
         </div>
+
+        {/* Goals */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-[-20px] w-5 h-20 bg-[#e0e0e0] border-2 border-gray-400 rounded-r-md perspective-[100px]">
+            <div className="absolute w-full h-full backface-hidden transform rotate-y-45 origin-left bg-gray-300" />
+        </div>
+        <div className="absolute top-1/2 -translate-y-1/2 right-[-20px] w-5 h-20 bg-[#e0e0e0] border-2 border-gray-400 rounded-l-md perspective-[100px]">
+            <div className="absolute w-full h-full backface-hidden transform -rotate-y-45 origin-right bg-gray-300" />
+        </div>
+
 
         {children}
       </div>
