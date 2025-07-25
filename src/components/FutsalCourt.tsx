@@ -39,8 +39,6 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
 
           {/* Home Goal Area */}
           <div className="absolute top-[20%] bottom-[20%] left-0 w-[15%] border-r-2 border-t-2 border-b-2 border-white/30 rounded-tr-lg rounded-br-lg" />
-           {/* Home goal semi-circle */}
-          <div className="absolute top-1/2 left-0 w-[24%] aspect-square border-r-2 border-t-2 border-b-2 border-white/30 rounded-full -translate-y-1/2 -translate-x-[50%]" />
           {/* Home Penalty Spot */}
           <div className="absolute top-1/2 left-[12%] w-1.5 h-1.5 bg-white/30 rounded-full -translate-x-1/2 -translate-y-1/2" />
           {/* Home second penalty spot */}
@@ -49,8 +47,6 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
 
           {/* Away Goal Area */}
           <div className="absolute top-[20%] bottom-[20%] right-0 w-[15%] border-l-2 border-t-2 border-b-2 border-white/30 rounded-tl-lg rounded-bl-lg" />
-          {/* Away goal semi-circle */}
-          <div className="absolute top-1/2 right-0 w-[24%] aspect-square border-l-2 border-t-2 border-b-2 border-white/30 rounded-full -translate-y-1/2 translate-x-[50%]" />
           {/* Away Penalty Spot */}
           <div className="absolute top-1/2 right-[12%] w-1.5 h-1.5 bg-white/30 rounded-full translate-x-1/2 -translate-y-1/2" />
            {/* Away second penalty spot */}
