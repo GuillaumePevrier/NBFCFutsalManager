@@ -56,6 +56,7 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
   const matchId = params.matchId;
 
   const updateMatchData = useCallback(async (updatedMatch: Match, showToast = false) => {
+    // Optimistically update local state first
     setMatch(updatedMatch);
 
     const { error } = await supabase
@@ -178,15 +179,19 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
     const x = e.clientX - courtRect.left - draggingPlayer.offsetX;
     const y = e.clientY - courtRect.top - draggingPlayer.offsetY;
 
+    // Convert pixels to percentage, clamping between -20% and 100% for Y
     const newX = Math.max(0, Math.min(100, (x / courtRect.width) * 100));
     const newY = Math.max(-20, Math.min(100, (y / courtRect.height) * 100));
     
+    // Check if the player being dragged is a substitute
     const isSub = match.substitutes.some(p => p.id === draggingPlayer.id);
 
+    // Create a function to update player positions
     const updatePosition = (playerList: PlayerPosition[]) => playerList.map(p => 
-        p.id === draggingPlayer.id ? { ...p, position: { ...p.position, x: newX, y: newY } } : p
+        p.id === draggingPlayer.id ? { ...p, position: { x: newX, y: newY } } : p
     );
     
+    // Update the state locally for smooth dragging
     setMatch(currentMatch => {
         if (!currentMatch) return null;
         return {
@@ -214,11 +219,13 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
     let newSubstitutes = [...match.substitutes];
     let changed = false;
 
+    // Player moved from field to bench
     if (y < 0 && match.team.some(p => p.id === draggedPlayer.id)) {
         newTeam = newTeam.filter(p => p.id !== draggedPlayer.id);
         newSubstitutes.push({ ...draggedPlayer, position: { x: 5 + (newSubstitutes.length * 10), y: -15 } });
         changed = true;
     }
+    // Player moved from bench to field
     else if (y >= 0 && match.substitutes.some(p => p.id === draggedPlayer.id)) {
         if (match.team.length < MAX_ON_FIELD) {
             newSubstitutes = newSubstitutes.filter(p => p.id !== draggedPlayer.id);
@@ -227,10 +234,12 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
         }
     }
     
+    // Finalize the update to Supabase
     if (changed) {
         updateMatchData({ ...match, team: newTeam, substitutes: newSubstitutes });
     } else if (match) {
-        updateMatchData(match); // Save final position
+        // Just save the final position if no team change occurred
+        updateMatchData(match); 
     }
 
     setDraggingPlayer(null);

@@ -89,7 +89,7 @@ export default function HomePage() {
         if (error) {
             console.error("Failed to fetch matches from Supabase", error);
             setMatches([]);
-        } else if (loadedMatches.length === 0) {
+        } else if (loadedMatches.length === 0 && role === 'coach') {
             console.log("No matches found, creating a demo match.");
             const demoMatch = await createDemoMatch();
             if(demoMatch) setMatches([demoMatch]);
@@ -98,7 +98,7 @@ export default function HomePage() {
         }
     };
     
-    loadMatches();
+    if(role) loadMatches();
 
     const channel = supabase
       .channel('matches_feed')
@@ -111,7 +111,7 @@ export default function HomePage() {
       supabase.removeChannel(channel);
     };
 
-  }, [supabase]);
+  }, [supabase, role]);
 
   useEffect(() => {
     const checkRole = async () => {
