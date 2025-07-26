@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { createClient } from '@/lib/supabase/client';
 
 const allPlayers: Player[] = [
     { id: '1', name: 'Leo Briantais', avatar: 'LB' },
@@ -50,71 +51,85 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
   const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const supabase = createClient();
 
   const matchId = params.matchId;
 
-  const updateMatchData = useCallback((updatedMatch: Match, showToast = false) => {
+  const updateMatchData = useCallback(async (updatedMatch: Match, showToast = false) => {
     setMatch(updatedMatch);
 
-    try {
-      const savedMatchesJSON = localStorage.getItem('futsal_matches');
-      let savedMatches: Match[] = savedMatchesJSON ? JSON.parse(savedMatchesJSON) : [];
-      
-      const matchIndex = savedMatches.findIndex(m => m.id === matchId);
-      if (matchIndex !== -1) {
-        savedMatches[matchIndex] = updatedMatch;
-      } else {
-        savedMatches.push(updatedMatch);
-      }
-      
-      localStorage.setItem('futsal_matches', JSON.stringify(savedMatches));
+    const { error } = await supabase
+      .from('matches')
+      .update({
+        details: updatedMatch.details,
+        team: updatedMatch.team,
+        substitutes: updatedMatch.substitutes,
+        scoreboard: updatedMatch.scoreboard,
+      })
+      .eq('id', matchId);
 
-      if(showToast) {
-        toast({
-          title: "Match sauvegardé !",
-          description: "Les informations du match ont été enregistrées.",
-        });
-      }
-
-    } catch (error) {
-      console.error("Failed to save match data to localStorage", error);
+    if (error) {
+      console.error("Failed to save match data to Supabase", error);
+      toast({ title: "Erreur de sauvegarde", description: "Impossible d'enregistrer les données du match.", variant: "destructive" });
+    } else if (showToast) {
+      toast({
+        title: "Match sauvegardé !",
+        description: "Les informations du match ont été enregistrées.",
+      });
     }
-  }, [matchId, toast]);
+  }, [matchId, supabase, toast]);
 
   useEffect(() => {
-    const loadMatch = () => {
-        try {
-            const savedMatchesJSON = localStorage.getItem('futsal_matches');
-            if (savedMatchesJSON) {
-                const savedMatches: Match[] = JSON.parse(savedMatchesJSON);
-                const currentMatch = savedMatches.find(m => m.id === matchId);
-                if (currentMatch) {
-                    setMatch(currentMatch);
-                } else {
-                    console.warn(`Match with ID ${matchId} not found. Redirecting.`);
-                    toast({ title: "Match non trouvé", description: "Redirection vers la page d'accueil.", variant: "destructive" });
-                    router.push('/');
-                }
-            } else {
-                console.warn("No matches found in localStorage. Redirecting.");
-                toast({ title: "Aucun match trouvé", description: "Redirection vers la page d'accueil.", variant: "destructive" });
-                router.push('/');
-            }
-        } catch (error) {
-            console.error("Failed to parse matches from localStorage", error);
-            router.push('/');
+    const fetchMatch = async () => {
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
+      if (error || !data) {
+        console.error("Failed to fetch match from Supabase", error);
+        toast({ title: "Match non trouvé", description: "Redirection vers la page d'accueil.", variant: "destructive" });
+        router.push('/');
+      } else {
+        setMatch(data as Match);
+      }
+    };
+
+    if (matchId) {
+      fetchMatch();
+
+      const channel = supabase.channel(`match-${matchId}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches', filter: `id=eq.${matchId}` }, (payload) => {
+          setMatch(payload.new as Match);
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [matchId, router, supabase, toast]);
+  
+  useEffect(() => {
+    const checkRole = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            setRole('coach');
+        } else {
+            setRole('player');
         }
     };
-    
-    if (typeof window !== 'undefined' && matchId) {
-        const savedRole = sessionStorage.getItem('futsal_role');
-        if (savedRole === 'coach') {
-            setRole('coach');
-        }
-        loadMatch();
-    }
-  }, [matchId, router, toast]);
+    checkRole();
 
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        setRole(session ? 'coach' : 'player');
+    });
+
+    return () => {
+        authListener?.subscription.unsubscribe();
+    };
+}, [supabase.auth]);
 
   const handleAddPlayer = (playerId: string) => {
     if (!match) return;
@@ -261,7 +276,7 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-       <Header onCoachClick={() => setIsCoachAuthOpen(true)}>
+       <Header onCoachClick={() => setIsCoachAuthOpen(true)} role={role}>
             <Button variant="outline" size="sm" onClick={() => router.push('/')}>
                 <Home className="mr-2 h-4 w-4"/>
                 Retour aux matchs

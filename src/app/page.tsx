@@ -19,24 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const FUTSAL_PERIOD_DURATION = 20 * 60; // 20 minutes in seconds
-
-// Extracted from match page to be used here
-const allPlayers = [
-    { id: '1', name: 'Leo Briantais', avatar: 'LB' },
-    { id: '2', name: 'Kevin Levesque', avatar: 'KL' },
-    { id: '3', name: 'Alexis Genet', avatar: 'AG' },
-    { id: '4', name: 'Nicolas Georgeault', avatar: 'NG' },
-    { id: '5', name: 'Omar Jaddour', avatar: 'OJ' },
-    { id: '6', name: 'Francois Beaudouin', avatar: 'FB' },
-    { id: '7', name: 'Benjamin Bedel', avatar: 'BB' },
-    { id: '8', name: 'Nicolas Gousset', avatar: 'NG' },
-    { id: '9', name: 'Alexandre Seveno', avatar: 'AS' },
-    { id: '10', name: 'Erwan Anfray', avatar: 'EA' },
-];
 
 const FoulDisplay = ({ count }: { count: number }) => (
     <div className="flex items-center gap-1">
@@ -60,10 +48,11 @@ export default function HomePage() {
   const [role, setRole] = useState<Role>('player');
   const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
+  const { toast } = useToast();
 
-  const createDemoMatch = (): Match => {
-    return {
-      id: `match_${Date.now()}`,
+  const createDemoMatch = async () => {
+    const demoMatch: Omit<Match, 'id' | 'created_at'> = {
       details: {
         opponent: 'Équipe de Démo',
         date: new Date().toISOString().split('T')[0],
@@ -71,8 +60,8 @@ export default function HomePage() {
         location: 'Gymnase de Démo',
         remarks: 'Ceci est un match de démonstration. Vous pouvez le modifier ou le supprimer.',
       },
-      team: allPlayers.slice(0, 5).map(p => ({ ...p, position: { x: Math.random() * 80 + 10, y: Math.random() * 80 + 10 } })),
-      substitutes: allPlayers.slice(5, 7).map((p, i) => ({ ...p, position: { x: 5 + (i * 10) , y: -15 } })),
+      team: [],
+      substitutes: [],
       scoreboard: {
         homeScore: 2,
         awayScore: 1,
@@ -83,53 +72,74 @@ export default function HomePage() {
         period: 1,
       },
     };
+    const { data, error } = await supabase.from('matches').insert(demoMatch).select().single();
+    if(error) {
+        console.error("Error creating demo match", error);
+    }
+    return data;
   };
 
   useEffect(() => {
-    const loadMatches = () => {
-      try {
-        let savedMatches: Match[] = [];
-        const savedMatchesJSON = localStorage.getItem('futsal_matches');
-        if (savedMatchesJSON) {
-          savedMatches = JSON.parse(savedMatchesJSON);
-        }
-        
-        if (savedMatches.length === 0) {
-          console.log("No matches found, creating a demo match.");
-          const demoMatch = createDemoMatch();
-          savedMatches.push(demoMatch);
-          localStorage.setItem('futsal_matches', JSON.stringify(savedMatches));
-        }
-        setMatches(savedMatches);
+    const loadMatches = async () => {
+        const { data: loadedMatches, error } = await supabase
+            .from('matches')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-      } catch (error) {
-        console.error("Failed to process matches from localStorage", error);
-        setMatches([]);
-      }
+        if (error) {
+            console.error("Failed to fetch matches from Supabase", error);
+            setMatches([]);
+        } else if (loadedMatches.length === 0) {
+            console.log("No matches found, creating a demo match.");
+            const demoMatch = await createDemoMatch();
+            if(demoMatch) setMatches([demoMatch]);
+        } else {
+            setMatches(loadedMatches);
+        }
+    };
+    
+    loadMatches();
+
+    const channel = supabase
+      .channel('matches_feed')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
+        loadMatches();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
     };
 
-    if (typeof window !== 'undefined') {
-      const savedRole = sessionStorage.getItem('futsal_role');
-      if (savedRole === 'coach') {
-        setRole('coach');
-      }
+  }, [supabase]);
 
-      loadMatches();
-      window.addEventListener('storage', loadMatches);
-      return () => {
-        window.removeEventListener('storage', loadMatches);
-      };
-    }
-  }, []);
+  useEffect(() => {
+    const checkRole = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            setRole('coach');
+        } else {
+            setRole('player');
+        }
+    };
+    checkRole();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        setRole(session ? 'coach' : 'player');
+    });
+
+    return () => {
+        authListener?.subscription.unsubscribe();
+    };
+}, [supabase.auth]);
 
   const onCoachLogin = () => {
     setRole('coach');
     setIsCoachAuthOpen(false);
   };
 
-  const createNewMatch = () => {
-    const newMatch: Match = {
-      id: `match_${Date.now()}`,
+  const createNewMatch = async () => {
+    const newMatchData: Omit<Match, 'id' | 'created_at'> = {
       details: {
         opponent: 'Nouvel Adversaire',
         date: new Date().toISOString().split('T')[0],
@@ -150,21 +160,28 @@ export default function HomePage() {
       },
     };
 
-    const updatedMatches = [...matches, newMatch];
-    localStorage.setItem('futsal_matches', JSON.stringify(updatedMatches));
-    setMatches(updatedMatches);
-    router.push(`/match/${newMatch.id}`);
+    const { data: newMatch, error } = await supabase.from('matches').insert(newMatchData).select().single();
+
+    if (error) {
+        console.error("Error creating new match:", error);
+        toast({ title: "Erreur", description: "Impossible de créer le match.", variant: "destructive"});
+    } else {
+        router.push(`/match/${newMatch.id}`);
+    }
   };
 
-  const deleteMatch = (matchId: string) => {
-    const updatedMatches = matches.filter(m => m.id !== matchId);
-    localStorage.setItem('futsal_matches', JSON.stringify(updatedMatches));
-    setMatches(updatedMatches);
+  const deleteMatch = async (matchId: string) => {
+    const { error } = await supabase.from('matches').delete().eq('id', matchId);
+    if(error){
+        toast({ title: "Erreur", description: "Impossible de supprimer le match.", variant: "destructive"});
+    } else {
+        toast({ title: "Match supprimé", description: "Le match a été supprimé avec succès."});
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
+      <Header onCoachClick={() => setIsCoachAuthOpen(true)} role={role}/>
       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       
       <main className="flex-grow p-4 md:p-8 main-bg">
@@ -190,7 +207,7 @@ export default function HomePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 bg-muted/30 p-3 rounded-lg">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 bg-muted/50 p-3 rounded-lg">
                         <div className="flex items-center gap-4">
                             <div className="text-center">
                                 <div className="font-bold text-xs uppercase text-muted-foreground">Domicile</div>
@@ -247,7 +264,7 @@ export default function HomePage() {
                 <CardDescription className="mt-2">
                   {role === 'coach'
                     ? 'Cliquez sur "Créer un match" pour commencer.'
-                    : 'Connectez-vous en mode Coach pour gérer les matchs.'}
+                    : 'Les matchs apparaîtront ici dès que le coach les aura créés.'}
                 </CardDescription>
               </Card>
             )}
