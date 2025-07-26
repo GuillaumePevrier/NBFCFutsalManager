@@ -23,28 +23,75 @@ import {
 
 const FUTSAL_PERIOD_DURATION = 20 * 60; // 20 minutes in seconds
 
+// Extracted from match page to be used here
+const allPlayers = [
+    { id: '1', name: 'Leo Briantais', avatar: 'LB' },
+    { id: '2', name: 'Kevin Levesque', avatar: 'KL' },
+    { id: '3', name: 'Alexis Genet', avatar: 'AG' },
+    { id: '4', name: 'Nicolas Georgeault', avatar: 'NG' },
+    { id: '5', name: 'Omar Jaddour', avatar: 'OJ' },
+    { id: '6', name: 'Francois Beaudouin', avatar: 'FB' },
+    { id: '7', name: 'Benjamin Bedel', avatar: 'BB' },
+    { id: '8', name: 'Nicolas Gousset', avatar: 'NG' },
+    { id: '9', name: 'Alexandre Seveno', avatar: 'AS' },
+    { id: '10', name: 'Erwan Anfray', avatar: 'EA' },
+];
+
 export default function HomePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [role, setRole] = useState<Role>('player');
   const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
   const router = useRouter();
 
+  const createDemoMatch = (): Match => {
+    return {
+      id: `match_${Date.now()}`,
+      details: {
+        opponent: 'Équipe de Démo',
+        date: new Date().toISOString().split('T')[0],
+        time: '21:00',
+        location: 'Gymnase de Démo',
+        remarks: 'Ceci est un match de démonstration. Vous pouvez le modifier ou le supprimer.',
+      },
+      team: allPlayers.slice(0, 5).map(p => ({ ...p, position: { x: Math.random() * 80 + 10, y: Math.random() * 80 + 10 } })),
+      substitutes: allPlayers.slice(5, 7).map((p, i) => ({ ...p, position: { x: 5 + (i * 10) , y: -15 } })),
+      scoreboard: {
+        homeScore: 2,
+        awayScore: 1,
+        homeFouls: 3,
+        awayFouls: 4,
+        time: FUTSAL_PERIOD_DURATION - 300,
+        isRunning: false,
+        period: 1,
+      },
+    };
+  };
+
   useEffect(() => {
     const loadMatches = () => {
       try {
+        let savedMatches: Match[] = [];
         const savedMatchesJSON = localStorage.getItem('futsal_matches');
         if (savedMatchesJSON) {
-          setMatches(JSON.parse(savedMatchesJSON));
+          savedMatches = JSON.parse(savedMatchesJSON);
         }
+        
+        if (savedMatches.length === 0) {
+          console.log("No matches found, creating a demo match.");
+          const demoMatch = createDemoMatch();
+          savedMatches.push(demoMatch);
+          localStorage.setItem('futsal_matches', JSON.stringify(savedMatches));
+        }
+        setMatches(savedMatches);
+
       } catch (error) {
-        console.error("Failed to parse matches from localStorage", error);
+        console.error("Failed to process matches from localStorage", error);
         setMatches([]);
       }
     };
 
     if (typeof window !== 'undefined') {
       loadMatches();
-       // Listen for storage changes to update the list
       window.addEventListener('storage', loadMatches);
       return () => {
         window.removeEventListener('storage', loadMatches);
