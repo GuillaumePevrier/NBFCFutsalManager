@@ -32,6 +32,7 @@ export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated 
     event.preventDefault();
     if (password === COACH_PASSWORD) {
       setError("");
+      sessionStorage.setItem('futsal_role', 'coach');
       toast({
         title: "Authentification réussie",
         description: "Le mode Coach est maintenant activé.",

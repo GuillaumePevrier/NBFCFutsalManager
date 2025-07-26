@@ -107,6 +107,10 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
     };
     
     if (typeof window !== 'undefined' && matchId) {
+        const savedRole = sessionStorage.getItem('futsal_role');
+        if (savedRole === 'coach') {
+            setRole('coach');
+        }
         loadMatch();
     }
   }, [matchId, router, toast]);

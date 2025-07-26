@@ -91,6 +91,11 @@ export default function HomePage() {
     };
 
     if (typeof window !== 'undefined') {
+      const savedRole = sessionStorage.getItem('futsal_role');
+      if (savedRole === 'coach') {
+        setRole('coach');
+      }
+
       loadMatches();
       window.addEventListener('storage', loadMatches);
       return () => {
