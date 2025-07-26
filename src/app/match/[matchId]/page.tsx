@@ -10,7 +10,7 @@ import CoachAuthDialog from '@/components/CoachAuthDialog';
 import Header from '@/components/Header';
 import MatchDetails from '@/components/MatchDetails';
 import Scoreboard from '@/components/Scoreboard';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +43,8 @@ const allPlayers: Player[] = [
 
 const MAX_ON_FIELD = 5;
 
-export default function MatchPage({ params }: { params: { matchId: string } }) {
+export default function MatchPage() {
+  const params = useParams();
   const [match, setMatch] = useState<Match | null>(null);
   const [role, setRole] = useState<Role>('player');
   const [draggingPlayer, setDraggingPlayer] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
@@ -53,7 +54,7 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
   const { toast } = useToast();
   const supabase = createClient();
 
-  const matchId = params.matchId;
+  const matchId = params.matchId as string;
 
   const updateMatchData = useCallback(async (updatedMatch: Match, showToast = false) => {
     // Optimistically update local state first
