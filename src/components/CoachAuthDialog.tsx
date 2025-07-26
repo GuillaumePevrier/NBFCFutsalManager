@@ -23,6 +23,7 @@ interface CoachAuthDialogProps {
 }
 
 export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated }: CoachAuthDialogProps) {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
@@ -32,18 +33,16 @@ export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated 
     event.preventDefault();
     setError("");
 
-    // In a real app, you would have a dedicated coach email.
-    // For this app, we use a generic email and the password provided.
     const { error } = await supabase.auth.signInWithPassword({
-      email: 'coach@nbfcfutsal.com',
+      email: email,
       password: password,
     });
     
     if (error) {
-      setError("Mot de passe incorrect.");
+      setError("Email ou mot de passe incorrect.");
       toast({
         title: "Échec de l'authentification",
-        description: "Le mot de passe est incorrect.",
+        description: "Veuillez vérifier vos identifiants.",
         variant: "destructive",
       });
     } else {
@@ -57,6 +56,7 @@ export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated 
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
+      setEmail("");
       setPassword("");
       setError("");
     }
@@ -73,7 +73,7 @@ export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated 
                 Accès Coach
             </DialogTitle>
             <DialogDescription>
-              Veuillez entrer le mot de passe pour activer les fonctionnalités de modification. L'email est pré-rempli.
+              Veuillez entrer votre email et mot de passe pour activer les fonctionnalités de modification.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -85,9 +85,10 @@ export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated 
                 id="email"
                 name="email"
                 type="email"
+                required
                 className="col-span-3"
-                value="coach@nbfcfutsal.com"
-                disabled
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
