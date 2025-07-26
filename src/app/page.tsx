@@ -190,7 +190,7 @@ export default function HomePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 bg-muted/50 p-3 rounded-lg">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 bg-muted/30 p-3 rounded-lg">
                         <div className="flex items-center gap-4">
                             <div className="text-center">
                                 <div className="font-bold text-xs uppercase text-muted-foreground">Domicile</div>
