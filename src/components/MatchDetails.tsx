@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from './ui/button';
 import { CalendarDays, Clock, MapPin, Users, Info, Save } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 interface MatchDetailsProps {
   details: MatchDetailsType;
@@ -19,7 +18,6 @@ interface MatchDetailsProps {
 
 export default function MatchDetails({ details, onDetailsChange, isCoach }: MatchDetailsProps) {
   const [currentDetails, setCurrentDetails] = useState<MatchDetailsType>(details);
-  const { toast } = useToast();
 
   useEffect(() => {
     setCurrentDetails(details);
@@ -32,10 +30,6 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
 
   const handleSave = () => {
     onDetailsChange(currentDetails);
-    toast({
-        title: "Détails du match sauvegardés !",
-        description: "Les informations ont été mises à jour.",
-    });
   };
 
   const DetailItem = ({ icon: Icon, label, value, name, placeholder, isCoach, isTextarea = false }: any) => (
@@ -75,7 +69,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
     <Card className="w-full max-w-2xl bg-card/80 backdrop-blur-sm border-border/50">
       <CardHeader className='flex-row items-center justify-between p-4'>
         <CardTitle className="text-base font-semibold">Détails du Match</CardTitle>
-        {isCoach && <Button size="sm" onClick={handleSave}><Save className="mr-2"/>Sauvegarder</Button>}
+        {isCoach && <Button size="sm" onClick={handleSave}><Save className="mr-2 h-4 w-4"/>Sauvegarder les détails</Button>}
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">

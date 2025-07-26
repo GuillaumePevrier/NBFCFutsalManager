@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -14,6 +13,7 @@ import Scoreboard from '@/components/Scoreboard';
 import { useRouter } from 'next/navigation';
 import { Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const allPlayers: Player[] = [
     { id: '1', name: 'Leo Briantais', avatar: 'LB' },
@@ -41,7 +41,6 @@ const allPlayers: Player[] = [
 ];
 
 const MAX_ON_FIELD = 5;
-const FUTSAL_PERIOD_DURATION = 20 * 60; // 20 minutes in seconds
 
 export default function MatchPage({ params }: { params: { matchId: string } }) {
   const [match, setMatch] = useState<Match | null>(null);
@@ -50,10 +49,11 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
   const courtRef = useRef<HTMLDivElement>(null);
   const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   const matchId = params.matchId;
 
-  const updateMatchData = useCallback((updatedMatch: Match) => {
+  const updateMatchData = useCallback((updatedMatch: Match, showToast = false) => {
     setMatch(updatedMatch);
 
     try {
@@ -68,10 +68,18 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
       }
       
       localStorage.setItem('futsal_matches', JSON.stringify(savedMatches));
+
+      if(showToast) {
+        toast({
+          title: "Match sauvegardé !",
+          description: "Les informations du match ont été enregistrées.",
+        });
+      }
+
     } catch (error) {
       console.error("Failed to save match data to localStorage", error);
     }
-  }, [matchId]);
+  }, [matchId, toast]);
 
   useEffect(() => {
     const loadMatch = () => {
@@ -84,10 +92,12 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
                     setMatch(currentMatch);
                 } else {
                     console.warn(`Match with ID ${matchId} not found. Redirecting.`);
+                    toast({ title: "Match non trouvé", description: "Redirection vers la page d'accueil.", variant: "destructive" });
                     router.push('/');
                 }
             } else {
                 console.warn("No matches found in localStorage. Redirecting.");
+                toast({ title: "Aucun match trouvé", description: "Redirection vers la page d'accueil.", variant: "destructive" });
                 router.push('/');
             }
         } catch (error) {
@@ -96,11 +106,10 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
         }
     };
     
-    // Ensure localStorage is available before trying to access it
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && matchId) {
         loadMatch();
     }
-  }, [matchId, router]);
+  }, [matchId, router, toast]);
 
 
   const handleAddPlayer = (playerId: string) => {
@@ -229,7 +238,7 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
 
   const handleDetailsChange = (details: MatchDetailsType) => {
     if (!match) return;
-    updateMatchData({ ...match, details });
+    updateMatchData({ ...match, details }, true);
   };
   
   const handleScoreboardChange = (scoreboard: ScoreboardType) => {
@@ -251,12 +260,12 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
        <Header onCoachClick={() => setIsCoachAuthOpen(true)}>
             <Button variant="outline" size="sm" onClick={() => router.push('/')}>
                 <Home className="mr-2 h-4 w-4"/>
-                Retour
+                Retour aux matchs
             </Button>
        </Header>
        <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex flex-col md:flex-row flex-grow font-body main-bg overflow-y-auto">
-        <div className="flex-grow flex flex-col items-center justify-center p-2 md:p-4 lg:p-8 relative gap-4">
+        <div className="flex-grow flex flex-col items-center justify-start p-2 md:p-4 lg:p-8 relative gap-4">
           <Scoreboard 
             scoreboard={match.scoreboard}
             onScoreboardChange={handleScoreboardChange}
@@ -289,11 +298,9 @@ export default function MatchPage({ params }: { params: { matchId: string } }) {
           onAddPlayer={handleAddPlayer}
           onRemovePlayer={handleRemovePlayer}
           onReset={handleReset}
-          onSave={() => match && updateMatchData(match)}
+          onSave={() => match && updateMatchData(match, true)}
         />
       </main>
     </div>
   );
 }
-
-    
