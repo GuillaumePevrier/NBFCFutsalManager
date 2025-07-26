@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { cn } from '@/lib/utils';
 
 const FUTSAL_PERIOD_DURATION = 20 * 60; // 20 minutes in seconds
 
@@ -36,6 +37,23 @@ const allPlayers = [
     { id: '9', name: 'Alexandre Seveno', avatar: 'AS' },
     { id: '10', name: 'Erwan Anfray', avatar: 'EA' },
 ];
+
+const FoulDisplay = ({ count }: { count: number }) => (
+    <div className="flex items-center gap-1">
+      <span className="text-xs font-semibold text-muted-foreground mr-1">Fautes:</span>
+      <div className="flex gap-1">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'h-1.5 w-4 rounded-sm',
+              i < count ? 'bg-destructive' : 'bg-destructive/20'
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
 
 export default function HomePage() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -164,23 +182,37 @@ export default function HomePage() {
           <div className="grid gap-4 md:gap-6">
             {matches.length > 0 ? (
               matches.sort((a, b) => new Date(b.details.date).getTime() - new Date(a.details.date).getTime()).map(match => (
-                <Card key={match.id} className="bg-card/80 backdrop-blur-sm border-border/50">
-                  <CardHeader>
+                <Card key={match.id} className="bg-card/80 backdrop-blur-sm border-border/50 overflow-hidden">
+                  <CardHeader className="pb-4">
                     <CardTitle>NBFC Futsal vs {match.details.opponent}</CardTitle>
                     <CardDescription>
                       {new Date(match.details.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} à {match.details.time} - {match.details.location}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>Score: {match.scoreboard.homeScore} - {match.scoreboard.awayScore}</span>
-                        <span>Joueurs: {match.team.length + match.substitutes.length}</span>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 bg-muted/50 p-3 rounded-lg">
+                        <div className="flex items-center gap-4">
+                            <div className="text-center">
+                                <div className="font-bold text-xs uppercase text-muted-foreground">Domicile</div>
+                                <div className="text-3xl font-bold font-['Orbitron',_sans-serif] text-primary">{String(match.scoreboard.homeScore).padStart(2, '0')}</div>
+                                <FoulDisplay count={match.scoreboard.homeFouls} />
+                            </div>
+                            <div className="text-2xl font-light text-muted-foreground">-</div>
+                             <div className="text-center">
+                                <div className="font-bold text-xs uppercase text-muted-foreground">Extérieur</div>
+                                <div className="text-3xl font-bold font-['Orbitron',_sans-serif] text-primary">{String(match.scoreboard.awayScore).padStart(2, '0')}</div>
+                                <FoulDisplay count={match.scoreboard.awayFouls} />
+                            </div>
+                        </div>
+                        <div className="text-sm text-muted-foreground font-semibold border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0 sm:pl-4 mt-2 sm:mt-0">
+                            Joueurs convoqués: {match.team.length + match.substitutes.length}
+                        </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end gap-2">
+                  <CardFooter className="flex justify-end gap-2 bg-background/30 p-4">
                     <Button variant="outline" size="sm" onClick={() => router.push(`/match/${match.id}`)}>
                       <Eye className="mr-2 h-4 w-4"/>
-                      Consulter
+                      Consulter le match
                     </Button>
                     {role === 'coach' && (
                        <AlertDialog>
