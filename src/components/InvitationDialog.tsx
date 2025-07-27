@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { PlayerPosition } from "@/lib/types";
 import { useState } from "react";
+import { sendNotification } from "@/ai/flows/send-notification";
+import { Loader2 } from "lucide-react";
 
 interface InvitationDialogProps {
     team: PlayerPosition[];
@@ -24,23 +26,41 @@ interface InvitationDialogProps {
 
 export default function InvitationDialog({ team, children }: InvitationDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsLoading(true);
     const formData = new FormData(event.currentTarget);
     const data = Object.fromEntries(formData.entries());
     
-    console.log("Notification Sent:", {
-        ...data,
-        players: team.map(p => p.name),
-    });
+    const notificationPayload = {
+        title: `Convocation Match vs ${data.opponent}`,
+        message: data.message as string || `Rendez-vous à ${data.location} à ${data.time}`,
+        opponent: data.opponent as string,
+        date: data.date as string,
+        time: data.time as string,
+        location: data.location as string
+    };
 
-    toast({
-        title: "Notification Envoyée!",
-        description: `Votre notification de match pour ${data.opponent} a été envoyée à ${team.length} joueurs.`,
-        variant: "default",
-    });
+    const result = await sendNotification(notificationPayload);
+
+    setIsLoading(false);
+
+    if (result.success) {
+        toast({
+            title: "Notification Envoyée!",
+            description: `Votre notification de match a été envoyée. (${result.sentCount} abonnés)`,
+            variant: "default",
+        });
+    } else {
+        toast({
+            title: "Erreur d'envoi",
+            description: "La notification n'a pas pu être envoyée.",
+            variant: "destructive",
+        });
+    }
 
     setIsOpen(false);
   };
@@ -55,7 +75,7 @@ export default function InvitationDialog({ team, children }: InvitationDialogPro
             <DialogHeader>
             <DialogTitle>Envoyer une Notification de Match</DialogTitle>
             <DialogDescription>
-                Remplissez les détails du match à venir. La notification sera envoyée à tous les joueurs de l'équipe actuelle.
+                Remplissez les détails du match à venir. La notification sera envoyée à tous les utilisateurs abonnés.
             </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -91,7 +111,10 @@ export default function InvitationDialog({ team, children }: InvitationDialogPro
                 </div>
             </div>
             <DialogFooter>
-            <Button type="submit">Envoyer la Notification</Button>
+            <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Envoyer la Notification
+            </Button>
             </DialogFooter>
         </form>
       </DialogContent>
