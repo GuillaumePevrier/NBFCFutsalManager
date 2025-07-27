@@ -170,46 +170,43 @@ export default function MatchPage() {
   };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!draggingPlayer || !courtRef.current || !match) return;
+    if (!draggingPlayer || !courtRef.current) return;
 
-    const courtRect = courtRef.current.getBoundingClientRect();
-    const x = e.clientX - courtRect.left - draggingPlayer.offsetX;
-    const y = e.clientY - courtRect.top - draggingPlayer.offsetY;
-
-    // Convert pixels to percentage, clamping between -20% and 100% for Y
-    const newX = Math.max(0, Math.min(100, (x / courtRect.width) * 100));
-    const newY = Math.max(-20, Math.min(100, (y / courtRect.height) * 100));
-    
-    // Check if the player being dragged is a substitute
-    const isSub = match.substitutes.some(p => p.id === draggingPlayer.id);
-
-    // Create a function to update player positions
-    const updatePosition = (playerList: PlayerPosition[]) => playerList.map(p => 
-        p.id === draggingPlayer.id ? { ...p, position: { x: newX, y: newY } } : p
-    );
-    
-    // Update the state locally for smooth dragging
     setMatch(currentMatch => {
-        if (!currentMatch) return null;
-        return {
-            ...currentMatch,
-            team: isSub ? currentMatch.team : updatePosition(currentMatch.team),
-            substitutes: isSub ? updatePosition(currentMatch.substitutes) : currentMatch.substitutes
-        };
+      if (!currentMatch) return null;
+
+      const courtRect = courtRef.current!.getBoundingClientRect();
+      const x = e.clientX - courtRect.left - draggingPlayer.offsetX;
+      const y = e.clientY - courtRect.top - draggingPlayer.offsetY;
+      
+      const newX = Math.max(0, Math.min(100, (x / courtRect.width) * 100));
+      const newY = Math.max(-20, Math.min(100, (y / courtRect.height) * 100));
+
+      const updatePosition = (playerList: PlayerPosition[]) => playerList.map(p => 
+          p.id === draggingPlayer.id ? { ...p, position: { x: newX, y: newY } } : p
+      );
+      
+      const isSub = currentMatch.substitutes.some(p => p.id === draggingPlayer.id);
+
+      return {
+          ...currentMatch,
+          team: isSub ? currentMatch.team : updatePosition(currentMatch.team),
+          substitutes: isSub ? updatePosition(currentMatch.substitutes) : currentMatch.substitutes
+      };
     });
-  }, [draggingPlayer, match]);
+  }, [draggingPlayer]);
 
   const handleMouseUp = useCallback(() => {
-    if (!draggingPlayer || !courtRef.current || !match) {
+    if (!draggingPlayer || !match) {
         setDraggingPlayer(null);
         return;
     }
 
     const draggedPlayer = [...match.team, ...match.substitutes].find(p => p.id === draggingPlayer.id);
-    if (!draggedPlayer) {
-        setDraggingPlayer(null);
-        return;
-    }
+    
+    setDraggingPlayer(null); // Stop dragging immediately
+
+    if (!draggedPlayer) return;
 
     const { y } = draggedPlayer.position;
     let newTeam = [...match.team];
@@ -219,27 +216,29 @@ export default function MatchPage() {
     // Player moved from field to bench
     if (y < 0 && match.team.some(p => p.id === draggedPlayer.id)) {
         newTeam = newTeam.filter(p => p.id !== draggedPlayer.id);
-        newSubstitutes.push({ ...draggedPlayer, position: { x: 5 + (newSubstitutes.length * 10), y: -15 } });
+        const currentSubCount = newSubstitutes.length;
+        newSubstitutes.push({ ...draggedPlayer, position: { x: 5 + (currentSubCount * 10), y: -15 } });
         changed = true;
     }
     // Player moved from bench to field
     else if (y >= 0 && match.substitutes.some(p => p.id === draggedPlayer.id)) {
         if (match.team.length < MAX_ON_FIELD) {
             newSubstitutes = newSubstitutes.filter(p => p.id !== draggedPlayer.id);
-            newTeam.push({ ...draggedPlayer, position: { x: draggedPlayer.position.x, y: Math.max(0, draggedPlayer.position.y) } });
+            newTeam.push({ ...draggedPlayer, position: { ...draggedPlayer.position, y: Math.max(0, draggedPlayer.position.y) } });
             changed = true;
+        } else {
+             // Not enough space, revert position visually for the user
+             const originalPlayer = match.substitutes.find(p => p.id === draggedPlayer.id);
+             setMatch(m => m ? ({ ...m, substitutes: m.substitutes.map(p => p.id === draggedPlayer.id ? originalPlayer! : p)}) : null);
         }
     }
     
-    // Finalize the update to Supabase
     if (changed) {
         updateMatchData({ ...match, team: newTeam, substitutes: newSubstitutes });
-    } else if (match) {
-        // Just save the final position if no team change occurred
+    } else {
         updateMatchData(match); 
     }
-
-    setDraggingPlayer(null);
+    
   }, [draggingPlayer, match, updateMatchData]);
 
   useEffect(() => {
