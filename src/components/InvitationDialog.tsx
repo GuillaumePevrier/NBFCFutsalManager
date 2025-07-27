@@ -31,14 +31,14 @@ export default function InvitationDialog({ team, children }: InvitationDialogPro
     const formData = new FormData(event.currentTarget);
     const data = Object.fromEntries(formData.entries());
     
-    console.log("Invitation Sent:", {
+    console.log("Notification Sent:", {
         ...data,
         players: team.map(p => p.name),
     });
 
     toast({
-        title: "Invitation Sent!",
-        description: `Your match invitation for ${data.opponent} has been sent to ${team.length} players.`,
+        title: "Notification Envoyée!",
+        description: `Votre notification de match pour ${data.opponent} a été envoyée à ${team.length} joueurs.`,
         variant: "default",
     });
 
@@ -53,15 +53,15 @@ export default function InvitationDialog({ team, children }: InvitationDialogPro
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
             <DialogHeader>
-            <DialogTitle>Send Match Invitation</DialogTitle>
+            <DialogTitle>Envoyer une Notification de Match</DialogTitle>
             <DialogDescription>
-                Fill in the details for the upcoming match. The invitation will be sent to all players in the current squad.
+                Remplissez les détails du match à venir. La notification sera envoyée à tous les joueurs de l'équipe actuelle.
             </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="opponent" className="text-right">
-                    Opponent
+                    Adversaire
                     </Label>
                     <Input id="opponent" name="opponent" required className="col-span-3" />
                 </div>
@@ -73,13 +73,13 @@ export default function InvitationDialog({ team, children }: InvitationDialogPro
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="time" className="text-right">
-                    Time
+                    Heure
                     </Label>
                     <Input id="time" name="time" type="time" required className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="location" className="text-right">
-                    Location
+                    Lieu
                     </Label>
                     <Input id="location" name="location" required className="col-span-3" />
                 </div>
@@ -87,11 +87,11 @@ export default function InvitationDialog({ team, children }: InvitationDialogPro
                     <Label htmlFor="message" className="text-right pt-2">
                     Message
                     </Label>
-                    <Textarea id="message" name="message" placeholder="Optional message..." className="col-span-3" />
+                    <Textarea id="message" name="message" placeholder="Message optionnel..." className="col-span-3" />
                 </div>
             </div>
             <DialogFooter>
-            <Button type="submit">Send Invitation</Button>
+            <Button type="submit">Envoyer la Notification</Button>
             </DialogFooter>
         </form>
       </DialogContent>

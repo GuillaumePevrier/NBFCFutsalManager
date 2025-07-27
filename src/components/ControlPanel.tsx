@@ -114,7 +114,7 @@ const ControlPanel = ({
         <div className="mt-auto p-4 space-y-2 flex-shrink-0 border-t">
           <InvitationDialog team={team}>
             <Button className="w-full" disabled={team.length === 0}>
-              <Send className="mr-2 h-4 w-4" /> Envoyer une invitation
+              <Send className="mr-2 h-4 w-4" /> Envoyer une notification
             </Button>
           </InvitationDialog>
           <div className="flex gap-2">
