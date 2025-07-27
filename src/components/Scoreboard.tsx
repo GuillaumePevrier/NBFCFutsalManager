@@ -20,16 +20,21 @@ interface ScoreboardProps {
 
 const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: ScoreboardProps) => {
   const { toast } = useToast();
+  const [localTime, setLocalTime] = useState(scoreboard.time);
+
+  useEffect(() => {
+    setLocalTime(scoreboard.time);
+  }, [scoreboard.time]);
   
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (scoreboard.isRunning && scoreboard.time > 0) {
+    if (scoreboard.isRunning && localTime > 0) {
       timer = setInterval(() => {
-        onScoreboardChange({ ...scoreboard, time: scoreboard.time - 1 });
+        setLocalTime(prevTime => Math.max(0, prevTime - 1));
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [scoreboard, onScoreboardChange]);
+  }, [scoreboard.isRunning, localTime]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -40,20 +45,21 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
   const handleScoreChange = (team: 'home' | 'away', delta: number) => {
     const key = team === 'home' ? 'homeScore' : 'awayScore';
     const newScore = Math.max(0, scoreboard[key] + delta);
-    onScoreboardChange({ ...scoreboard, [key]: newScore });
+    onScoreboardChange({ ...scoreboard, time: localTime, [key]: newScore });
   };
 
   const handleFoulChange = (team: 'home' | 'away', delta: number) => {
     const key = team === 'home' ? 'homeFouls' : 'awayFouls';
     const newFouls = Math.max(0, Math.min(5, scoreboard[key] + delta));
-    onScoreboardChange({ ...scoreboard, [key]: newFouls });
+    onScoreboardChange({ ...scoreboard, time: localTime, [key]: newFouls });
   };
 
   const handleTimerToggle = () => {
-    onScoreboardChange({ ...scoreboard, isRunning: !scoreboard.isRunning });
+    onScoreboardChange({ ...scoreboard, time: localTime, isRunning: !scoreboard.isRunning });
   };
 
   const handleTimerReset = () => {
+    setLocalTime(FUTSAL_PERIOD_DURATION);
     onScoreboardChange({
         ...scoreboard,
         time: FUTSAL_PERIOD_DURATION,
@@ -63,6 +69,7 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
   };
 
   const handleFullReset = () => {
+     setLocalTime(FUTSAL_PERIOD_DURATION);
      onScoreboardChange({
         homeScore: 0,
         awayScore: 0,
@@ -109,7 +116,7 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
         <div className="flex flex-col items-center gap-2 mx-2">
           <div className="text-sm font-semibold text-yellow-400">P{scoreboard.period}</div>
           <div className="text-5xl md:text-6xl font-['Orbitron',_sans-serif] text-yellow-400 font-bold">
-            {formatTime(scoreboard.time)}
+            {formatTime(localTime)}
           </div>
           <div className="text-xs md:text-sm font-semibold uppercase text-neutral-400">Fautes</div>
         </div>

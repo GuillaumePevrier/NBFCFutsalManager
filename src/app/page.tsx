@@ -48,6 +48,48 @@ const FoulDisplay = ({ count }: { count: number }) => (
     </div>
   );
 
+const MatchCardTimer = ({ match }: { match: Match }) => {
+    const [time, setTime] = useState(match.scoreboard.time);
+
+    useEffect(() => {
+        setTime(match.scoreboard.time); // Sync with updates from Supabase
+        
+        let timer: NodeJS.Timeout | undefined;
+        if (match.scoreboard.isRunning && match.scoreboard.time > 0) {
+            const lastUpdatedTime = new Date(match.created_at).getTime(); // Approximation
+            const serverTime = match.scoreboard.time;
+            
+            // A more robust solution would store last_updated timestamp in scoreboard
+            // For now, we just count down from the last known time.
+            timer = setInterval(() => {
+                setTime(prevTime => Math.max(0, prevTime - 1));
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [match.scoreboard.time, match.scoreboard.isRunning, match.created_at]);
+
+    if (!match.scoreboard.isRunning || time <= 0) {
+        return (
+            <span className="text-xs">
+                Période: {match.scoreboard.period}
+            </span>
+        );
+    }
+    
+    return (
+        <>
+            <div className="flex items-center gap-2 text-accent font-bold font-['Orbitron',_sans-serif] animate-pulse">
+                <Timer className="h-4 w-4" />
+                <span>{formatTime(time)}</span>
+            </div>
+            <span className="text-xs">
+                Période: {match.scoreboard.period}
+            </span>
+        </>
+    );
+};
+
+
 export default function HomePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [role, setRole] = useState<Role>('player');
@@ -85,17 +127,18 @@ export default function HomePage() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'matches' },
         (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setMatches(currentMatches => [payload.new as Match, ...currentMatches]);
-          } else if (payload.eventType === 'UPDATE') {
-            setMatches(currentMatches =>
-              currentMatches.map(m => (m.id === payload.new.id ? payload.new as Match : m))
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setMatches(currentMatches =>
-              currentMatches.filter(m => m.id !== (payload.old as Match).id)
-            );
-          }
+          setMatches(currentMatches => {
+            if (payload.eventType === 'INSERT') {
+              return [payload.new as Match, ...currentMatches];
+            }
+            if (payload.eventType === 'UPDATE') {
+              return currentMatches.map(m => (m.id === payload.new.id ? payload.new as Match : m))
+            }
+            if (payload.eventType === 'DELETE') {
+              return currentMatches.filter(m => m.id !== (payload.old as Match).id)
+            }
+            return currentMatches;
+          });
         }
       )
       .subscribe();
@@ -165,13 +208,15 @@ export default function HomePage() {
   };
 
   const deleteMatch = async (matchId: string) => {
+    // Optimistic update first
+    setMatches(currentMatches => currentMatches.filter(m => m.id !== matchId));
     const { error } = await supabase.from('matches').delete().eq('id', matchId);
     if(error){
         toast({ title: "Erreur", description: "Impossible de supprimer le match.", variant: "destructive"});
+        // Re-fetch if deletion failed to revert optimistic update
+        loadMatches();
     } else {
         toast({ title: "Match supprimé", description: "Le match a été supprimé avec succès."});
-        // Optimistic update, though realtime should handle it too
-        setMatches(currentMatches => currentMatches.filter(m => m.id !== matchId));
     }
   };
 
@@ -219,15 +264,7 @@ export default function HomePage() {
                             </div>
                         </div>
                         <div className="flex flex-col items-end gap-2 text-sm text-muted-foreground font-semibold border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0 sm:pl-4 mt-2 sm:mt-0 flex-shrink-0">
-                           {match.scoreboard.isRunning && match.scoreboard.time > 0 && (
-                                <div className="flex items-center gap-2 text-accent font-bold font-['Orbitron',_sans-serif] animate-pulse">
-                                    <Timer className="h-4 w-4" />
-                                    <span>{formatTime(match.scoreboard.time)}</span>
-                                </div>
-                           )}
-                           <span className="text-xs">
-                             Période: {match.scoreboard.period}
-                           </span>
+                           <MatchCardTimer match={match} />
                         </div>
                     </div>
                   </CardContent>
