@@ -263,7 +263,17 @@ export default function MatchPage() {
 
   const handleDetailsChange = (details: MatchDetailsType) => {
     if (!match) return;
-    updateMatchData({ ...match, details }, true);
+    const periodDuration = (details.matchType === '25min' ? 25 : 20) * 60;
+    
+    const updatedScoreboard = { ...match.scoreboard };
+    if (match.details.matchType !== details.matchType) {
+        updatedScoreboard.time = periodDuration;
+        updatedScoreboard.isRunning = false;
+        updatedScoreboard.timerLastStarted = null;
+        toast({ title: "Type de match modifié", description: `Le chronomètre a été réinitialisé à ${periodDuration/60} minutes.`})
+    }
+    
+    updateMatchData({ ...match, details, scoreboard: updatedScoreboard }, true);
   };
   
   const handleScoreboardChange = (scoreboard: ScoreboardType) => {
@@ -294,7 +304,7 @@ export default function MatchPage() {
           <Scoreboard 
             scoreboard={match.scoreboard}
             onScoreboardChange={handleScoreboardChange}
-            opponentName={match.details.opponent}
+            details={match.details}
             isCoach={role === 'coach'}
           />
           <FutsalCourt ref={courtRef}>

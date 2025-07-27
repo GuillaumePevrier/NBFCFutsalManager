@@ -23,8 +23,6 @@ import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const FUTSAL_PERIOD_DURATION = 20 * 60; // 20 minutes in seconds
-
 const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -74,8 +72,8 @@ const MatchCardTimer = ({ match }: { match: Match }) => {
         return () => clearInterval(timer);
     }, [match.scoreboard]);
 
-
-    if (!match.scoreboard.isRunning || time <= 0) {
+    const periodDuration = (match.details.matchType === '25min' ? 25 : 20) * 60;
+    if (!match.scoreboard.isRunning || time <= 0 || time > periodDuration) {
         return (
             <span className="text-xs">
                 Période: {match.scoreboard.period}
@@ -185,6 +183,7 @@ export default function HomePage() {
         time: '20:00',
         location: isDemo ? 'Gymnase de Démo' : 'Lieu à définir',
         remarks: isDemo ? 'Ceci est un match de démonstration.' : '',
+        matchType: '20min',
       },
       team: [],
       substitutes: [],
@@ -193,7 +192,7 @@ export default function HomePage() {
         awayScore: 0,
         homeFouls: 0,
         awayFouls: 0,
-        time: FUTSAL_PERIOD_DURATION,
+        time: 20 * 60,
         isRunning: false,
         period: 1,
         timerLastStarted: null,

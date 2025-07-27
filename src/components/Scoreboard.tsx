@@ -5,22 +5,21 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { Scoreboard as ScoreboardType } from '@/lib/types';
+import type { Scoreboard as ScoreboardType, MatchDetails } from '@/lib/types';
 import { Minus, Pause, Play, Plus, RefreshCw, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const FUTSAL_PERIOD_DURATION = 20 * 60; // 20 minutes in seconds
-
 interface ScoreboardProps {
   scoreboard: ScoreboardType;
+  details: MatchDetails;
   onScoreboardChange: (scoreboard: ScoreboardType) => void;
-  opponentName: string;
   isCoach: boolean;
 }
 
-const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: ScoreboardProps) => {
+const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: ScoreboardProps) => {
   const { toast } = useToast();
   const [localTime, setLocalTime] = useState(scoreboard.time);
+  const periodDuration = (details.matchType === '25min' ? 25 : 20) * 60;
 
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
@@ -77,10 +76,10 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
   };
 
   const handleTimerReset = () => {
-    setLocalTime(FUTSAL_PERIOD_DURATION);
+    setLocalTime(periodDuration);
     onScoreboardChange({
         ...scoreboard,
-        time: FUTSAL_PERIOD_DURATION,
+        time: periodDuration,
         isRunning: false,
         timerLastStarted: null
     });
@@ -88,13 +87,13 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
   };
 
   const handleFullReset = () => {
-     setLocalTime(FUTSAL_PERIOD_DURATION);
+     setLocalTime(periodDuration);
      onScoreboardChange({
         homeScore: 0,
         awayScore: 0,
         homeFouls: 0,
         awayFouls: 0,
-        time: FUTSAL_PERIOD_DURATION,
+        time: periodDuration,
         isRunning: false,
         period: 1,
         timerLastStarted: null
@@ -143,7 +142,7 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
 
         {/* Away Team */}
         <div className="flex flex-col items-center gap-2 flex-1">
-          <h2 className="text-sm md:text-lg font-bold uppercase tracking-wider text-center truncate" title={opponentName}>{opponentName}</h2>
+          <h2 className="text-sm md:text-lg font-bold uppercase tracking-wider text-center truncate" title={details.opponent}>{details.opponent}</h2>
           <ScoreDisplay score={scoreboard.awayScore} />
           <FoulDisplay count={scoreboard.awayFouls} />
         </div>

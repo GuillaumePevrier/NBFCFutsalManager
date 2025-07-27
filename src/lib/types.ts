@@ -25,6 +25,7 @@ export interface MatchDetails {
   time: string;
   location: string;
   remarks: string;
+  matchType: '20min' | '25min';
 }
 
 export interface Scoreboard {
