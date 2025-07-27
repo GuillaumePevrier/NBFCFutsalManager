@@ -5,7 +5,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import webpush from 'web-push';
 
@@ -31,8 +31,8 @@ const sendNotificationFlow = ai.defineFlow(
     outputSchema: z.object({ success: z.boolean(), sentCount: z.number() }),
   },
   async (input) => {
-    if (!process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-      console.error("VAPID keys are not configured.");
+    if (!process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("VAPID keys or Supabase service key are not configured.");
       return { success: false, sentCount: 0 };
     }
 
@@ -43,7 +43,11 @@ const sendNotificationFlow = ai.defineFlow(
       process.env.VAPID_PRIVATE_KEY
     );
 
-    const supabase = createClient();
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
     const { data: subscriptions, error } = await supabase
       .from('subscriptions')
       .select('subscription_object');
