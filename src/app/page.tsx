@@ -52,21 +52,28 @@ const MatchCardTimer = ({ match }: { match: Match }) => {
     const [time, setTime] = useState(match.scoreboard.time);
 
     useEffect(() => {
-        setTime(match.scoreboard.time); // Sync with updates from Supabase
-        
         let timer: NodeJS.Timeout | undefined;
-        if (match.scoreboard.isRunning && match.scoreboard.time > 0) {
-            const lastUpdatedTime = new Date(match.created_at).getTime(); // Approximation
+
+        if (match.scoreboard.isRunning) {
             const serverTime = match.scoreboard.time;
+            const lastStarted = new Date(match.scoreboard.timerLastStarted || 0).getTime();
+            const now = new Date().getTime();
+            const elapsed = Math.floor((now - lastStarted) / 1000);
+            const newTime = Math.max(0, serverTime - elapsed);
+            setTime(newTime);
             
-            // A more robust solution would store last_updated timestamp in scoreboard
-            // For now, we just count down from the last known time.
-            timer = setInterval(() => {
-                setTime(prevTime => Math.max(0, prevTime - 1));
-            }, 1000);
+            if (newTime > 0) {
+                 timer = setInterval(() => {
+                    setTime(prevTime => Math.max(0, prevTime - 1));
+                }, 1000);
+            }
+        } else {
+            setTime(match.scoreboard.time);
         }
+        
         return () => clearInterval(timer);
-    }, [match.scoreboard.time, match.scoreboard.isRunning, match.created_at]);
+    }, [match.scoreboard]);
+
 
     if (!match.scoreboard.isRunning || time <= 0) {
         return (
@@ -189,6 +196,7 @@ export default function HomePage() {
         time: FUTSAL_PERIOD_DURATION,
         isRunning: false,
         period: 1,
+        timerLastStarted: null,
       },
     };
 

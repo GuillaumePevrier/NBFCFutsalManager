@@ -23,18 +23,28 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
   const [localTime, setLocalTime] = useState(scoreboard.time);
 
   useEffect(() => {
-    setLocalTime(scoreboard.time);
-  }, [scoreboard.time]);
-  
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (scoreboard.isRunning && localTime > 0) {
-      timer = setInterval(() => {
-        setLocalTime(prevTime => Math.max(0, prevTime - 1));
-      }, 1000);
+    let timer: NodeJS.Timeout | undefined;
+
+    if (scoreboard.isRunning) {
+        const serverTime = scoreboard.time;
+        const lastStarted = new Date(scoreboard.timerLastStarted || 0).getTime();
+        const now = new Date().getTime();
+        const elapsed = Math.floor((now - lastStarted) / 1000);
+        const newTime = Math.max(0, serverTime - elapsed);
+        setLocalTime(newTime);
+        
+        if (newTime > 0) {
+            timer = setInterval(() => {
+                setLocalTime(prevTime => Math.max(0, prevTime - 1));
+            }, 1000);
+        }
+    } else {
+        setLocalTime(scoreboard.time);
     }
+    
     return () => clearInterval(timer);
-  }, [scoreboard.isRunning, localTime]);
+  }, [scoreboard]);
+
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -55,7 +65,15 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
   };
 
   const handleTimerToggle = () => {
-    onScoreboardChange({ ...scoreboard, time: localTime, isRunning: !scoreboard.isRunning });
+    const nowIsRunning = !scoreboard.isRunning;
+    const newTime = nowIsRunning ? localTime : Math.max(0, localTime);
+    
+    onScoreboardChange({ 
+        ...scoreboard, 
+        time: newTime, 
+        isRunning: nowIsRunning,
+        timerLastStarted: nowIsRunning ? new Date().toISOString() : null
+    });
   };
 
   const handleTimerReset = () => {
@@ -64,6 +82,7 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
         ...scoreboard,
         time: FUTSAL_PERIOD_DURATION,
         isRunning: false,
+        timerLastStarted: null
     });
     toast({ title: "Chronomètre réinitialisé." });
   };
@@ -78,6 +97,7 @@ const Scoreboard = ({ scoreboard, onScoreboardChange, opponentName, isCoach }: S
         time: FUTSAL_PERIOD_DURATION,
         isRunning: false,
         period: 1,
+        timerLastStarted: null
      })
      toast({ title: "Tableau de marque réinitialisé." });
   }

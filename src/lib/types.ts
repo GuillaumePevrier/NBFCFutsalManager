@@ -35,6 +35,7 @@ export interface Scoreboard {
   time: number; // in seconds
   isRunning: boolean;
   period: number;
+  timerLastStarted: string | null; // ISO string
 }
 
 // This interface now matches the Supabase table structure
