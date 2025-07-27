@@ -31,20 +31,14 @@ const sendNotificationFlow = ai.defineFlow(
     outputSchema: z.object({ success: z.boolean(), sentCount: z.number() }),
   },
   async (input) => {
-    
-    // This is a simulation. In a real scenario, you would fetch subscriptions
-    // from your database and use the web-push library to send notifications.
-    console.log('Simulating sending notifications with input:', input);
-    
-    // Here is how you would configure web-push
-    /*
     if (!process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
       console.error("VAPID keys are not configured.");
       return { success: false, sentCount: 0 };
     }
 
+    // You need to set your email here
     webpush.setVapidDetails(
-      'mailto:youremail@example.com',
+      'mailto:contact@nbfcfutsal.com',
       process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       process.env.VAPID_PRIVATE_KEY
     );
@@ -76,10 +70,8 @@ const sendNotificationFlow = ai.defineFlow(
       }
     });
 
-    await Promise.all(sentPromises);
-    */
-   
-    // For now, we just return a success message.
-    return { success: true, sentCount: 0 }; // Change sentCount when implementing for real
+    await Promise.all(sendPromises);
+    
+    return { success: true, sentCount: sentCount };
   }
 );

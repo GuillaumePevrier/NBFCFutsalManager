@@ -34,19 +34,33 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
   const handleNotificationSubscription = async () => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       try {
-        const swRegistration = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.register('/sw.js');
+        const swRegistration = await navigator.serviceWorker.ready;
         
         let subscription = await swRegistration.pushManager.getSubscription();
         
         if (subscription === null) {
+          if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+            console.error("VAPID public key not found");
+            toast({ title: "Erreur de configuration", description: "La clé de notification est manquante.", variant: "destructive" });
+            return;
+          }
+
           subscription = await swRegistration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
           });
           
           console.log('New push subscription:', subscription);
-          // TODO: Send subscription to your server
-          toast({ title: "Notifications Activées", description: "Vous recevrez maintenant les mises à jour en direct." });
+
+          // Send subscription to the server to save it
+          const { error } = await supabase.from('subscriptions').insert({ subscription_object: subscription });
+          if(error) {
+            console.error("Failed to save subscription", error);
+            toast({ title: "Erreur", description: "Impossible de sauvegarder votre abonnement.", variant: "destructive" });
+          } else {
+            toast({ title: "Notifications Activées", description: "Vous recevrez maintenant les mises à jour en direct." });
+          }
         } else {
           console.log('Existing push subscription:', subscription);
           toast({ title: "Notifications Déjà Activées", description: "Vous êtes déjà abonné aux mises à jour." });
