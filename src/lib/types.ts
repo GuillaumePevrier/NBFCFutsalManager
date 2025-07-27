@@ -1,11 +1,20 @@
 export interface Player {
-  id: string;
+  id: string; // uuid
   name: string;
-  avatar: string;
+  email?: string;
+  age?: number;
+  avatar_url?: string;
+  team: 'D1' | 'D2' | 'Autre';
+  position?: 'Goalkeeper' | 'Defender' | 'Winger' | 'Pivot';
+  preferred_foot?: 'Right' | 'Left' | 'Both';
+  goals_scored?: number;
+  assists?: number;
 }
 
 export interface PlayerPosition extends Player {
   position: { x: number; y: number };
+  // Kept for backward compatibility with existing avatar fallbacks, but avatar_url should be used
+  avatar?: string;
 }
 
 export type Role = 'coach' | 'player';

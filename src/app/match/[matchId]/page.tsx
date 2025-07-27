@@ -16,35 +16,11 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 
-const allPlayers: Player[] = [
-    { id: '1', name: 'Leo Briantais', avatar: 'LB' },
-    { id: '2', name: 'Kevin Levesque', avatar: 'KL' },
-    { id: '3', name: 'Alexis Genet', avatar: 'AG' },
-    { id: '4', name: 'Nicolas Georgeault', avatar: 'NG' },
-    { id: '5', name: 'Omar Jaddour', avatar: 'OJ' },
-    { id: '6', name: 'Francois Beaudouin', avatar: 'FB' },
-    { id: '7', name: 'Benjamin Bedel', avatar: 'BB' },
-    { id: '8', name: 'Nicolas Gousset', avatar: 'NG' },
-    { id: '9', name: 'Alexandre Seveno', avatar: 'AS' },
-    { id: '10', name: 'Erwan Anfray', avatar: 'EA' },
-    { id: '11', name: 'Florian Arnoult', avatar: 'FA' },
-    { id: '12', name: 'Nicolas Beillard', avatar: 'NB' },
-    { id: '13', name: 'Vincent Bourdoiseau', avatar: 'VB' },
-    { id: '14', name: 'Julien Durand', avatar: 'JD' },
-    { id: '15', name: 'Kevin Mahe', avatar: 'KM' },
-    { id: '16', name: 'Germain Maquine', avatar: 'GM' },
-    { id: '17', name: 'Anousack Ouanesavady', avatar: 'AO' },
-    { id: '18', name: 'Vincent Poilvet', avatar: 'VP' },
-    { id: '19', name: 'Yoann Poulain', avatar: 'YP' },
-    { id: '20', name: 'Amine Rhidane', avatar: 'AR' },
-    { id: '21', name: 'Antoine Le Cam', avatar: 'AL' },
-    { id: '22', name: 'Guillaume Pevrier', avatar: 'GP' }
-];
-
 const MAX_ON_FIELD = 5;
 
 export default function MatchPage() {
   const params = useParams();
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
   const [match, setMatch] = useState<Match | null>(null);
   const [role, setRole] = useState<Role>('player');
   const [draggingPlayer, setDraggingPlayer] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
@@ -55,6 +31,19 @@ export default function MatchPage() {
   const supabase = createClient();
 
   const matchId = params.matchId as string;
+
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      const { data, error } = await supabase.from('players').select('*').order('name');
+      if (error) {
+        console.error("Failed to fetch players", error);
+        toast({ title: "Erreur", description: "Impossible de charger la liste des joueurs.", variant: "destructive" });
+      } else {
+        setAllPlayers(data as Player[]);
+      }
+    };
+    fetchPlayers();
+  }, [supabase, toast]);
 
   const updateMatchData = useCallback(async (updatedMatch: Match, showToast = false) => {
     // Optimistically update local state first
@@ -140,12 +129,19 @@ export default function MatchPage() {
     
     let newTeam = [...match.team];
     let newSubstitutes = [...match.substitutes];
+    
+    const playerWithPosition: PlayerPosition = {
+        ...playerToAdd,
+        // Add fallback for avatar initials
+        avatar: playerToAdd.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase(),
+        position: { x: 50, y: 85 }
+    };
 
     if (newTeam.length < MAX_ON_FIELD) {
-      newTeam.push({ ...playerToAdd, position: { x: 50, y: 85 } });
+      newTeam.push(playerWithPosition);
     } else {
       const subIndex = newSubstitutes.length;
-      newSubstitutes.push({ ...playerToAdd, position: { x: 5 + (subIndex * 10) , y: -15 } });
+      newSubstitutes.push({ ...playerWithPosition, position: { x: 5 + (subIndex * 10) , y: -15 } });
     }
     updateMatchData({ ...match, team: newTeam, substitutes: newSubstitutes });
   };
@@ -276,10 +272,10 @@ export default function MatchPage() {
   };
 
 
-  if (!match) {
+  if (!match || allPlayers.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <p>Chargement du match...</p>
+        <p>Chargement du match et des joueurs...</p>
       </div>
     );
   }

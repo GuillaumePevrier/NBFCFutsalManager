@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Save, Send, Trash2, Users, X } from 'lucide-react';
 import InvitationDialog from './InvitationDialog';
 import { ScrollArea } from './ui/scroll-area';
@@ -73,6 +73,7 @@ const ControlPanel = ({
                 <div key={player.id} className="flex items-center justify-between bg-muted p-2 rounded-md">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
+                       <AvatarImage src={player.avatar_url} alt={player.name} />
                       <AvatarFallback className="bg-primary text-primary-foreground">{player.avatar}</AvatarFallback>
                     </Avatar>
                     <span className="font-medium">{player.name}</span>
@@ -94,6 +95,7 @@ const ControlPanel = ({
                 <div key={player.id} className="flex items-center justify-between bg-muted p-2 rounded-md">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
+                      <AvatarImage src={player.avatar_url} alt={player.name} />
                       <AvatarFallback className="bg-secondary text-secondary-foreground">{player.avatar}</AvatarFallback>
                     </Avatar>
                     <span className="font-medium">{player.name}</span>
