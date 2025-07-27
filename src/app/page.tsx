@@ -18,7 +18,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -57,78 +56,60 @@ export default function HomePage() {
   const supabase = createClient();
   const { toast } = useToast();
 
-  const createDemoMatch = async () => {
-    const demoMatch: Omit<Match, 'id' | 'created_at'> = {
-      details: {
-        opponent: 'Équipe de Démo',
-        date: new Date().toISOString().split('T')[0],
-        time: '21:00',
-        location: 'Gymnase de Démo',
-        remarks: 'Ceci est un match de démonstration. Vous pouvez le modifier ou le supprimer.',
-      },
-      team: [],
-      substitutes: [],
-      scoreboard: {
-        homeScore: 2,
-        awayScore: 1,
-        homeFouls: 3,
-        awayFouls: 4,
-        time: FUTSAL_PERIOD_DURATION - 300,
-        isRunning: false,
-        period: 1,
-      },
-    };
-    const { data, error } = await supabase.from('matches').insert(demoMatch).select().single();
-    if(error) {
-        console.error("Error creating demo match", error);
+  const loadMatches = async () => {
+    const { data: loadedMatches, error } = await supabase
+        .from('matches')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Failed to fetch matches from Supabase", error);
+        toast({ title: "Erreur", description: "Impossible de charger les matchs.", variant: "destructive"});
+        setMatches([]);
+    } else {
+        setMatches(loadedMatches);
+        if (loadedMatches.length === 0 && role === 'coach') {
+            await createNewMatch(true); // Create a demo match if none exist for a coach
+        }
     }
-    return data;
   };
 
   useEffect(() => {
-    const loadMatches = async () => {
-        const { data: loadedMatches, error } = await supabase
-            .from('matches')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error("Failed to fetch matches from Supabase", error);
-            setMatches([]);
-        } else if (loadedMatches.length === 0 && role === 'coach') {
-            console.log("No matches found, creating a demo match.");
-            const demoMatch = await createDemoMatch();
-            if(demoMatch) setMatches([demoMatch]);
-        } else {
-            setMatches(loadedMatches);
-        }
-    };
+    if(role) {
+      loadMatches();
+    }
     
-    if(role) loadMatches();
-
     const channel = supabase
       .channel('matches_feed')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, (payload) => {
-        setMatches(currentMatches => 
-            currentMatches.map(m => m.id === payload.new.id ? payload.new as Match : m)
-        );
-      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'matches' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setMatches(currentMatches => [payload.new as Match, ...currentMatches]);
+          } else if (payload.eventType === 'UPDATE') {
+            setMatches(currentMatches =>
+              currentMatches.map(m => (m.id === payload.new.id ? payload.new as Match : m))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setMatches(currentMatches =>
+              currentMatches.filter(m => m.id !== (payload.old as Match).id)
+            );
+          }
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, role]);
 
   useEffect(() => {
     const checkRole = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            setRole('coach');
-        } else {
-            setRole('player');
-        }
+        setRole(session ? 'coach' : 'player');
     };
     checkRole();
 
@@ -146,14 +127,14 @@ export default function HomePage() {
     setIsCoachAuthOpen(false);
   };
 
-  const createNewMatch = async () => {
+  const createNewMatch = async (isDemo = false) => {
     const newMatchData: Omit<Match, 'id' | 'created_at'> = {
       details: {
-        opponent: 'Nouvel Adversaire',
+        opponent: isDemo ? 'Équipe de Démo' : 'Nouvel Adversaire',
         date: new Date().toISOString().split('T')[0],
         time: '20:00',
-        location: 'Lieu à définir',
-        remarks: '',
+        location: isDemo ? 'Gymnase de Démo' : 'Lieu à définir',
+        remarks: isDemo ? 'Ceci est un match de démonstration.' : '',
       },
       team: [],
       substitutes: [],
@@ -174,7 +155,12 @@ export default function HomePage() {
         console.error("Error creating new match:", error);
         toast({ title: "Erreur", description: "Impossible de créer le match.", variant: "destructive"});
     } else {
-        router.push(`/match/${newMatch.id}`);
+        if(!isDemo) {
+          router.push(`/match/${newMatch.id}`);
+        } else {
+          // If it's a demo, we rely on the realtime subscription to update the state
+          toast({ title: "Match de démo créé", description: "Un match de démo a été ajouté."});
+        }
     }
   };
 
@@ -184,6 +170,8 @@ export default function HomePage() {
         toast({ title: "Erreur", description: "Impossible de supprimer le match.", variant: "destructive"});
     } else {
         toast({ title: "Match supprimé", description: "Le match a été supprimé avec succès."});
+        // Optimistic update, though realtime should handle it too
+        setMatches(currentMatches => currentMatches.filter(m => m.id !== matchId));
     }
   };
 
@@ -197,7 +185,7 @@ export default function HomePage() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl md:text-3xl font-bold">Tableau de Bord des Matchs</h1>
             {role === 'coach' && (
-              <Button onClick={createNewMatch}>
+              <Button onClick={() => createNewMatch(false)}>
                 <PlusCircle className="mr-2" />
                 Créer un match
               </Button>
@@ -206,12 +194,13 @@ export default function HomePage() {
 
           <div className="grid gap-4 md:gap-6">
             {matches.length > 0 ? (
-              matches.sort((a, b) => new Date(b.details.date).getTime() - new Date(a.details.date).getTime()).map(match => (
+              matches.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(match => (
                 <Card key={match.id} className="bg-card/80 backdrop-blur-sm border-border/50 overflow-hidden">
                   <CardHeader className="pb-4">
                     <CardTitle>NBFC Futsal vs {match.details.opponent}</CardTitle>
                     <CardDescription>
                       {new Date(match.details.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} à {match.details.time} - {match.details.location}
+                      <span className="block text-xs mt-1">Joueurs convoqués: {match.team.length + match.substitutes.length}</span>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -230,14 +219,14 @@ export default function HomePage() {
                             </div>
                         </div>
                         <div className="flex flex-col items-end gap-2 text-sm text-muted-foreground font-semibold border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0 sm:pl-4 mt-2 sm:mt-0 flex-shrink-0">
-                           {match.scoreboard.isRunning && (
+                           {match.scoreboard.isRunning && match.scoreboard.time > 0 && (
                                 <div className="flex items-center gap-2 text-accent font-bold font-['Orbitron',_sans-serif] animate-pulse">
                                     <Timer className="h-4 w-4" />
                                     <span>{formatTime(match.scoreboard.time)}</span>
                                 </div>
                            )}
-                           <span>
-                            Joueurs convoqués: {match.team.length + match.substitutes.length}
+                           <span className="text-xs">
+                             Période: {match.scoreboard.period}
                            </span>
                         </div>
                     </div>
@@ -279,7 +268,7 @@ export default function HomePage() {
                 <CardTitle>Aucun match trouvé</CardTitle>
                 <CardDescription className="mt-2">
                   {role === 'coach'
-                    ? 'Cliquez sur "Créer un match" pour commencer.'
+                    ? 'Un match de démonstration va être créé...'
                     : 'Les matchs apparaîtront ici dès que le coach les aura créés.'}
                 </CardDescription>
               </Card>
@@ -290,5 +279,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
