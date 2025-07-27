@@ -18,6 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -52,9 +53,9 @@ const MatchCardTimer = ({ match }: { match: Match }) => {
     useEffect(() => {
         let timer: NodeJS.Timeout | undefined;
 
-        if (match.scoreboard.isRunning) {
+        if (match.scoreboard.isRunning && match.scoreboard.timerLastStarted) {
             const serverTime = match.scoreboard.time;
-            const lastStarted = new Date(match.scoreboard.timerLastStarted || 0).getTime();
+            const lastStarted = new Date(match.scoreboard.timerLastStarted).getTime();
             const now = new Date().getTime();
             const elapsed = Math.floor((now - lastStarted) / 1000);
             const newTime = Math.max(0, serverTime - elapsed);
