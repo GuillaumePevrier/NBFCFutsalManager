@@ -6,7 +6,7 @@ import type { Match, Role } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import { PlusCircle, Eye, Trash2 } from 'lucide-react';
+import { PlusCircle, Eye, Trash2, Timer } from 'lucide-react';
 import Header from '@/components/Header';
 import CoachAuthDialog from '@/components/CoachAuthDialog';
 import {
@@ -25,6 +25,12 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const FUTSAL_PERIOD_DURATION = 20 * 60; // 20 minutes in seconds
+
+const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
 
 const FoulDisplay = ({ count }: { count: number }) => (
     <div className="flex items-center gap-1">
@@ -102,8 +108,10 @@ export default function HomePage() {
 
     const channel = supabase
       .channel('matches_feed')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
-        loadMatches();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, (payload) => {
+        setMatches(currentMatches => 
+            currentMatches.map(m => m.id === payload.new.id ? payload.new as Match : m)
+        );
       })
       .subscribe();
 
@@ -221,8 +229,16 @@ export default function HomePage() {
                                 <FoulDisplay count={match.scoreboard.awayFouls} />
                             </div>
                         </div>
-                        <div className="text-sm text-muted-foreground font-semibold border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0 sm:pl-4 mt-2 sm:mt-0">
+                        <div className="flex flex-col items-end gap-2 text-sm text-muted-foreground font-semibold border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0 sm:pl-4 mt-2 sm:mt-0 flex-shrink-0">
+                           {match.scoreboard.isRunning && (
+                                <div className="flex items-center gap-2 text-accent font-bold font-['Orbitron',_sans-serif] animate-pulse">
+                                    <Timer className="h-4 w-4" />
+                                    <span>{formatTime(match.scoreboard.time)}</span>
+                                </div>
+                           )}
+                           <span>
                             Joueurs convoqués: {match.team.length + match.substitutes.length}
+                           </span>
                         </div>
                     </div>
                   </CardContent>
@@ -274,3 +290,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
