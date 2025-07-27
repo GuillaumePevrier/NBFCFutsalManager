@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Bell } from "lucide-react";
 import Image from "next/image";
 import type { Role } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +31,35 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
     }
   };
 
+  const handleNotificationSubscription = async () => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      try {
+        const swRegistration = await navigator.serviceWorker.register('/sw.js');
+        
+        let subscription = await swRegistration.pushManager.getSubscription();
+        
+        if (subscription === null) {
+          subscription = await swRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+          });
+          
+          console.log('New push subscription:', subscription);
+          // TODO: Send subscription to your server
+          toast({ title: "Notifications Activées", description: "Vous recevrez maintenant les mises à jour en direct." });
+        } else {
+          console.log('Existing push subscription:', subscription);
+          toast({ title: "Notifications Déjà Activées", description: "Vous êtes déjà abonné aux mises à jour." });
+        }
+      } catch (error) {
+        console.error('Failed to subscribe to push notifications', error);
+        toast({ title: "Erreur de Notification", description: "Impossible d'activer les notifications.", variant: "destructive" });
+      }
+    } else {
+      toast({ title: "Fonctionnalité non supportée", description: "Votre navigateur ne supporte pas les notifications push.", variant: "destructive" });
+    }
+  };
+
   return (
     <header className="flex items-center justify-between p-2 border-b bg-card">
       <div className="flex items-center gap-3">
@@ -51,6 +80,11 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={handleNotificationSubscription}>
+            <Bell className="mr-2 h-4 w-4" />
+            <span>Activer les notifications</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           {role === 'coach' ? (
              <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
