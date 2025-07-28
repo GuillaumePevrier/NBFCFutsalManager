@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import type { Scoreboard as ScoreboardType, MatchDetails } from '@/lib/types';
 import { Minus, Pause, Play, Plus, RefreshCw, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { sendScoreUpdate } from '@/ai/flows/send-score-update';
 
 interface ScoreboardProps {
   scoreboard: ScoreboardType;
@@ -54,7 +55,16 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
   const handleScoreChange = (team: 'home' | 'away', delta: number) => {
     const key = team === 'home' ? 'homeScore' : 'awayScore';
     const newScore = Math.max(0, scoreboard[key] + delta);
-    onScoreboardChange({ ...scoreboard, time: localTime, [key]: newScore });
+    const newScoreboard = { ...scoreboard, time: localTime, [key]: newScore };
+    onScoreboardChange(newScoreboard);
+
+    if (isCoach) {
+      sendScoreUpdate({
+        homeScore: team === 'home' ? newScore : scoreboard.homeScore,
+        awayScore: team === 'away' ? newScore : scoreboard.awayScore,
+        opponent: details.opponent,
+      });
+    }
   };
 
   const handleFoulChange = (team: 'home' | 'away', delta: number) => {
