@@ -69,7 +69,8 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
             
             console.log('New push subscription:', subscription);
 
-            const { error } = await supabase.from('subscriptions').insert({ subscription_object: subscription });
+            const { error } = await supabase.from('subscriptions').upsert({ subscription_object: subscription }, { onConflict: 'subscription_object' });
+
             if(error) {
                 console.error("Failed to save subscription", error);
                 toast({ title: "Erreur", description: "Impossible de sauvegarder l'abonnement.", variant: "destructive" });
