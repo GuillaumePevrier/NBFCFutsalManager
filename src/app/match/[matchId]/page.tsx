@@ -18,9 +18,25 @@ import { createClient } from '@/lib/supabase/client';
 
 const MAX_ON_FIELD = 5;
 
+const defaultPlayers: Player[] = [
+    { id: '1', name: 'Hugo Lloris', team: 'D1', position: 'Goalkeeper' },
+    { id: '2', name: 'Benjamin Pavard', team: 'D1', position: 'Defender' },
+    { id: '3', name: 'Raphaël Varane', team: 'D1', position: 'Defender' },
+    { id: '4', name: 'Presnel Kimpembe', team: 'D1', position: 'Defender' },
+    { id: '5', name: 'Lucas Hernandez', team: 'D1', position: 'Defender' },
+    { id: '6', name: 'Paul Pogba', team: 'D1', position: 'Winger' },
+    { id: '7', name: 'Antoine Griezmann', team: 'D1', position: 'Pivot' },
+    { id: '8', name: "N'Golo Kanté", team: 'D1', position: 'Winger' },
+    { id: '9', name: 'Olivier Giroud', team: 'D1', position: 'Pivot' },
+    { id: '10', name: 'Kylian Mbappé', team: 'D1', position: 'Pivot' },
+    { id: '11', name: 'Ousmane Dembélé', team: 'D2', position: 'Winger' },
+    { id: '12', name: 'Corentin Tolisso', team: 'D2', position: 'Winger' },
+];
+
+
 export default function MatchPage() {
   const params = useParams();
-  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
+  const [allPlayers, setAllPlayers] = useState<Player[]>(defaultPlayers);
   const [match, setMatch] = useState<Match | null>(null);
   const [role, setRole] = useState<Role>('player');
   const [draggingPlayer, setDraggingPlayer] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
@@ -33,17 +49,10 @@ export default function MatchPage() {
   const matchId = params.matchId as string;
 
   useEffect(() => {
-    const fetchPlayers = async () => {
-      const { data, error } = await supabase.from('players').select('*').order('name');
-      if (error) {
-        console.error("Failed to fetch players", error);
-        toast({ title: "Erreur", description: "Impossible de charger la liste des joueurs.", variant: "destructive" });
-      } else {
-        setAllPlayers(data as Player[]);
-      }
-    };
-    fetchPlayers();
-  }, [supabase, toast]);
+    // For now, we use a static list of players.
+    // In a real application, you would fetch this from your database.
+    setAllPlayers(defaultPlayers);
+  }, []);
 
   const updateMatchData = useCallback(async (updatedMatch: Match, showToast = false) => {
     // Optimistically update local state first
@@ -356,5 +365,3 @@ export default function MatchPage() {
     </div>
   );
 }
-
-    
