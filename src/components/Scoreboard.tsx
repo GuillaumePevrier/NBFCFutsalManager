@@ -55,12 +55,13 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
   const handleScoreChange = (team: 'home' | 'away', delta: number) => {
     if (!isCoach) return;
     const key = team === 'home' ? 'homeScore' : 'awayScore';
-    const newScore = Math.max(0, scoreboard[key] + delta);
-    const newScoreboard = { ...scoreboard, time: localTime, [key]: newScore };
-    onScoreboardChange(newScoreboard);
+    const oldScore = scoreboard[key];
+    const newScore = Math.max(0, oldScore + delta);
 
-    // Send notification only if score changed
-    if (newScoreboard[key] !== scoreboard[key]) {
+    if (newScore !== oldScore) {
+      const newScoreboard = { ...scoreboard, time: localTime, [key]: newScore };
+      onScoreboardChange(newScoreboard);
+
       sendScoreUpdate({
         homeScore: newScoreboard.homeScore,
         awayScore: newScoreboard.awayScore,
