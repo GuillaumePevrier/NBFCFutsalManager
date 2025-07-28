@@ -32,6 +32,9 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
   };
 
   const handleNotificationSubscription = async () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       try {
         await navigator.serviceWorker.register('/sw.js');
@@ -70,7 +73,11 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
         toast({ title: "Erreur de Notification", description: "Impossible d'activer les notifications.", variant: "destructive" });
       }
     } else {
-      toast({ title: "Fonctionnalité non supportée", description: "Votre navigateur ne supporte pas les notifications push.", variant: "destructive" });
+      if (isIOS && !isSafari) {
+         toast({ title: "Navigateur non supporté", description: "Sur iPhone, les notifications sont uniquement supportées via Safari. Veuillez ajouter le site à votre écran d'accueil.", variant: "destructive", duration: 10000 });
+      } else {
+        toast({ title: "Fonctionnalité non supportée", description: "Votre navigateur ne supporte pas les notifications push.", variant: "destructive" });
+      }
     }
   };
 
