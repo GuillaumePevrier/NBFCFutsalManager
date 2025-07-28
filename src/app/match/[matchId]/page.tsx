@@ -158,26 +158,34 @@ export default function MatchPage() {
     updateMatchData({ ...match, team: [], substitutes: [] });
   };
 
-  const handleDragStart = (e: React.MouseEvent<HTMLDivElement>, id: string) => {
+  const startDragging = (clientX: number, clientY: number, id: string, target: HTMLDivElement) => {
     if (role !== 'coach' || !match) return;
-    const target = e.currentTarget as HTMLDivElement;
     const rect = target.getBoundingClientRect();
     setDraggingPlayer({ 
       id,
-      offsetX: e.clientX - rect.left,
-      offsetY: e.clientY - rect.top,
+      offsetX: clientX - rect.left,
+      offsetY: clientY - rect.top,
     });
+  }
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>, id: string) => {
+    startDragging(e.clientX, e.clientY, id, e.currentTarget);
+  };
+  
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>, id: string) => {
+    startDragging(e.touches[0].clientX, e.touches[0].clientY, id, e.currentTarget);
   };
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+
+  const handleDragMove = useCallback((clientX: number, clientY: number) => {
     if (!draggingPlayer || !courtRef.current) return;
 
     setMatch(currentMatch => {
       if (!currentMatch) return null;
 
       const courtRect = courtRef.current!.getBoundingClientRect();
-      const x = e.clientX - courtRect.left - draggingPlayer.offsetX;
-      const y = e.clientY - courtRect.top - draggingPlayer.offsetY;
+      const x = clientX - courtRect.left - draggingPlayer.offsetX;
+      const y = clientY - courtRect.top - draggingPlayer.offsetY;
       
       const newX = Math.max(0, Math.min(100, (x / courtRect.width) * 100));
       const newY = Math.max(-20, Math.min(100, (y / courtRect.height) * 100));
@@ -195,8 +203,11 @@ export default function MatchPage() {
       };
     });
   }, [draggingPlayer]);
+  
+  const handleMouseMove = useCallback((e: MouseEvent) => handleDragMove(e.clientX, e.clientY), [handleDragMove]);
+  const handleTouchMove = useCallback((e: TouchEvent) => handleDragMove(e.touches[0].clientX, e.touches[0].clientY), [handleDragMove]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleDragEnd = useCallback(() => {
     if (!draggingPlayer || !match) {
         setDraggingPlayer(null);
         return;
@@ -244,16 +255,22 @@ export default function MatchPage() {
   useEffect(() => {
     if (draggingPlayer) {
       window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleDragEnd);
     } else {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleDragEnd);
     }
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleDragEnd);
     };
-  }, [draggingPlayer, handleMouseMove, handleMouseUp]);
+  }, [draggingPlayer, handleMouseMove, handleDragEnd, handleTouchMove]);
   
   const onCoachLogin = () => {
     setRole('coach');
@@ -311,7 +328,8 @@ export default function MatchPage() {
               <PlayerToken
                 key={player.id}
                 player={player}
-                onMouseDown={e => handleDragStart(e, player.id)}
+                onMouseDown={e => handleMouseDown(e, player.id)}
+                onTouchStart={e => handleTouchStart(e, player.id)}
                 isDraggable={role === 'coach'}
                 isDragging={draggingPlayer?.id === player.id}
                 isSubstitute={match.substitutes.some(p => p.id === player.id)}
