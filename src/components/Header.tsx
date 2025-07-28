@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -32,52 +33,56 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
   };
 
   const handleNotificationSubscription = async () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        if (isIOS) {
+             toast({ 
+                title: "Notifications sur iPhone", 
+                description: "Pour activer les notifications, ajoutez d'abord ce site à votre écran d'accueil depuis le menu de partage de Safari.", 
+                variant: "default", 
+                duration: 10000 
+            });
+        } else {
+            toast({ title: "Fonctionnalité non supportée", description: "Votre navigateur ne supporte pas les notifications push.", variant: "destructive" });
+        }
+        return;
+    }
+
+    try {
         await navigator.serviceWorker.register('/sw.js');
         const swRegistration = await navigator.serviceWorker.ready;
         
         let subscription = await swRegistration.pushManager.getSubscription();
         
         if (subscription === null) {
-          if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-            console.error("VAPID public key not found");
-            toast({ title: "Erreur de configuration", description: "La clé de notification est manquante.", variant: "destructive" });
-            return;
-          }
+            if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+                console.error("VAPID public key not found");
+                toast({ title: "Erreur de configuration", description: "La clé de notification est manquante.", variant: "destructive" });
+                return;
+            }
 
-          subscription = await swRegistration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-          });
-          
-          console.log('New push subscription:', subscription);
+            subscription = await swRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            });
+            
+            console.log('New push subscription:', subscription);
 
-          // Send subscription to the server to save it
-          const { error } = await supabase.from('subscriptions').insert({ subscription_object: subscription });
-          if(error) {
-            console.error("Failed to save subscription", error);
-            toast({ title: "Erreur", description: "Impossible de sauvegarder votre abonnement.", variant: "destructive" });
-          } else {
-            toast({ title: "Notifications Activées", description: "Vous recevrez maintenant les mises à jour en direct." });
-          }
+            const { error } = await supabase.from('subscriptions').insert({ subscription_object: subscription });
+            if(error) {
+                console.error("Failed to save subscription", error);
+                toast({ title: "Erreur", description: "Impossible de sauvegarder l'abonnement.", variant: "destructive" });
+            } else {
+                toast({ title: "Notifications Activées", description: "Vous recevrez maintenant les mises à jour." });
+            }
         } else {
-          console.log('Existing push subscription:', subscription);
-          toast({ title: "Notifications Déjà Activées", description: "Vous êtes déjà abonné aux mises à jour." });
+            console.log('Existing push subscription:', subscription);
+            toast({ title: "Notifications Déjà Activées", description: "Vous êtes déjà abonné." });
         }
-      } catch (error) {
+    } catch (error) {
         console.error('Failed to subscribe to push notifications', error);
-        toast({ title: "Erreur de Notification", description: "Impossible d'activer les notifications.", variant: "destructive" });
-      }
-    } else {
-      if (isIOS && !isSafari) {
-         toast({ title: "Navigateur non supporté", description: "Sur iPhone, les notifications sont uniquement supportées via Safari. Veuillez ajouter le site à votre écran d'accueil.", variant: "destructive", duration: 10000 });
-      } else {
-        toast({ title: "Fonctionnalité non supportée", description: "Votre navigateur ne supporte pas les notifications push.", variant: "destructive" });
-      }
+        toast({ title: "Erreur de Notification", description: "Impossible d'activer les notifications. Assurez-vous d'avoir autorisé les notifications pour ce site dans les réglages de votre navigateur.", variant: "destructive", duration: 10000 });
     }
   };
 
