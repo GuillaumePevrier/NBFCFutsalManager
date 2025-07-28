@@ -25,9 +25,9 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
 
-    if (scoreboard.isRunning) {
+    if (scoreboard.isRunning && scoreboard.timerLastStarted) {
         const serverTime = scoreboard.time;
-        const lastStarted = new Date(scoreboard.timerLastStarted || 0).getTime();
+        const lastStarted = new Date(scoreboard.timerLastStarted).getTime();
         const now = new Date().getTime();
         const elapsed = Math.floor((now - lastStarted) / 1000);
         const newTime = Math.max(0, serverTime - elapsed);
@@ -53,27 +53,31 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
   };
 
   const handleScoreChange = (team: 'home' | 'away', delta: number) => {
+    if (!isCoach) return;
     const key = team === 'home' ? 'homeScore' : 'awayScore';
     const newScore = Math.max(0, scoreboard[key] + delta);
     const newScoreboard = { ...scoreboard, time: localTime, [key]: newScore };
     onScoreboardChange(newScoreboard);
 
-    if (isCoach) {
+    // Send notification only if score changed
+    if (newScoreboard[key] !== scoreboard[key]) {
       sendScoreUpdate({
-        homeScore: team === 'home' ? newScore : scoreboard.homeScore,
-        awayScore: team === 'away' ? newScore : scoreboard.awayScore,
+        homeScore: newScoreboard.homeScore,
+        awayScore: newScoreboard.awayScore,
         opponent: details.opponent,
       });
     }
   };
 
   const handleFoulChange = (team: 'home' | 'away', delta: number) => {
+    if (!isCoach) return;
     const key = team === 'home' ? 'homeFouls' : 'awayFouls';
     const newFouls = Math.max(0, Math.min(5, scoreboard[key] + delta));
     onScoreboardChange({ ...scoreboard, time: localTime, [key]: newFouls });
   };
 
   const handleTimerToggle = () => {
+    if (!isCoach) return;
     const nowIsRunning = !scoreboard.isRunning;
     const newTime = nowIsRunning ? localTime : Math.max(0, localTime);
     
@@ -86,6 +90,7 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
   };
 
   const handleTimerReset = () => {
+    if (!isCoach) return;
     setLocalTime(periodDuration);
     onScoreboardChange({
         ...scoreboard,
@@ -97,6 +102,7 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
   };
 
   const handleFullReset = () => {
+    if (!isCoach) return;
      setLocalTime(periodDuration);
      onScoreboardChange({
         homeScore: 0,
@@ -200,3 +206,5 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
 };
 
 export default Scoreboard;
+
+    
