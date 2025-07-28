@@ -28,8 +28,8 @@ const sendScoreUpdateFlow = ai.defineFlow(
     outputSchema: z.object({ success: z.boolean(), sentCount: z.number() }),
   },
   async (input) => {
-    if (!process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("VAPID keys or Supabase service key are not configured.");
+    if (!process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      console.error("VAPID keys or Supabase config are not configured.");
       return { success: false, sentCount: 0 };
     }
 

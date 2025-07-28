@@ -62,11 +62,13 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
       const newScoreboard = { ...scoreboard, time: localTime, [key]: newScore };
       onScoreboardChange(newScoreboard);
 
-      sendScoreUpdate({
-        homeScore: newScoreboard.homeScore,
-        awayScore: newScoreboard.awayScore,
-        opponent: details.opponent,
-      });
+      if(delta > 0){ // Only send notification on score increase
+         sendScoreUpdate({
+            homeScore: newScoreboard.homeScore,
+            awayScore: newScoreboard.awayScore,
+            opponent: details.opponent,
+        });
+      }
     }
   };
 
@@ -213,7 +215,3 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
 };
 
 export default Scoreboard;
-
-    
-
-    
