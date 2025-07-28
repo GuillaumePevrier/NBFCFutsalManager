@@ -65,7 +65,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
                 />
             )
         ) : (
-          <p className="font-medium text-sm pt-1">{value || '-'}</p>
+          <p className="font-medium text-sm pt-1 truncate">{value || '-'}</p>
         )}
       </div>
     </div>
@@ -75,7 +75,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
     <Card className="w-full max-w-2xl bg-card/80 backdrop-blur-sm border-border/50">
       <CardHeader className='flex-row items-center justify-between p-4'>
         <CardTitle className="text-base font-semibold">Détails du Match</CardTitle>
-        {isCoach && <Button size="sm" onClick={handleSave}><Save className="mr-2 h-4 w-4"/>Sauvegarder les détails</Button>}
+        {isCoach && <Button size="sm" onClick={handleSave}><Save className="mr-2 h-4 w-4"/>Sauvegarder</Button>}
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
@@ -104,3 +104,5 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
     </Card>
   );
 }
+
+    

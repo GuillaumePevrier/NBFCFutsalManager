@@ -134,3 +134,5 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
     </header>
   );
 }
+
+    

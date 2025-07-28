@@ -119,7 +119,7 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
   }
 
   const ScoreDisplay = ({ score }: { score: number }) => (
-    <div className="text-6xl md:text-7xl font-['Orbitron',_sans-serif] text-destructive">
+    <div className="text-5xl sm:text-6xl md:text-7xl font-['Orbitron',_sans-serif] text-destructive">
       {score.toString().padStart(2, '0')}
     </div>
   );
@@ -130,7 +130,7 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
         <div
           key={i}
           className={cn(
-            'h-2 w-5 md:h-3 md:w-8 rounded-sm',
+            'h-2 w-4 md:h-3 md:w-8 rounded-sm',
             i < count ? 'bg-destructive' : 'bg-destructive/20'
           )}
         />
@@ -140,65 +140,71 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
 
   return (
     <Card className="w-full max-w-2xl bg-black/80 backdrop-blur-sm border-neutral-700 shadow-lg">
-      <div className="flex items-center justify-between p-3 md:p-4 text-white">
+      <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 text-white">
         {/* Home Team */}
-        <div className="flex flex-col items-center gap-2 flex-1">
-          <h2 className="text-sm md:text-lg font-bold uppercase tracking-wider text-center">NBFC Futsal</h2>
+        <div className="flex flex-col items-center gap-1 sm:gap-2 flex-1">
+          <h2 className="text-xs sm:text-sm md:text-lg font-bold uppercase tracking-wider text-center">NBFC Futsal</h2>
           <ScoreDisplay score={scoreboard.homeScore} />
           <FoulDisplay count={scoreboard.homeFouls} />
         </div>
 
         {/* Center Controls */}
-        <div className="flex flex-col items-center gap-2 mx-2">
-          <div className="text-sm font-semibold text-yellow-400">P{scoreboard.period}</div>
-          <div className="text-5xl md:text-6xl font-['Orbitron',_sans-serif] text-yellow-400 font-bold">
+        <div className="flex flex-col items-center gap-1 sm:gap-2 mx-2">
+          <div className="text-xs sm:text-sm font-semibold text-yellow-400">P{scoreboard.period}</div>
+          <div className="text-4xl sm:text-5xl md:text-6xl font-['Orbitron',_sans-serif] text-yellow-400 font-bold">
             {formatTime(localTime)}
           </div>
-          <div className="text-xs md:text-sm font-semibold uppercase text-neutral-400">Fautes</div>
+          <div className="text-xs font-semibold uppercase text-neutral-400">Fautes</div>
         </div>
 
         {/* Away Team */}
-        <div className="flex flex-col items-center gap-2 flex-1">
-          <h2 className="text-sm md:text-lg font-bold uppercase tracking-wider text-center truncate" title={details.opponent}>{details.opponent}</h2>
+        <div className="flex flex-col items-center gap-1 sm:gap-2 flex-1">
+          <h2 className="text-xs sm:text-sm md:text-lg font-bold uppercase tracking-wider text-center truncate" title={details.opponent}>{details.opponent}</h2>
           <ScoreDisplay score={scoreboard.awayScore} />
           <FoulDisplay count={scoreboard.awayFouls} />
         </div>
       </div>
       {isCoach && (
         <div className="bg-neutral-900/50 p-2 border-t border-neutral-700">
-           <div className="flex justify-center items-center gap-2 md:gap-4 flex-wrap">
-                {/* Home Controls */}
-                <div className="flex items-center gap-1">
-                    <Button onClick={() => handleScoreChange('home', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
-                    <span className="text-xs w-12 text-center">Score Domicile</span>
-                    <Button onClick={() => handleScoreChange('home', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
-                </div>
-                 <div className="flex items-center gap-1">
-                    <Button onClick={() => handleFoulChange('home', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
-                    <span className="text-xs w-12 text-center">Fautes Domicile</span>
-                    <Button onClick={() => handleFoulChange('home', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
-                </div>
-
-                {/* Timer Controls */}
-                <div className="flex items-center gap-2">
-                    <Button onClick={handleTimerToggle} size="sm" variant="secondary" className="h-8 w-8 p-0">
-                        {scoreboard.isRunning ? <Pause /> : <Play />}
-                    </Button>
-                    <Button onClick={handleTimerReset} size="sm" variant="secondary" className="h-8 w-8 p-0"><RefreshCw/></Button>
+           <div className="grid grid-cols-3 gap-2">
+                {/* Left Controls (Home) */}
+                <div className="flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-1">
+                       <Button onClick={() => handleScoreChange('home', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                        <span className="text-xs w-10 text-center">Score</span>
+                       <Button onClick={() => handleScoreChange('home', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                    </div>
+                     <div className="flex items-center gap-1">
+                       <Button onClick={() => handleFoulChange('home', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                        <span className="text-xs w-10 text-center">Fautes</span>
+                       <Button onClick={() => handleFoulChange('home', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                    </div>
                 </div>
 
-                {/* Away Controls */}
-                 <div className="flex items-center gap-1">
-                    <Button onClick={() => handleScoreChange('away', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
-                    <span className="text-xs w-12 text-center">Score Extérieur</span>
-                    <Button onClick={() => handleScoreChange('away', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                {/* Center Timer Controls */}
+                 <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="flex items-center gap-2">
+                        <Button onClick={handleTimerToggle} size="sm" variant="secondary" className="h-8 w-8 p-0">
+                            {scoreboard.isRunning ? <Pause /> : <Play />}
+                        </Button>
+                        <Button onClick={handleTimerReset} size="sm" variant="secondary" className="h-8 w-8 p-0"><RefreshCw/></Button>
+                    </div>
+                     <Button onClick={handleFullReset} size="sm" variant="destructive" className="h-8 w-8 p-0"><Trophy/></Button>
                 </div>
-                 <div className="flex items-center gap-1">
-                    <Button onClick={() => handleFoulChange('away', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
-                    <span className="text-xs w-12 text-center">Fautes Extérieur</span>
-                    <Button onClick={() => handleFoulChange('away', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+
+                {/* Right Controls (Away) */}
+                <div className="flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-1">
+                        <Button onClick={() => handleScoreChange('away', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                        <span className="text-xs w-10 text-center">Score</span>
+                        <Button onClick={() => handleScoreChange('away', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <Button onClick={() => handleFoulChange('away', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                        <span className="text-xs w-10 text-center">Fautes</span>
+                        <Button onClick={() => handleFoulChange('away', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                    </div>
                 </div>
-                 <Button onClick={handleFullReset} size="sm" variant="destructive" className="h-8 w-8 p-0"><Trophy/></Button>
            </div>
         </div>
       )}
@@ -207,5 +213,7 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
 };
 
 export default Scoreboard;
+
+    
 
     

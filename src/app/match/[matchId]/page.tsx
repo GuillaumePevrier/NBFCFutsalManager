@@ -311,12 +311,12 @@ export default function MatchPage() {
        <Header onCoachClick={() => setIsCoachAuthOpen(true)} role={role}>
             <Button variant="outline" size="sm" onClick={() => router.push('/')}>
                 <Home className="mr-2 h-4 w-4"/>
-                Retour aux matchs
+                <span className="hidden sm:inline">Retour</span>
             </Button>
        </Header>
        <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex flex-col md:flex-row flex-grow font-body main-bg overflow-y-auto">
-        <div className="flex-grow flex flex-col items-center justify-start p-2 md:p-4 lg:p-8 relative gap-4">
+        <div className="flex-grow flex flex-col items-center justify-start p-2 md:p-4 lg:p-6 relative gap-4">
           <Scoreboard 
             scoreboard={match.scoreboard}
             onScoreboardChange={handleScoreboardChange}
@@ -356,3 +356,5 @@ export default function MatchPage() {
     </div>
   );
 }
+
+    

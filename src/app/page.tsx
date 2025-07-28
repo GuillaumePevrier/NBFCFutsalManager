@@ -236,7 +236,7 @@ export default function HomePage() {
       <main className="flex-grow p-4 md:p-8 main-bg">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold">Tableau de Bord des Matchs</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">Tableau de Bord</h1>
             {role === 'coach' && (
               <Button onClick={() => createNewMatch(false)}>
                 <PlusCircle className="mr-2" />
@@ -250,7 +250,7 @@ export default function HomePage() {
               matches.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(match => (
                 <Card key={match.id} className="bg-card/80 backdrop-blur-sm border-border/50 overflow-hidden">
                   <CardHeader className="pb-4">
-                    <CardTitle>NBFC Futsal vs {match.details.opponent}</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl">NBFC Futsal vs {match.details.opponent}</CardTitle>
                     <CardDescription>
                       {new Date(match.details.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} à {match.details.time} - {match.details.location}
                       <span className="block text-xs mt-1">Joueurs convoqués: {match.team.length + match.substitutes.length}</span>
@@ -279,7 +279,7 @@ export default function HomePage() {
                   <CardFooter className="flex justify-end gap-2 bg-background/30 p-4">
                     <Button variant="outline" size="sm" onClick={() => router.push(`/match/${match.id}`)}>
                       <Eye className="mr-2 h-4 w-4"/>
-                      Consulter le match
+                      Consulter
                     </Button>
                     {role === 'coach' && (
                        <AlertDialog>
@@ -324,3 +324,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
