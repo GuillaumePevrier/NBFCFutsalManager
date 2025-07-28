@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 import withPWA from 'next-pwa';
 
@@ -6,6 +7,8 @@ const pwaConfig = withPWA({
     register: true,
     skipWaiting: true,
     disable: process.env.NODE_ENV === 'development',
+    // Exclude the problematic app-build-manifest.json
+    buildExcludes: [/app-build-manifest.json$/],
 });
 
 
