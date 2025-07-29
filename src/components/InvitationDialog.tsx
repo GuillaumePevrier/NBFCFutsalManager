@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { PlayerPosition } from "@/lib/types";
 import { useState } from "react";
-import { sendNotification } from "@/ai/flows/send-notification";
+import { sendOneSignalNotification } from "@/ai/flows/send-onesignal-notification";
 import { Loader2 } from "lucide-react";
 
 interface InvitationDialogProps {
@@ -38,13 +38,9 @@ export default function InvitationDialog({ team, children }: InvitationDialogPro
     const notificationPayload = {
         title: `Convocation Match vs ${data.opponent}`,
         message: data.message as string || `Rendez-vous à ${data.location} à ${data.time}`,
-        opponent: data.opponent as string,
-        date: data.date as string,
-        time: data.time as string,
-        location: data.location as string
     };
 
-    const result = await sendNotification(notificationPayload);
+    const result = await sendOneSignalNotification(notificationPayload);
 
     setIsLoading(false);
 

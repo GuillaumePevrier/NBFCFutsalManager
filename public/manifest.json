@@ -1,0 +1,21 @@
+{
+  "name": "NBFC Futsal Manager",
+  "short_name": "NBFC Futsal",
+  "description": "Le tableau tactique et de gestion pour les coachs du NBFC Futsal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#01182a",
+  "theme_color": "#01182a",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

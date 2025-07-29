@@ -31,60 +31,6 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
     }
   };
 
-  const handleNotificationSubscription = async () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        if (isIOS) {
-             toast({ 
-                title: "Notifications sur iPhone", 
-                description: "Pour activer les notifications, ajoutez d'abord ce site à votre écran d'accueil depuis le menu de partage de Safari.", 
-                variant: "default", 
-                duration: 10000 
-            });
-        } else {
-            toast({ title: "Fonctionnalité non supportée", description: "Votre navigateur ne supporte pas les notifications push.", variant: "destructive" });
-        }
-        return;
-    }
-
-    try {
-        await navigator.serviceWorker.register('/sw.js');
-        const swRegistration = await navigator.serviceWorker.ready;
-        
-        let subscription = await swRegistration.pushManager.getSubscription();
-        
-        if (subscription === null) {
-            if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-                console.error("VAPID public key not found");
-                toast({ title: "Erreur de configuration", description: "La clé de notification est manquante.", variant: "destructive" });
-                return;
-            }
-
-            subscription = await swRegistration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-            });
-            
-            console.log('New push subscription:', subscription);
-
-            const { error } = await supabase.from('subscriptions').upsert({ subscription_object: subscription }, { onConflict: 'subscription_object' });
-
-            if(error) {
-                console.error("Failed to save subscription", error);
-                toast({ title: "Erreur", description: "Impossible de sauvegarder l'abonnement.", variant: "destructive" });
-            } else {
-                toast({ title: "Notifications Activées", description: "Vous recevrez maintenant les mises à jour." });
-            }
-        } else {
-            console.log('Existing push subscription:', subscription);
-            toast({ title: "Notifications Déjà Activées", description: "Vous êtes déjà abonné." });
-        }
-    } catch (error) {
-        console.error('Failed to subscribe to push notifications', error);
-        toast({ title: "Erreur de Notification", description: "Impossible d'activer les notifications. Assurez-vous d'avoir autorisé les notifications pour ce site dans les réglages de votre navigateur.", variant: "destructive", duration: 10000 });
-    }
-  };
 
   return (
     <header className="flex items-center justify-between p-2 border-b bg-card">
@@ -106,10 +52,6 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={handleNotificationSubscription}>
-            <Bell className="mr-2 h-4 w-4" />
-            <span>Activer les notifications</span>
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           {role === 'coach' ? (
              <DropdownMenuItem onClick={handleSignOut}>

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import type { Scoreboard as ScoreboardType, MatchDetails } from '@/lib/types';
 import { Minus, Pause, Play, Plus, RefreshCw, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { sendScoreUpdate } from '@/ai/flows/send-score-update';
+import { sendOneSignalNotification } from '@/ai/flows/send-onesignal-notification';
 
 interface ScoreboardProps {
   scoreboard: ScoreboardType;
@@ -63,11 +63,13 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
       onScoreboardChange(newScoreboard);
 
       if(delta > 0){ // Only send notification on score increase
-         sendScoreUpdate({
-            homeScore: newScoreboard.homeScore,
-            awayScore: newScoreboard.awayScore,
-            opponent: details.opponent,
-        });
+         const notificationTitle = `But pour ${team === 'home' ? 'NBFC Futsal' : details.opponent} !`;
+         const notificationMessage = `Le score est maintenant de ${newScoreboard.homeScore} - ${newScoreboard.awayScore} contre ${details.opponent}`;
+         
+         sendOneSignalNotification({
+            title: notificationTitle,
+            message: notificationMessage
+         });
       }
     }
   };
