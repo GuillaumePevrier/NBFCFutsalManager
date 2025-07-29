@@ -13,7 +13,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="en" className="dark">
+    <html lang="fr" className="dark">
       <head>
         <title>NBFC Futsal Manager</title>
         <meta name="description" content="Application de gestion de tactique et de match pour le NBFC Futsal." />
