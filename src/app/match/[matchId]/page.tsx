@@ -11,7 +11,7 @@ import Header from '@/components/Header';
 import MatchDetails from '@/components/MatchDetails';
 import Scoreboard from '@/components/Scoreboard';
 import { useRouter, useParams } from 'next/navigation';
-import { Home } from 'lucide-react';
+import { Home, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
@@ -317,11 +317,17 @@ export default function MatchPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-       <Header onCoachClick={() => setIsCoachAuthOpen(true)} role={role}>
+       <Header>
             <Button variant="outline" size="sm" onClick={() => router.push('/')}>
                 <Home className="mr-2 h-4 w-4"/>
                 <span className="hidden sm:inline">Retour</span>
             </Button>
+            {role !== 'coach' && (
+                <Button variant="outline" size="sm" onClick={() => setIsCoachAuthOpen(true)}>
+                    <ShieldCheck className="mr-2 h-4 w-4"/>
+                    <span className="hidden sm:inline">Mode Coach</span>
+                </Button>
+            )}
        </Header>
        <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex flex-col md:flex-row flex-grow font-body main-bg overflow-y-auto">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -8,18 +9,34 @@ import type { Role } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-
+import { useState, useEffect } from "react";
 
 interface HeaderProps {
-    onCoachClick: () => void;
     children?: React.ReactNode;
-    role: Role;
 }
 
-export default function Header({ onCoachClick, children, role }: HeaderProps) {
+export default function Header({ children }: HeaderProps) {
   const supabase = createClient();
   const { toast } = useToast();
   const router = useRouter();
+  const [role, setRole] = useState<Role>('player');
+  const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+
+  useEffect(() => {
+    const checkRole = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        setRole(session ? 'coach' : 'player');
+    };
+    checkRole();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+        setRole(session ? 'coach' : 'player');
+    });
+
+    return () => {
+        authListener?.subscription.unsubscribe();
+    };
+  }, [supabase.auth]);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -59,7 +76,7 @@ export default function Header({ onCoachClick, children, role }: HeaderProps) {
                 <span>Se déconnecter</span>
             </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem onClick={onCoachClick}>
+            <DropdownMenuItem onClick={() => (children as any)?.props?.onCoachClick()}>
                 <ShieldCheck className="mr-2 h-4 w-4" />
                 <span>Mode Coach</span>
             </DropdownMenuItem>
