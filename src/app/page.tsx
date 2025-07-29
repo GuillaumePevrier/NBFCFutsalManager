@@ -11,15 +11,17 @@ import Header from '@/components/Header';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { Match } from '@/lib/types';
+import type { Match, Role } from '@/lib/types';
 import MiniScoreboard from '@/components/MiniScoreboard';
-
+import CoachAuthDialog from '@/components/CoachAuthDialog';
 
 export default function Home() {
   const router = useRouter();
   const supabase = createClient();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<Role>('player');
+  const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -55,6 +57,27 @@ export default function Home() {
     };
   }, [supabase]);
   
+  useEffect(() => {
+    const checkRole = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        setRole(session ? 'coach' : 'player');
+    };
+    checkRole();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+        setRole(session ? 'coach' : 'player');
+    });
+
+    return () => {
+        authListener?.subscription.unsubscribe();
+    };
+}, [supabase.auth]);
+
+  const onCoachLogin = () => {
+    setRole('coach');
+    setIsCoachAuthOpen(false);
+  }
+
   const createMatch = async () => {
     const newMatch = {
       details: {
@@ -92,15 +115,18 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <Header />
+      <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
+      <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex-grow flex flex-col items-center p-4 md:p-8 main-bg">
         <div className="w-full max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl md:text-3xl font-bold">Tableau de Bord des Matchs</h1>
-            <Button onClick={createMatch}>
-              <PlusCircle className="mr-2 h-5 w-5" />
-              Nouveau Match
-            </Button>
+            {role === 'coach' && (
+                <Button onClick={createMatch}>
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Nouveau Match
+                </Button>
+            )}
           </div>
           
           {loading ? (
@@ -113,7 +139,7 @@ export default function Home() {
             <Card className="text-center py-12">
               <CardContent>
                 <p className="text-muted-foreground">Aucun match programmé pour le moment.</p>
-                <p className="text-muted-foreground mt-2">Cliquez sur "Nouveau Match" pour commencer.</p>
+                {role === 'player' && <p className="text-muted-foreground mt-2">Seul le coach peut créer un nouveau match.</p>}
               </CardContent>
             </Card>
           ) : (

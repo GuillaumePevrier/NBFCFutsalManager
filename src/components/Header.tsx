@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Bell } from "lucide-react";
+import { LogOut, Menu, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import type { Role } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -13,14 +13,14 @@ import { useState, useEffect } from "react";
 
 interface HeaderProps {
     children?: React.ReactNode;
+    onCoachClick?: () => void;
 }
 
-export default function Header({ children }: HeaderProps) {
+export default function Header({ children, onCoachClick }: HeaderProps) {
   const supabase = createClient();
   const { toast } = useToast();
   const router = useRouter();
   const [role, setRole] = useState<Role>('player');
-  const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
 
   useEffect(() => {
     const checkRole = async () => {
@@ -30,13 +30,17 @@ export default function Header({ children }: HeaderProps) {
     checkRole();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-        setRole(session ? 'coach' : 'player');
+        const newRole = session ? 'coach' : 'player';
+        setRole(newRole);
+        if (newRole === 'player') {
+            router.refresh(); // Refresh to apply player view restrictions
+        }
     });
 
     return () => {
         authListener?.subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, [supabase.auth, router]);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -44,7 +48,6 @@ export default function Header({ children }: HeaderProps) {
         toast({ title: "Erreur", description: "Impossible de se déconnecter.", variant: "destructive" });
     } else {
         toast({ title: "Déconnecté", description: "Vous êtes repassé en mode joueur." });
-        router.refresh();
     }
   };
 
@@ -69,6 +72,11 @@ export default function Header({ children }: HeaderProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem>
+             <a href="https://futsal.noyalbrecefc.com/" target="_blank" rel="noopener noreferrer" className="w-full">
+                Site du Club
+            </a>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           {role === 'coach' ? (
              <DropdownMenuItem onClick={handleSignOut}>
@@ -76,17 +84,11 @@ export default function Header({ children }: HeaderProps) {
                 <span>Se déconnecter</span>
             </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem onClick={() => (children as any)?.props?.onCoachClick()}>
+            <DropdownMenuItem onClick={onCoachClick}>
                 <ShieldCheck className="mr-2 h-4 w-4" />
                 <span>Mode Coach</span>
             </DropdownMenuItem>
           )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <a href="https://futsal.noyalbrecefc.com/" target="_blank" rel="noopener noreferrer">
-                Site du Club
-            </a>
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       </div>
