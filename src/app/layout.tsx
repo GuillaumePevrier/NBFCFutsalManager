@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'FutsalTactics Board',
-  description: 'Interactive tactical board for Futsal coaches',
+  title: 'NBFC Futsal Manager',
+  description: 'Le tableau tactique et de gestion pour les coachs du NBFC Futsal',
 };
 
 export default function RootLayout({
