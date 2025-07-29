@@ -24,6 +24,9 @@ export default function RootLayout({
         appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
         safari_web_id: process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID,
         allowLocalhostAsSecureOrigin: true,
+        notifyButton: {
+          enable: true,
+        },
       });
     }
     initOneSignal();
@@ -32,6 +35,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
+        <title>NBFC Futsal Manager</title>
+        <meta name="description" content="Application de gestion de tactique et de match pour le NBFC Futsal." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
