@@ -18,6 +18,8 @@ export default function OneSignalProvider() {
         allowLocalhostAsSecureOrigin: true,
         notifyButton: {
           enable: true,
+          // Force l'affichage de la cloche sur tous les appareils, y compris les mobiles.
+          displayPredicate: "show",
         },
       });
     };

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -33,6 +34,8 @@ const sendOneSignalNotificationFlow = ai.defineFlow(
       return { success: false };
     }
 
+    console.log(`Attempting to send notification: "${input.title}"`);
+
     const notification = {
       app_id: appId,
       included_segments: ["Subscribed Users"], // Sends to all subscribed users
@@ -59,7 +62,7 @@ const sendOneSignalNotificationFlow = ai.defineFlow(
         return { success: false };
       }
       
-      console.log("OneSignal Response:", jsonResponse);
+      console.log("OneSignal API Success Response:", jsonResponse);
 
       return { success: true, sentCount: jsonResponse.recipients || 0 };
 
