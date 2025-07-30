@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import type { Scoreboard as ScoreboardType, MatchDetails } from '@/lib/types';
 import { Minus, Pause, Play, Plus, RefreshCw, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { sendOneSignalNotification } from '@/ai/flows/send-onesignal-notification';
 
 interface ScoreboardProps {
   scoreboard: ScoreboardType;
@@ -61,16 +60,8 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
     if (newScore !== oldScore) {
       const newScoreboard = { ...scoreboard, time: localTime, [key]: newScore };
       onScoreboardChange(newScoreboard);
-
-      if(delta > 0){ // Only send notification on score increase
-         const notificationTitle = `But pour ${team === 'home' ? 'NBFC Futsal' : details.opponent} !`;
-         const notificationMessage = `Le score est maintenant de ${newScoreboard.homeScore} - ${newScoreboard.awayScore} contre ${details.opponent}`;
-         
-         sendOneSignalNotification({
-            title: notificationTitle,
-            message: notificationMessage
-         });
-      }
+      // NOTE: La logique de notification est maintenant gérée par le webhook de la base de données.
+      // Nous n'appelons plus sendOneSignalNotification ici.
     }
   };
 
@@ -105,6 +96,21 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
     });
     toast({ title: "Chronomètre réinitialisé." });
   };
+  
+  const handleNextPeriod = () => {
+    if(!isCoach) return;
+    setLocalTime(periodDuration);
+    onScoreboardChange({
+      ...scoreboard,
+      time: periodDuration,
+      isRunning: false,
+      timerLastStarted: null,
+      period: scoreboard.period === 1 ? 2 : 1,
+      homeFouls: 0,
+      awayFouls: 0,
+    });
+    toast({ title: `Début de la période ${scoreboard.period === 1 ? 2 : 1}. Fautes remises à zéro.` });
+  }
 
   const handleFullReset = () => {
     if (!isCoach) return;
@@ -193,7 +199,10 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
                         </Button>
                         <Button onClick={handleTimerReset} size="sm" variant="secondary" className="h-8 w-8 p-0"><RefreshCw/></Button>
                     </div>
-                     <Button onClick={handleFullReset} size="sm" variant="destructive" className="h-8 w-8 p-0"><Trophy/></Button>
+                     <div className="flex items-center gap-2">
+                        <Button onClick={handleNextPeriod} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8">Période Suiv.</Button>
+                        <Button onClick={handleFullReset} size="sm" variant="destructive" className="h-8 w-8 p-0"><Trophy/></Button>
+                     </div>
                 </div>
 
                 {/* Right Controls (Away) */}

@@ -11,6 +11,8 @@ import { z } from 'zod';
 const SendOneSignalNotificationInputSchema = z.object({
   title: z.string().describe('The title of the notification.'),
   message: z.string().describe('The main content of the notification.'),
+  type: z.enum(['goal', 'foul', 'match_start', 'match_end', 'generic']).describe('The type of event triggering the notification.'),
+  matchId: z.string().uuid().describe('The ID of the match concerned by the notification.'),
 });
 
 export type SendOneSignalNotificationInput = z.infer<typeof SendOneSignalNotificationInputSchema>;
@@ -34,15 +36,19 @@ const sendOneSignalNotificationFlow = ai.defineFlow(
       return { success: false };
     }
 
-    console.log(`Attempting to send notification: "${input.title}"`);
+    console.log(`Attempting to send notification for match ${input.matchId}: "${input.title}"`);
 
     const notification = {
       app_id: appId,
       included_segments: ["Subscribed Users"], // Sends to all subscribed users
       headings: { en: input.title },
       contents: { en: input.message },
-      // You can add more options here, like a URL to open on click
-      // web_url: 'https://yoursite.com/match/123'
+      // URL à ouvrir au clic, pointe vers la page du match
+      web_url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${input.matchId}`,
+      // Regrouper les notifications par match pour éviter le spam
+      web_push_topic: `match-${input.matchId}`,
+      // Icône de but ou autre
+      chrome_web_icon: input.type === 'goal' ? `${process.env.NEXT_PUBLIC_BASE_URL}/goal-icon.png` : undefined,
     };
     
     try {
