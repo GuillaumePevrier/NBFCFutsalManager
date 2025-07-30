@@ -14,7 +14,7 @@ declare
   -- Récupère l'URL du webhook depuis les secrets de Supabase (Vault).
   -- C'est plus sécurisé que de la coder en dur.
   -- Allez dans Project Settings > Vault pour ajouter un secret nommé `MATCH_UPDATE_WEBHOOK_URL`.
-  webhook_url text := 'https://REPLACE_WITH_YOUR_VERCEL_APP_URL.vercel.app/api/match-update-webhook';
+  webhook_url text := 'https://nbfc-futsal-manager.vercel.app/api/match-update-webhook';
   payload jsonb;
 begin
   -- Construit le payload JSON dans le même format que les webhooks natifs de Supabase.
