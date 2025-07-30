@@ -23,7 +23,7 @@ $$;
 -- 3. Insérer les joueurs (uniquement s'ils n'existent pas déjà)
 -- Maintenant que la contrainte UNIQUE sur "name" existe, le ON CONFLICT fonctionnera.
 INSERT INTO public.players (name, team, "position", preferred_foot, goals, fouls) VALUES
-    ('Guillaume Pevrier', 'D1', 'Winger', 'Right', 0, 0),
+    ('Guillaume Pevrie', 'D1', 'Winger', 'Right', 0, 0),
     ('Thomas Dubreuil', 'D1', 'Pivot', 'Right', 0, 0),
     ('Killian Olivier', 'D1', 'Goalkeeper', 'Right', 0, 0),
     ('Matthieu Pevrier', 'D1', 'Defender', 'Right', 0, 0),
