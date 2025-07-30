@@ -3,6 +3,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import type { Match } from '@/lib/types';
+import { revalidatePath } from 'next/cache';
 
 export async function getMatches(): Promise<Match[]> {
   const supabase = createClient();
@@ -18,4 +19,23 @@ export async function getMatches(): Promise<Match[]> {
   }
   
   return data as Match[];
+}
+
+export async function deleteMatch(matchId: string): Promise<{ success: boolean, error?: any }> {
+    const supabase = createClient();
+    
+    const { error } = await supabase
+        .from('matches')
+        .delete()
+        .eq('id', matchId);
+
+    if (error) {
+        console.error("Failed to delete match:", error);
+        return { success: false, error };
+    }
+
+    // Revalidate the home page to reflect the changes
+    revalidatePath('/');
+
+    return { success: true };
 }
