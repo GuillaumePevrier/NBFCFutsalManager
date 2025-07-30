@@ -15,22 +15,23 @@ import { Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
+import { updatePlayerStats } from '@/app/actions';
 
 const MAX_ON_FIELD = 5;
 
 const defaultPlayers: Player[] = [
-    { id: '1', name: 'Hugo Lloris', team: 'D1', position: 'Goalkeeper' },
-    { id: '2', name: 'Benjamin Pavard', team: 'D1', position: 'Defender' },
-    { id: '3', name: 'Raphaël Varane', team: 'D1', position: 'Defender' },
-    { id: '4', name: 'Presnel Kimpembe', team: 'D1', position: 'Defender' },
-    { id: '5', name: 'Lucas Hernandez', team: 'D1', position: 'Defender' },
-    { id: '6', name: 'Paul Pogba', team: 'D1', position: 'Winger' },
-    { id: '7', name: 'Antoine Griezmann', team: 'D1', position: 'Pivot' },
-    { id: '8', name: "N'Golo Kanté", team: 'D1', position: 'Winger' },
-    { id: '9', name: 'Olivier Giroud', team: 'D1', position: 'Pivot' },
-    { id: '10', name: 'Kylian Mbappé', team: 'D1', position: 'Pivot' },
-    { id: '11', name: 'Ousmane Dembélé', team: 'D2', position: 'Winger' },
-    { id: '12', name: 'Corentin Tolisso', team: 'D2', position: 'Winger' },
+    { id: '1', name: 'Hugo Lloris', team: 'D1', position: 'Goalkeeper', goals: 0, fouls: 0 },
+    { id: '2', name: 'Benjamin Pavard', team: 'D1', position: 'Defender', goals: 0, fouls: 0 },
+    { id: '3', name: 'Raphaël Varane', team: 'D1', position: 'Defender', goals: 0, fouls: 0 },
+    { id: '4', name: 'Presnel Kimpembe', team: 'D1', position: 'Defender', goals: 0, fouls: 0 },
+    { id: '5', name: 'Lucas Hernandez', team: 'D1', position: 'Defender', goals: 0, fouls: 0 },
+    { id: '6', name: 'Paul Pogba', team: 'D1', position: 'Winger', goals: 0, fouls: 0 },
+    { id: '7', name: 'Antoine Griezmann', team: 'D1', position: 'Pivot', goals: 0, fouls: 0 },
+    { id: '8', name: "N'Golo Kanté", team: 'D1', position: 'Winger', goals: 0, fouls: 0 },
+    { id: '9', name: 'Olivier Giroud', team: 'D1', position: 'Pivot', goals: 0, fouls: 0 },
+    { id: '10', name: 'Kylian Mbappé', team: 'D1', position: 'Pivot', goals: 0, fouls: 0 },
+    { id: '11', name: 'Ousmane Dembélé', team: 'D2', position: 'Winger', goals: 0, fouls: 0 },
+    { id: '12', name: 'Corentin Tolisso', team: 'D2', position: 'Winger', goals: 0, fouls: 0 },
 ];
 
 
@@ -45,6 +46,8 @@ export default function MatchPage() {
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
+  const clickTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isDraggingRef = useRef(false);
 
   const matchId = params.matchId as string;
 
@@ -141,7 +144,6 @@ export default function MatchPage() {
     
     const playerWithPosition: PlayerPosition = {
         ...playerToAdd,
-        // Add fallback for avatar initials
         avatar: playerToAdd.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase(),
         position: { x: 50, y: 85 }
     };
@@ -167,14 +169,22 @@ export default function MatchPage() {
     updateMatchData({ ...match, team: [], substitutes: [] });
   };
 
+  const handlePlayerClick = (playerId: string) => {
+      router.push(`/player/${playerId}`);
+  };
+
   const startDragging = (clientX: number, clientY: number, id: string, target: HTMLDivElement) => {
     if (role !== 'coach' || !match) return;
-    const rect = target.getBoundingClientRect();
-    setDraggingPlayer({ 
-      id,
-      offsetX: clientX - rect.left,
-      offsetY: clientY - rect.top,
-    });
+
+    clickTimeout.current = setTimeout(() => {
+      isDraggingRef.current = true;
+      const rect = target.getBoundingClientRect();
+      setDraggingPlayer({ 
+        id,
+        offsetX: clientX - rect.left,
+        offsetY: clientY - rect.top,
+      });
+    }, 200); // 200ms delay to distinguish click from drag
   }
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>, id: string) => {
@@ -217,6 +227,19 @@ export default function MatchPage() {
   const handleTouchMove = useCallback((e: TouchEvent) => handleDragMove(e.touches[0].clientX, e.touches[0].clientY), [handleDragMove]);
 
   const handleDragEnd = useCallback(() => {
+    if (clickTimeout.current) {
+        clearTimeout(clickTimeout.current);
+        clickTimeout.current = null;
+    }
+
+    if (!isDraggingRef.current && draggingPlayer) {
+        handlePlayerClick(draggingPlayer.id);
+        setDraggingPlayer(null);
+        return;
+    }
+    
+    isDraggingRef.current = false;
+    
     if (!draggingPlayer || !match) {
         setDraggingPlayer(null);
         return;
@@ -224,7 +247,7 @@ export default function MatchPage() {
 
     const draggedPlayer = [...match.team, ...match.substitutes].find(p => p.id === draggingPlayer.id);
     
-    setDraggingPlayer(null); // Stop dragging immediately
+    setDraggingPlayer(null);
 
     if (!draggedPlayer) return;
 
@@ -233,21 +256,18 @@ export default function MatchPage() {
     let newSubstitutes = [...match.substitutes];
     let changed = false;
 
-    // Player moved from field to bench
     if (y < 0 && match.team.some(p => p.id === draggedPlayer.id)) {
         newTeam = newTeam.filter(p => p.id !== draggedPlayer.id);
         const currentSubCount = newSubstitutes.length;
         newSubstitutes.push({ ...draggedPlayer, position: { x: 5 + (currentSubCount * 10), y: -15 } });
         changed = true;
     }
-    // Player moved from bench to field
     else if (y >= 0 && match.substitutes.some(p => p.id === draggedPlayer.id)) {
         if (match.team.length < MAX_ON_FIELD) {
             newSubstitutes = newSubstitutes.filter(p => p.id !== draggedPlayer.id);
             newTeam.push({ ...draggedPlayer, position: { ...draggedPlayer.position, y: Math.max(0, draggedPlayer.position.y) } });
             changed = true;
         } else {
-             // Not enough space, revert position visually for the user
              const originalPlayer = match.substitutes.find(p => p.id === draggedPlayer.id);
              setMatch(m => m ? ({ ...m, substitutes: m.substitutes.map(p => p.id === draggedPlayer.id ? originalPlayer! : p)}) : null);
         }
@@ -274,6 +294,7 @@ export default function MatchPage() {
       window.removeEventListener('touchend', handleDragEnd);
     }
     return () => {
+      if (clickTimeout.current) clearTimeout(clickTimeout.current);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleDragEnd);
       window.removeEventListener('touchmove', handleTouchMove);
@@ -301,10 +322,34 @@ export default function MatchPage() {
     updateMatchData({ ...match, details, scoreboard: updatedScoreboard }, true);
   };
   
-  const handleScoreboardChange = (scoreboard: ScoreboardType) => {
+  const handleScoreboardChange = async (scoreboard: ScoreboardType, eventPlayer?: Player) => {
     if (!match) return;
-    updateMatchData({ ...match, scoreboard });
-  };
+
+    let updatedMatch = { ...match, scoreboard };
+
+    if (eventPlayer) {
+        const playerInTeam = updatedMatch.team.find(p => p.id === eventPlayer.id);
+        const playerInSubs = updatedMatch.substitutes.find(p => p.id === eventPlayer.id);
+
+        const updatePlayerStatsLocally = (player: PlayerPosition) => {
+            const newGoals = eventPlayer.goals || 0;
+            const newFouls = eventPlayer.fouls || 0;
+            return {
+                ...player,
+                goals: newGoals,
+                fouls: newFouls
+            };
+        };
+        
+        if (playerInTeam) {
+            updatedMatch.team = updatedMatch.team.map(p => p.id === eventPlayer.id ? updatePlayerStatsLocally(p) : p);
+        } else if (playerInSubs) {
+            updatedMatch.substitutes = updatedMatch.substitutes.map(p => p.id === eventPlayer.id ? updatePlayerStatsLocally(p) : p);
+        }
+    }
+
+    updateMatchData(updatedMatch);
+};
 
 
   if (!match || allPlayers.length === 0) {
@@ -331,6 +376,7 @@ export default function MatchPage() {
             onScoreboardChange={handleScoreboardChange}
             details={match.details}
             isCoach={role === 'coach'}
+            playersOnField={match.team}
           />
           <FutsalCourt ref={courtRef}>
             {[...match.team, ...match.substitutes].map(player => (
@@ -339,6 +385,8 @@ export default function MatchPage() {
                 player={player}
                 onMouseDown={e => handleMouseDown(e, player.id)}
                 onTouchStart={e => handleTouchStart(e, player.id)}
+                onMouseUp={() => handleDragEnd()}
+                onTouchEnd={() => handleDragEnd()}
                 isDraggable={role === 'coach'}
                 isDragging={draggingPlayer?.id === player.id}
                 isSubstitute={match.substitutes.some(p => p.id === player.id)}

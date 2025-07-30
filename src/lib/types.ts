@@ -7,8 +7,8 @@ export interface Player {
   team: 'D1' | 'D2' | 'Autre';
   position?: 'Goalkeeper' | 'Defender' | 'Winger' | 'Pivot';
   preferred_foot?: 'Right' | 'Left' | 'Both';
-  goals_scored?: number;
-  assists?: number;
+  goals: number;
+  fouls: number;
 }
 
 export interface PlayerPosition extends Player {

@@ -5,21 +5,25 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { Scoreboard as ScoreboardType, MatchDetails } from '@/lib/types';
+import type { Scoreboard as ScoreboardType, MatchDetails, Player, PlayerPosition } from '@/lib/types';
 import { Minus, Pause, Play, Plus, RefreshCw, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import PlayerSelectionDialog from './PlayerSelectionDialog';
+import { updatePlayerStats } from '@/app/actions';
 
 interface ScoreboardProps {
   scoreboard: ScoreboardType;
   details: MatchDetails;
-  onScoreboardChange: (scoreboard: ScoreboardType) => void;
+  onScoreboardChange: (scoreboard: ScoreboardType, eventPlayer?: Player) => void;
   isCoach: boolean;
+  playersOnField: PlayerPosition[];
 }
 
-const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: ScoreboardProps) => {
+const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersOnField }: ScoreboardProps) => {
   const { toast } = useToast();
   const [localTime, setLocalTime] = useState(scoreboard.time);
   const periodDuration = (details.matchType === '25min' ? 25 : 20) * 60;
+  const [dialogState, setDialogState] = useState<{ open: boolean, type: 'goal' | 'foul', team: 'home' | 'away' }>({ open: false, type: 'goal', team: 'home' });
 
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
@@ -51,26 +55,57 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleScoreChange = (team: 'home' | 'away', delta: number) => {
+  const handleStatChange = (team: 'home' | 'away', type: 'goal' | 'foul', delta: number) => {
     if (!isCoach) return;
-    const key = team === 'home' ? 'homeScore' : 'awayScore';
-    const oldScore = scoreboard[key];
-    const newScore = Math.max(0, oldScore + delta);
+    
+    if ((type === 'goal' || type === 'foul') && delta > 0 && team === 'home') {
+        setDialogState({ open: true, type, team });
+    } else {
+        // For away team or decreasing stats, update directly
+        const scoreKey = type === 'goal' ? (team === 'home' ? 'homeScore' : 'awayScore') : null;
+        const foulKey = type === 'foul' ? (team === 'home' ? 'homeFouls' : 'awayFouls') : null;
 
-    if (newScore !== oldScore) {
-      const newScoreboard = { ...scoreboard, time: localTime, [key]: newScore };
-      onScoreboardChange(newScoreboard);
-      // NOTE: La logique de notification est maintenant gérée par le webhook de la base de données.
-      // Nous n'appelons plus sendOneSignalNotification ici.
+        let updatedScoreboard = { ...scoreboard, time: localTime };
+        
+        if (scoreKey) {
+            const oldScore = updatedScoreboard[scoreKey];
+            updatedScoreboard = {...updatedScoreboard, [scoreKey]: Math.max(0, oldScore + delta) };
+        }
+        if (foulKey) {
+            const oldFouls = updatedScoreboard[foulKey];
+             updatedScoreboard = {...updatedScoreboard, [foulKey]: Math.max(0, Math.min(5, oldFouls + delta)) };
+        }
+        onScoreboardChange(updatedScoreboard);
     }
   };
 
-  const handleFoulChange = (team: 'home' | 'away', delta: number) => {
-    if (!isCoach) return;
-    const key = team === 'home' ? 'homeFouls' : 'awayFouls';
-    const newFouls = Math.max(0, Math.min(5, scoreboard[key] + delta));
-    onScoreboardChange({ ...scoreboard, time: localTime, [key]: newFouls });
+  const handlePlayerSelected = async (player: Player) => {
+    const { type, team } = dialogState;
+    setDialogState({ ...dialogState, open: false });
+
+    let updatedScoreboard = { ...scoreboard, time: localTime };
+    let updatedPlayer = { ...player };
+
+    if (type === 'goal') {
+        updatedScoreboard.homeScore += 1;
+        updatedPlayer.goals = (updatedPlayer.goals || 0) + 1;
+        toast({ title: "But !", description: `${player.name} a marqué.` });
+    } else if (type === 'foul') {
+        updatedScoreboard.homeFouls = Math.min(5, updatedScoreboard.homeFouls + 1);
+        updatedPlayer.fouls = (updatedPlayer.fouls || 0) + 1;
+        toast({ title: "Faute", description: `Faute commise par ${player.name}.` });
+    }
+
+    // Update player stats in the database
+    await updatePlayerStats({ 
+        playerId: player.id, 
+        goals: type === 'goal' ? 1 : 0, 
+        fouls: type === 'foul' ? 1 : 0 
+    });
+
+    onScoreboardChange(updatedScoreboard, updatedPlayer);
   };
+
 
   const handleTimerToggle = () => {
     if (!isCoach) return;
@@ -149,6 +184,14 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
   );
 
   return (
+    <>
+    <PlayerSelectionDialog 
+      isOpen={dialogState.open}
+      onOpenChange={(open) => setDialogState({ ...dialogState, open })}
+      players={playersOnField}
+      onPlayerSelect={handlePlayerSelected}
+      title={dialogState.type === 'goal' ? 'Qui a marqué ?' : 'Qui a fait la faute ?'}
+    />
     <Card className="w-full max-w-2xl bg-black/80 backdrop-blur-sm border-neutral-700 shadow-lg">
       <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 text-white">
         {/* Home Team */}
@@ -180,14 +223,14 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
                 {/* Left Controls (Home) */}
                 <div className="flex flex-col items-center gap-2">
                     <div className="flex items-center gap-1">
-                       <Button onClick={() => handleScoreChange('home', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                       <Button onClick={() => handleStatChange('home', 'goal', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
                         <span className="text-xs w-10 text-center">Score</span>
-                       <Button onClick={() => handleScoreChange('home', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                       <Button onClick={() => handleStatChange('home', 'goal', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
                     </div>
                      <div className="flex items-center gap-1">
-                       <Button onClick={() => handleFoulChange('home', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                       <Button onClick={() => handleStatChange('home', 'foul', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
                         <span className="text-xs w-10 text-center">Fautes</span>
-                       <Button onClick={() => handleFoulChange('home', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                       <Button onClick={() => handleStatChange('home', 'foul', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
                     </div>
                 </div>
 
@@ -208,20 +251,21 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach }: Scoreb
                 {/* Right Controls (Away) */}
                 <div className="flex flex-col items-center gap-2">
                     <div className="flex items-center gap-1">
-                        <Button onClick={() => handleScoreChange('away', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                        <Button onClick={() => handleStatChange('away', 'goal', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
                         <span className="text-xs w-10 text-center">Score</span>
-                        <Button onClick={() => handleScoreChange('away', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                        <Button onClick={() => handleStatChange('away', 'goal', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
                     </div>
                     <div className="flex items-center gap-1">
-                        <Button onClick={() => handleFoulChange('away', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                        <Button onClick={() => handleStatChange('away', 'foul', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
                         <span className="text-xs w-10 text-center">Fautes</span>
-                        <Button onClick={() => handleFoulChange('away', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                        <Button onClick={() => handleStatChange('away', 'foul', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
                     </div>
                 </div>
            </div>
         </div>
       )}
     </Card>
+    </>
   );
 };
 
