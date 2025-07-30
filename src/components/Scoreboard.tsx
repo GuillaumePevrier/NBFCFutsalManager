@@ -14,7 +14,7 @@ import { updatePlayerStats } from '@/app/actions';
 interface ScoreboardProps {
   scoreboard: ScoreboardType;
   details: MatchDetails;
-  onScoreboardChange: (scoreboard: ScoreboardType, eventPlayer?: Player) => void;
+  onScoreboardChange: (scoreboard: ScoreboardType, eventInfo?: { type: 'goal' | 'foul', player: Player}) => void;
   isCoach: boolean;
   playersOnField: PlayerPosition[];
 }
@@ -80,19 +80,17 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersO
   };
 
   const handlePlayerSelected = async (player: Player) => {
-    const { type, team } = dialogState;
+    const { type } = dialogState;
     setDialogState({ ...dialogState, open: false });
 
     let updatedScoreboard = { ...scoreboard, time: localTime };
-    let updatedPlayer = { ...player };
+    let eventInfo: { type: 'goal' | 'foul', player: Player } | undefined = undefined;
 
     if (type === 'goal') {
         updatedScoreboard.homeScore += 1;
-        updatedPlayer.goals = (updatedPlayer.goals || 0) + 1;
         toast({ title: "But !", description: `${player.name} a marqué.` });
     } else if (type === 'foul') {
         updatedScoreboard.homeFouls = Math.min(5, updatedScoreboard.homeFouls + 1);
-        updatedPlayer.fouls = (updatedPlayer.fouls || 0) + 1;
         toast({ title: "Faute", description: `Faute commise par ${player.name}.` });
     }
 
@@ -103,7 +101,8 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersO
         fouls: type === 'foul' ? 1 : 0 
     });
 
-    onScoreboardChange(updatedScoreboard, updatedPlayer);
+    eventInfo = { type, player };
+    onScoreboardChange(updatedScoreboard, eventInfo);
   };
 
 

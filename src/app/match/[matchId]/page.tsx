@@ -314,14 +314,14 @@ export default function MatchPage() {
     let updatedMatch = { ...match, scoreboard };
 
     // Optimistically update the player stats in the local match state
-    if (eventInfo) {
+    if (eventInfo && eventInfo.player) {
         const { player, type } = eventInfo;
         const playerInTeam = updatedMatch.team.find(p => p.id === player.id);
         const playerInSubs = updatedMatch.substitutes.find(p => p.id === player.id);
 
         const updatePlayerStatsLocally = (p: PlayerPosition) => {
-            const newGoals = p.goals + (type === 'goal' ? 1 : 0);
-            const newFouls = p.fouls + (type === 'foul' ? 1 : 0);
+            const newGoals = (p.goals || 0) + (type === 'goal' ? 1 : 0);
+            const newFouls = (p.fouls || 0) + (type === 'foul' ? 1 : 0);
             return {
                 ...p,
                 goals: newGoals,
@@ -417,4 +417,3 @@ export default function MatchPage() {
     </div>
   );
 }
-
