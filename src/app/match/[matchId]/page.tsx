@@ -15,29 +15,13 @@ import { Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
-import { updatePlayerStats } from '@/app/actions';
+import { getPlayers } from '@/app/actions';
 
 const MAX_ON_FIELD = 5;
 
-const defaultPlayers: Player[] = [
-    { id: '1', name: 'Hugo Lloris', team: 'D1', position: 'Goalkeeper', goals: 0, fouls: 0 },
-    { id: '2', name: 'Benjamin Pavard', team: 'D1', position: 'Defender', goals: 0, fouls: 0 },
-    { id: '3', name: 'Raphaël Varane', team: 'D1', position: 'Defender', goals: 0, fouls: 0 },
-    { id: '4', name: 'Presnel Kimpembe', team: 'D1', position: 'Defender', goals: 0, fouls: 0 },
-    { id: '5', name: 'Lucas Hernandez', team: 'D1', position: 'Defender', goals: 0, fouls: 0 },
-    { id: '6', name: 'Paul Pogba', team: 'D1', position: 'Winger', goals: 0, fouls: 0 },
-    { id: '7', name: 'Antoine Griezmann', team: 'D1', position: 'Pivot', goals: 0, fouls: 0 },
-    { id: '8', name: "N'Golo Kanté", team: 'D1', position: 'Winger', goals: 0, fouls: 0 },
-    { id: '9', name: 'Olivier Giroud', team: 'D1', position: 'Pivot', goals: 0, fouls: 0 },
-    { id: '10', name: 'Kylian Mbappé', team: 'D1', position: 'Pivot', goals: 0, fouls: 0 },
-    { id: '11', name: 'Ousmane Dembélé', team: 'D2', position: 'Winger', goals: 0, fouls: 0 },
-    { id: '12', name: 'Corentin Tolisso', team: 'D2', position: 'Winger', goals: 0, fouls: 0 },
-];
-
-
 export default function MatchPage() {
   const params = useParams();
-  const [allPlayers, setAllPlayers] = useState<Player[]>(defaultPlayers);
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
   const [match, setMatch] = useState<Match | null>(null);
   const [role, setRole] = useState<Role>('player');
   const [draggingPlayer, setDraggingPlayer] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
@@ -52,9 +36,11 @@ export default function MatchPage() {
   const matchId = params.matchId as string;
 
   useEffect(() => {
-    // For now, we use a static list of players.
-    // In a real application, you would fetch this from your database.
-    setAllPlayers(defaultPlayers);
+    const fetchPlayers = async () => {
+      const players = await getPlayers();
+      setAllPlayers(players);
+    };
+    fetchPlayers();
   }, []);
 
   const updateMatchData = useCallback(async (updatedMatch: Match, showToast = false) => {
@@ -279,7 +265,7 @@ export default function MatchPage() {
         updateMatchData(match); 
     }
     
-  }, [draggingPlayer, match, updateMatchData]);
+  }, [draggingPlayer, match, updateMatchData, handlePlayerClick]);
 
   useEffect(() => {
     if (draggingPlayer) {
@@ -322,29 +308,31 @@ export default function MatchPage() {
     updateMatchData({ ...match, details, scoreboard: updatedScoreboard }, true);
   };
   
-  const handleScoreboardChange = async (scoreboard: ScoreboardType, eventPlayer?: Player) => {
+  const handleScoreboardChange = async (scoreboard: ScoreboardType, eventInfo?: { type: 'goal' | 'foul', player: Player}) => {
     if (!match) return;
 
     let updatedMatch = { ...match, scoreboard };
 
-    if (eventPlayer) {
-        const playerInTeam = updatedMatch.team.find(p => p.id === eventPlayer.id);
-        const playerInSubs = updatedMatch.substitutes.find(p => p.id === eventPlayer.id);
+    // Optimistically update the player stats in the local match state
+    if (eventInfo) {
+        const { player, type } = eventInfo;
+        const playerInTeam = updatedMatch.team.find(p => p.id === player.id);
+        const playerInSubs = updatedMatch.substitutes.find(p => p.id === player.id);
 
-        const updatePlayerStatsLocally = (player: PlayerPosition) => {
-            const newGoals = eventPlayer.goals || 0;
-            const newFouls = eventPlayer.fouls || 0;
+        const updatePlayerStatsLocally = (p: PlayerPosition) => {
+            const newGoals = p.goals + (type === 'goal' ? 1 : 0);
+            const newFouls = p.fouls + (type === 'foul' ? 1 : 0);
             return {
-                ...player,
+                ...p,
                 goals: newGoals,
                 fouls: newFouls
             };
         };
         
         if (playerInTeam) {
-            updatedMatch.team = updatedMatch.team.map(p => p.id === eventPlayer.id ? updatePlayerStatsLocally(p) : p);
+            updatedMatch.team = updatedMatch.team.map(p => p.id === player.id ? updatePlayerStatsLocally(p) : p);
         } else if (playerInSubs) {
-            updatedMatch.substitutes = updatedMatch.substitutes.map(p => p.id === eventPlayer.id ? updatePlayerStatsLocally(p) : p);
+            updatedMatch.substitutes = updatedMatch.substitutes.map(p => p.id === player.id ? updatePlayerStatsLocally(p) : p);
         }
     }
 
@@ -385,8 +373,24 @@ export default function MatchPage() {
                 player={player}
                 onMouseDown={e => handleMouseDown(e, player.id)}
                 onTouchStart={e => handleTouchStart(e, player.id)}
-                onMouseUp={() => handleDragEnd()}
-                onTouchEnd={() => handleDragEnd()}
+                onMouseUp={(e) => {
+                    if (isDraggingRef.current) {
+                        handleDragEnd();
+                    } else if (clickTimeout.current) {
+                        clearTimeout(clickTimeout.current);
+                        clickTimeout.current = null;
+                        handlePlayerClick(player.id)
+                    }
+                }}
+                onTouchEnd={() => {
+                   if (isDraggingRef.current) {
+                        handleDragEnd();
+                    } else if (clickTimeout.current) {
+                        clearTimeout(clickTimeout.current);
+                        clickTimeout.current = null;
+                        handlePlayerClick(player.id)
+                    }
+                }}
                 isDraggable={role === 'coach'}
                 isDragging={draggingPlayer?.id === player.id}
                 isSubstitute={match.substitutes.some(p => p.id === player.id)}
@@ -413,3 +417,4 @@ export default function MatchPage() {
     </div>
   );
 }
+

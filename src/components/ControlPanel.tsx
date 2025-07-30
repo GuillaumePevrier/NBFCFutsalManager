@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Player, PlayerPosition, Role } from '@/lib/types';
@@ -51,9 +52,9 @@ const ControlPanel = ({
           {role === 'coach' && (
             <div className="space-y-4">
               <Label>Ajouter un joueur</Label>
-              <Select onValueChange={onAddPlayer} disabled={!canAddMorePlayers}>
+              <Select onValueChange={onAddPlayer} disabled={!canAddMorePlayers || !availablePlayers.length}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un joueur..." />
+                  <SelectValue placeholder={availablePlayers.length > 0 ? "Sélectionner un joueur..." : "Tous les joueurs sont ajoutés"} />
                 </SelectTrigger>
                 <SelectContent>
                   {availablePlayers.map(player => (
@@ -134,3 +135,4 @@ const ControlPanel = ({
 };
 
 export default ControlPanel;
+

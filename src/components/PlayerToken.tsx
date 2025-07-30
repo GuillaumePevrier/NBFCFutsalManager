@@ -46,8 +46,17 @@ const PlayerToken = ({ player, onMouseDown, onTouchStart, onMouseUp, onTouchEnd,
           {fallbackInitials}
         </AvatarFallback>
       </Avatar>
+       <div className="absolute -bottom-2.5 flex items-center justify-center gap-1">
+        {[...Array(player.goals || 0)].map((_, i) => (
+          <span key={`goal_${i}`} className="text-xs" role="img" aria-label="Goal">⚽</span>
+        ))}
+        {[...Array(player.fouls || 0)].map((_, i) => (
+          <span key={`foul_${i}`} className="w-2 h-2 bg-yellow-400 rounded-full border border-black/50" role="img" aria-label="Foul"></span>
+        ))}
+      </div>
     </div>
   );
 };
 
 export default PlayerToken;
+
