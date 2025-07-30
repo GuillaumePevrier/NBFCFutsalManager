@@ -3,8 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { sendOneSignalNotification, type SendOneSignalNotificationInput } from '@/ai/flows/send-onesignal-notification';
 import type { Match } from '@/lib/types';
 
-export const runtime = 'edge'; // Spécifie que c'est une Edge Function
-
 interface WebhookPayload {
   type: 'UPDATE';
   table: string;
