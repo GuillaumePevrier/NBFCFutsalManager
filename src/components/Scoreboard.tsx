@@ -274,7 +274,7 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersO
     />
     <div className={cn(
         "w-full max-w-2xl transition-all duration-300",
-        isFullScreen && "fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm"
+        isFullScreen && "fixed inset-0 z-50 flex items-center justify-center bg-background"
     )}>
         <Card className={cn(
             "w-full bg-black/80 backdrop-blur-sm border-neutral-700 shadow-lg relative",
