@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from './ui/button';
 import { CalendarDays, Clock, MapPin, Users, Info, Save, Swords } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useDebounce } from '@/hooks/use-debounce';
 
 interface MatchDetailsProps {
   details: MatchDetailsType;
@@ -19,10 +20,23 @@ interface MatchDetailsProps {
 
 export default function MatchDetails({ details, onDetailsChange, isCoach }: MatchDetailsProps) {
   const [currentDetails, setCurrentDetails] = useState<MatchDetailsType>(details);
+  const debouncedDetails = useDebounce(currentDetails, 500);
 
+  // Update internal state if props change from server
   useEffect(() => {
     setCurrentDetails(details);
   }, [details]);
+
+  // Effect to call the parent onDetailsChange when debouncedDetails change
+  useEffect(() => {
+    // We only call the update if there's an actual change,
+    // and to avoid calling it on initial mount with the same data.
+    if (JSON.stringify(debouncedDetails) !== JSON.stringify(details)) {
+        onDetailsChange(debouncedDetails);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedDetails]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -30,7 +44,9 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
   };
 
   const handleSelectChange = (value: '20min' | '25min') => {
-    setCurrentDetails(prev => ({ ...prev, matchType: value }));
+    const newDetails = { ...currentDetails, matchType: value };
+    setCurrentDetails(newDetails);
+    onDetailsChange(newDetails); // For selects, we can update immediately
   }
 
   const handleSave = () => {
@@ -85,8 +101,8 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
           <DetailItem icon={MapPin} label="Lieu" value={currentDetails.location} name="location" placeholder="Adresse du match" isCoach={isCoach} />
           
           <DetailItem icon={Swords} label="Type de Match" name="matchType" isCoach={isCoach} value={currentDetails.matchType === '20min' ? "20 min (arrêté)" : "25 min (continu)"}>
-             <Select onValueChange={handleSelectChange} value={currentDetails.matchType} name="matchType">
-                <SelectTrigger className="mt-1 bg-transparent border-0 border-b rounded-none px-0 h-8 focus:ring-0 focus:ring-offset-0 focus:border-primary">
+             <Select onValueChange={handleSelectChange} value={currentDetails.matchType} name="matchType" disabled={!isCoach}>
+                <SelectTrigger className="mt-1 bg-transparent border-0 border-b rounded-none px-0 h-8 focus:ring-0 focus:ring-offset-0 focus:border-primary disabled:opacity-100 disabled:cursor-default">
                     <SelectValue placeholder="Choisir le type..." />
                 </SelectTrigger>
                 <SelectContent>

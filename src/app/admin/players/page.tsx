@@ -2,22 +2,20 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, MoreHorizontal, Users, ArrowLeft } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Users, ArrowLeft, View } from "lucide-react";
 import Link from "next/link";
 import { getPlayers } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlayerActions } from "./player-actions";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import type { Player } from "@/lib/types";
 
 
 export default async function PlayersAdminPage() {
     const supabase = createClient();
     const { data: { session }} = await supabase.auth.getSession();
-
-    if (!session) {
-        redirect('/');
-    }
+    const isCoach = !!session;
 
     const players = await getPlayers();
 
@@ -32,13 +30,17 @@ export default async function PlayersAdminPage() {
                      Retour à l'accueil
                    </Link>
                  </Button>
-                 <h1 className="text-xl font-semibold">Gestion de l'Effectif</h1>
-                 <Button asChild size="sm">
-                    <Link href="/admin/players/new">
-                        <PlusCircle className="mr-2 h-4 w-4"/>
-                        Ajouter un joueur
-                    </Link>
-                </Button>
+                 <h1 className="text-xl font-semibold">Effectif du Club</h1>
+                 {isCoach ? (
+                    <Button asChild size="sm">
+                        <Link href="/admin/players/new">
+                            <PlusCircle className="mr-2 h-4 w-4"/>
+                            Ajouter un joueur
+                        </Link>
+                    </Button>
+                 ) : (
+                    <div className="w-28"></div> // Placeholder for alignment
+                 )}
             </header>
             <main className="flex-grow p-4 md:p-8">
                 <Card>
@@ -48,7 +50,7 @@ export default async function PlayersAdminPage() {
                             Liste des Joueurs ({players.length})
                         </CardTitle>
                         <CardDescription>
-                            Ajoutez, modifiez ou supprimez les joueurs de votre effectif.
+                            Consultez les informations et les statistiques de chaque joueur de l'effectif.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -67,7 +69,7 @@ export default async function PlayersAdminPage() {
                             </TableHeader>
                             <TableBody>
                                 {players.length > 0 ? (
-                                    players.map(player => (
+                                    players.map((player: Player) => (
                                         <TableRow key={player.id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
@@ -83,14 +85,23 @@ export default async function PlayersAdminPage() {
                                             <TableCell className="hidden sm:table-cell">{player.goals}</TableCell>
                                             <TableCell className="hidden sm:table-cell">{player.fouls}</TableCell>
                                             <TableCell>
-                                               <PlayerActions player={player}/>
+                                                {isCoach ? (
+                                                    <PlayerActions player={player}/>
+                                                ) : (
+                                                    <Button asChild variant="outline" size="sm">
+                                                        <Link href={`/player/${player.id}`}>
+                                                            <View className="mr-2 h-4 w-4" />
+                                                            Voir la fiche
+                                                        </Link>
+                                                    </Button>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={6} className="text-center h-24">
-                                            Aucun joueur trouvé. Commencez par en ajouter un.
+                                            Aucun joueur trouvé. {isCoach && "Commencez par en ajouter un."}
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -102,3 +113,4 @@ export default async function PlayersAdminPage() {
         </div>
     );
 }
+

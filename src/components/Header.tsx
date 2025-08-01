@@ -33,9 +33,6 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
         const newRole = session ? 'coach' : 'player';
         setRole(newRole);
-        if (newRole === 'player' && window.location.pathname.startsWith('/admin')) {
-            router.push('/');
-        }
     });
 
     return () => {
@@ -74,26 +71,23 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>
-             <a href="https://futsal.noyalbrecefc.com/" target="_blank" rel="noopener noreferrer" className="w-full">
+            <DropdownMenuItem asChild>
+               <Link href="/admin/players">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Effectif</span>
+                </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+             <a href="https://futsal.noyalbrecefc.com/" target="_blank" rel="noopener noreferrer" className="w-full flex items-center">
                 Site du Club
             </a>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {role === 'coach' ? (
-            <>
-              <Link href="/admin/players" passHref legacyBehavior>
-                <DropdownMenuItem>
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Gérer les joueurs</span>
-                </DropdownMenuItem>
-              </Link>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Se déconnecter</span>
               </DropdownMenuItem>
-            </>
           ) : (
             <DropdownMenuItem onClick={onCoachClick}>
                 <ShieldCheck className="mr-2 h-4 w-4" />
