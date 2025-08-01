@@ -1,81 +1,86 @@
 -- supabase/migrations/0_consolidated_players_setup.sql
 
--- 1. Create the players table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.players (
-    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+-- Forcer le passage au schéma public (le plus courant)
+SET search_path TO public;
+
+-- Supprimer les anciens types ENUM s'ils existent pour éviter les conflits
+-- Cela permet au script d'être exécuté plusieurs fois en toute sécurité
+DROP TYPE IF EXISTS player_team_enum CASCADE;
+DROP TYPE IF EXISTS player_position_enum CASCADE;
+DROP TYPE IF EXISTS player_foot_enum CASCADE;
+
+-- Création de la table "players" si elle n'existe pas déjà.
+-- Utilisation de TEXT avec des contraintes CHECK au lieu de types ENUM personnalisés.
+CREATE TABLE IF NOT EXISTS players (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at timestamptz DEFAULT now(),
     name text NOT NULL,
-    email text,
+    email text UNIQUE,
     age integer,
     avatar_url text,
-    team text,
-    "position" text,
-    preferred_foot text,
+    team text CHECK (team IN ('D1', 'D2', 'Autre')),
+    position text CHECK (position IN ('Gardien', 'Défenseur', 'Ailier', 'Pivot')),
+    preferred_foot text CHECK (preferred_foot IN ('Droit', 'Gauche', 'Ambidextre')),
     goals integer DEFAULT 0,
-    fouls integer DEFAULT 0,
-    created_at timestamp with time zone DEFAULT now()
+    fouls integer DEFAULT 0
 );
 
--- Make sure RLS is enabled
-ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
+-- Activation de la Row Level Security (RLS) sur la table des joueurs.
+-- C'est une mesure de sécurité essentielle.
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 
--- Remove old policies to avoid conflicts
-DROP POLICY IF EXISTS "Allow all users to read players" ON public.players;
-DROP POLICY IF EXISTS "Allow authenticated users (coaches) to do everything" ON public.players;
-DROP POLICY IF EXISTS "Allow authenticated users to insert players" ON public.players;
-DROP POLICY IF EXISTS "Allow authenticated users to update players" ON public.players;
-DROP POLICY IF EXISTS "Allow authenticated users to delete players" ON public.players;
+-- Suppression des anciennes policies pour éviter les conflits et les doublons.
+DROP POLICY IF EXISTS "Les coachs peuvent tout faire" ON players;
+DROP POLICY IF EXISTS "Tout le monde peut voir les joueurs" ON players;
+DROP POLICY IF EXISTS "Allow all access for authenticated users" ON players;
+DROP POLICY IF EXISTS "Enable read access for all users" ON players;
 
+-- Création des nouvelles policies RLS :
+-- 1. Tout le monde (utilisateurs connectés ou non) peut LIRE les informations des joueurs.
+CREATE POLICY "Enable read access for all users" ON players
+FOR SELECT USING (true);
 
--- 2. Define Row Level Security (RLS) policies
--- Policy: Allow all users (public) to read player data
-CREATE POLICY "Allow all users to read players"
-ON public.players
-FOR SELECT
-USING (true);
-
--- Policy: Allow authenticated users (coaches) to insert, update, and delete players
-CREATE POLICY "Allow authenticated users (coaches) to do everything"
-ON public.players
-FOR ALL
-USING (auth.role() = 'authenticated')
+-- 2. Seuls les coachs (utilisateurs authentifiés) peuvent AJOUTER, MODIFIER et SUPPRIMER des joueurs.
+-- La fonction auth.role() récupère le rôle de l'utilisateur connecté.
+CREATE POLICY "Allow all access for authenticated users" ON players
+FOR ALL USING (auth.role() = 'authenticated')
 WITH CHECK (auth.role() = 'authenticated');
 
 
--- 3. Add CHECK constraints for specific columns, now with French values
--- Drop old constraints if they exist
-ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_position_check;
-ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_preferred_foot_check;
-ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_team_check;
-
--- Add new constraints with French vocabulary
-ALTER TABLE public.players ADD CONSTRAINT players_position_check
-CHECK (("position" = ANY (ARRAY['Gardien'::text, 'Défenseur'::text, 'Ailier'::text, 'Pivot'::text, ''::text, NULL])));
-
-ALTER TABLE public.players ADD CONSTRAINT players_preferred_foot_check
-CHECK ((preferred_foot = ANY (ARRAY['Droit'::text, 'Gauche'::text, 'Ambidextre'::text, ''::text, NULL])));
-
-ALTER TABLE public.players ADD CONSTRAINT players_team_check
-CHECK ((team = ANY (ARRAY['D1'::text, 'D2'::text, 'Autre'::text])));
-
-
--- 4. Clean up duplicates
--- This command will keep the first created record for each player with the same name and delete the others.
-DELETE FROM public.players
-WHERE id NOT IN (
-  SELECT MIN(id)
-  FROM public.players
-  GROUP BY name
+-- Nettoyage des doublons de joueurs basés sur le nom
+-- Garde la première entrée (la plus ancienne) et supprime les doublons
+DELETE FROM players
+WHERE id IN (
+    SELECT id
+    FROM (
+        SELECT 
+            id, 
+            row_number() OVER(PARTITION BY name ORDER BY created_at) as rn
+        FROM players
+    ) t
+    WHERE t.rn > 1
 );
 
--- 5. Add a UNIQUE constraint on the name to prevent future duplicates
-ALTER TABLE public.players
-ADD CONSTRAINT players_name_unique UNIQUE (name);
+-- Création de la table "opponents" pour la gestion future des adversaires
+CREATE TABLE IF NOT EXISTS opponents (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at timestamptz DEFAULT now(),
+    name text NOT NULL UNIQUE,
+    logo_url text
+);
 
--- Reset sequence for IDs if needed (though UUIDs don't strictly need it, it's good practice for other types)
--- This step is generally not required for UUIDs but is included for completeness.
--- No action needed for UUID primary keys.
+-- Activation de la RLS pour la table des adversaires
+ALTER TABLE opponents ENABLE ROW LEVEL SECURITY;
 
--- Grant usage permissions to the public schema and the players table
-GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON TABLE public.players TO postgres, anon, authenticated, service_role;
-GRANT ALL ON SEQUENCE players_id_seq TO postgres, anon, authenticated, service_role; -- If you were using SERIAL instead of UUID
+-- Tout le monde peut lire les adversaires (utile pour les menus déroulants futurs)
+CREATE POLICY "Enable read access for all users on opponents" ON opponents
+FOR SELECT USING (true);
+
+-- Seuls les coachs peuvent gérer la liste des adversaires
+CREATE POLICY "Allow authenticated users to manage opponents" ON opponents
+FOR ALL USING (auth.role() = 'authenticated')
+WITH CHECK (auth.role() = 'authenticated');
+
+
+-- Affiche un message de succès dans la console de l'éditeur SQL.
+SELECT 'Script de configuration des joueurs et adversaires exécuté avec succès.';
