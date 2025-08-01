@@ -83,9 +83,9 @@ export function PlayerForm({ player }: { player?: Player }) {
                                         <SelectValue placeholder="Sélectionner le poste" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Goalkeeper">Gardien</SelectItem>
-                                        <SelectItem value="Defender">Défenseur</SelectItem>
-                                        <SelectItem value="Winger">Ailier</SelectItem>
+                                        <SelectItem value="Gardien">Gardien</SelectItem>
+                                        <SelectItem value="Défenseur">Défenseur</SelectItem>
+                                        <SelectItem value="Ailier">Ailier</SelectItem>
                                         <SelectItem value="Pivot">Pivot</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -99,9 +99,9 @@ export function PlayerForm({ player }: { player?: Player }) {
                                         <SelectValue placeholder="Sélectionner le pied fort" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Right">Droit</SelectItem>
-                                        <SelectItem value="Left">Gauche</SelectItem>
-                                        <SelectItem value="Both">Ambidextre</SelectItem>
+                                        <SelectItem value="Droit">Droit</SelectItem>
+                                        <SelectItem value="Gauche">Gauche</SelectItem>
+                                        <SelectItem value="Ambidextre">Ambidextre</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

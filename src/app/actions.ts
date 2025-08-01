@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import type { Match, Player } from '@/lib/types';
+import type { Player } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -33,8 +33,8 @@ const PlayerSchema = z.object({
   id: z.string().optional(), // id can be present for updates
   name: z.string().min(3, "Le nom doit contenir au moins 3 caractères."),
   team: z.enum(['D1', 'D2', 'Autre']),
-  position: z.enum(['Goalkeeper', 'Defender', 'Winger', 'Pivot', '']).optional(),
-  preferred_foot: z.enum(['Right', 'Left', 'Both', '']).optional(),
+  position: z.enum(['Gardien', 'Défenseur', 'Ailier', 'Pivot', '']).optional(),
+  preferred_foot: z.enum(['Droit', 'Gauche', 'Ambidextre', '']).optional(),
   avatar_url: z.string().url("L'URL de l'avatar n'est pas valide.").optional().or(z.literal('')),
 });
 
