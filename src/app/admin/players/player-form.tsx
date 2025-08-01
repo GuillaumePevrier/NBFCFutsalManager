@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import Link from 'next/link';
 export function PlayerForm({ player }: { player?: Player }) {
     const isEditing = !!player;
     const action = isEditing ? updatePlayer.bind(null, player.id) : createPlayer;
-    const [state, formAction] = useFormState(action, { errors: {} });
+    const [state, formAction] = useActionState(action, { errors: {} });
     const router = useRouter();
     const { toast } = useToast();
 
