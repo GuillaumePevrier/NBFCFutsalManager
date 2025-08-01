@@ -33,8 +33,8 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
         const newRole = session ? 'coach' : 'player';
         setRole(newRole);
-        if (newRole === 'player') {
-            router.refresh(); // Refresh to apply player view restrictions
+        if (newRole === 'player' && window.location.pathname.startsWith('/admin')) {
+            router.push('/');
         }
     });
 
@@ -82,12 +82,12 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
           <DropdownMenuSeparator />
           {role === 'coach' ? (
             <>
-              <DropdownMenuItem asChild>
-                <Link href="/admin/players">
+              <Link href="/admin/players" passHref legacyBehavior>
+                <DropdownMenuItem>
                   <Users className="mr-2 h-4 w-4" />
                   <span>Gérer les joueurs</span>
-                </Link>
-              </DropdownMenuItem>
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
