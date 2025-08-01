@@ -39,20 +39,6 @@ export async function deleteMatch(matchId: string): Promise<{ success: boolean, 
     return { success: true };
 }
 
-export async function getPlayers(): Promise<Player[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('players')
-    .select('*')
-    .order('name', { ascending: true });
-
-  if (error) {
-    console.error('Failed to fetch players:', error);
-    return [];
-  }
-  return data;
-}
-
 export async function getPlayerById(playerId: string): Promise<Player | null> {
     const supabase = createClient();
     const { data, error } = await supabase
@@ -108,4 +94,3 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
 
     return { success: true };
 }
-

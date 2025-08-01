@@ -1,68 +1,93 @@
--- Create the players table only if it doesn't exist
+
+-- Drop existing policies on players table to avoid conflicts
+DROP POLICY IF EXISTS "Public can view players" ON public.players;
+DROP POLICY IF EXISTS "Coach can update players" ON public.players;
+
+-- Ensure players table exists
 CREATE TABLE IF NOT EXISTS public.players (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     name text NOT NULL,
     email text,
     age integer,
     avatar_url text,
-    team text, -- Keeping as text for flexibility: 'D1', 'D2', 'Autre'
-    position text, -- 'Goalkeeper', 'Defender', 'Winger', 'Pivot'
-    preferred_foot text, -- 'Right', 'Left', 'Both'
+    team text CHECK (team IN ('D1', 'D2', 'Autre')),
+    position text CHECK (position IN ('Goalkeeper', 'Defender', 'Winger', 'Pivot')),
+    preferred_foot text CHECK (preferred_foot IN ('Right', 'Left', 'Both')),
     goals integer DEFAULT 0 NOT NULL,
-    fouls integer DEFAULT 0 NOT NULL,
-    CONSTRAINT players_name_key UNIQUE (name)
+    fouls integer DEFAULT 0 NOT NULL
 );
 
--- Add columns only if they don't exist
--- This is useful if the table was created but is missing columns
+-- Add a primary key if it doesn't exist
 DO $$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'players' AND column_name = 'goals') THEN
-        ALTER TABLE public.players ADD COLUMN goals integer DEFAULT 0 NOT NULL;
-    END IF;
-    IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'players' AND column_name = 'fouls') THEN
-        ALTER TABLE public.players ADD COLUMN fouls integer DEFAULT 0 NOT NULL;
-    END IF;
-END;
+   IF NOT EXISTS (
+       SELECT 1 FROM pg_constraint 
+       WHERE conrelid = 'public.players'::regclass 
+       AND conname = 'players_pkey'
+   ) THEN
+       ALTER TABLE public.players ADD PRIMARY KEY (id);
+   END IF;
+END
 $$;
 
+-- Add a unique constraint on the name column if it doesn't exist
+-- This is crucial for ON CONFLICT to work and for cleaning up duplicates
+DO $$
+BEGIN
+   IF NOT EXISTS (
+       SELECT 1 FROM pg_constraint 
+       WHERE conrelid = 'public.players'::regclass 
+       AND conname = 'players_name_key'
+   ) THEN
+       ALTER TABLE public.players ADD CONSTRAINT players_name_key UNIQUE (name);
+   END IF;
+END
+$$;
 
--- Enable Row Level Security on the table if not already enabled
-ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
+-- Clean up duplicate players based on name, keeping the one with the most goals
+-- This is a safe way to remove duplicates without losing important data.
+WITH ranked_players AS (
+  SELECT
+    id,
+    name,
+    ROW_NUMBER() OVER (PARTITION BY name ORDER BY goals DESC, created_at DESC) as rn
+  FROM public.players
+)
+DELETE FROM public.players
+WHERE id IN (
+  SELECT id FROM ranked_players WHERE rn > 1
+);
 
--- Drop existing policies before creating new ones to avoid conflicts
-DROP POLICY IF EXISTS "Players are viewable by everyone." ON public.players;
-DROP POLICY IF EXISTS "Coaches can insert new players." ON public.players;
-DROP POLICY IF EXISTS "Coaches can update player stats and info." ON public.players;
-DROP POLICY IF EXISTS "Coaches can delete players." ON public.players;
 
--- Create policies for data access
-CREATE POLICY "Players are viewable by everyone." ON public.players
-    FOR SELECT USING (true);
-
-CREATE POLICY "Coaches can insert new players." ON public.players
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Coaches can update player stats and info." ON public.players
-    FOR UPDATE USING (auth.role() = 'authenticated')
-    WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Coaches can delete players." ON public.players
-    FOR DELETE USING (auth.role() = 'authenticated');
-
--- Insert players only if they don't already exist (based on the unique name)
--- This prevents duplication errors if the script is run multiple times
+-- Insert initial players only if they don't already exist
+-- ON CONFLICT(name) DO NOTHING prevents errors if a player with the same name already exists.
 INSERT INTO public.players (name, team, position, preferred_foot)
 VALUES
-    ('Guillaume PEVRIER', 'D1', 'Winger', 'Right'),
-    ('Fabien R.', 'D1', 'Defender', 'Right'),
-    ('Coach Seb', 'D1', 'Pivot', 'Right'),
-    ('Antoine B.', 'D1', 'Goalkeeper', 'Right'),
-    ('Pierre G.', 'D1', 'Winger', 'Left'),
-    ('Bastien L.', 'D2', 'Defender', 'Right'),
-    ('Kevin R.', 'D2', 'Pivot', 'Right'),
-    ('Yoann L.', 'D2', 'Winger', 'Right'),
-    ('Gireg L.', 'D2', 'Defender', 'Right'),
-    ('Ronan B', 'D2', 'Goalkeeper', 'Right')
+    ('Guillaume Pevrier', 'D1', 'Winger', 'Right'),
+    ('Alexandre Plihon', 'D1', 'Winger', 'Right'),
+    ('Yoann Plihon', 'D1', 'Pivot', 'Right'),
+    ('Clément Plihon', 'D1', 'Defender', 'Right'),
+    ('Mael Pevrier', 'D1', 'Defender', 'Right'),
+    ('Simon Pevrier', 'D1', 'Goalkeeper', 'Right'),
+    ('Nolann Pevrier', 'D1', 'Winger', 'Right'),
+    ('Thomas Chevalier', 'D2', 'Pivot', 'Left'),
+    ('Romain Duval', 'D2', 'Defender', 'Right'),
+    ('Antoine Lemoine', 'D2', 'Goalkeeper', 'Right')
 ON CONFLICT (name) DO NOTHING;
+
+-- Enable Row Level Security on the players table
+ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
+
+-- Create a new, simple policy: Anyone can read players' data.
+-- This will fix the issue of player pages not showing up for non-coaches.
+CREATE POLICY "Public can view players" ON public.players
+    FOR SELECT
+    USING (true);
+
+-- Create a new policy: Only authenticated users (coaches) can update players.
+-- This secures your data while allowing public visibility.
+CREATE POLICY "Coach can update players" ON public.players
+    FOR UPDATE
+    USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');

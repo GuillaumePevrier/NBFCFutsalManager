@@ -15,7 +15,6 @@ import { Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
-import { getPlayers } from '@/app/actions';
 
 const MAX_ON_FIELD = 5;
 
@@ -37,11 +36,15 @@ export default function MatchPage() {
 
   useEffect(() => {
     const fetchPlayers = async () => {
-      const players = await getPlayers();
-      setAllPlayers(players);
+      const { data: players, error } = await supabase.from('players').select('*');
+      if (error) {
+        console.error("Failed to fetch players:", error);
+      } else {
+        setAllPlayers(players || []);
+      }
     };
     fetchPlayers();
-  }, []);
+  }, [supabase]);
 
   const updateMatchData = useCallback(async (updatedMatch: Match, showToast = false) => {
     // Optimistically update local state first
