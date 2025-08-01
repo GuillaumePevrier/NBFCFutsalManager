@@ -278,7 +278,7 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersO
     )}>
         <Card className={cn(
             "w-full bg-black/80 backdrop-blur-sm border-neutral-700 shadow-lg relative",
-             isFullScreen ? "w-full h-full rounded-none border-0 flex flex-col" : "w-[95%] max-w-4xl"
+             isFullScreen ? "w-full h-full rounded-none border-0 flex flex-col md:flex-row" : "max-w-4xl"
         )}>
             <Button
                 variant="ghost"
@@ -347,5 +347,3 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersO
 };
 
 export default Scoreboard;
-
-    
