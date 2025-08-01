@@ -5,10 +5,10 @@ export interface Player {
   age?: number;
   avatar_url?: string;
   team: 'D1' | 'D2' | 'Autre';
-  position?: 'Gardien' | 'Défenseur' | 'Ailier' | 'Pivot';
-  preferred_foot?: 'Droit' | 'Gauche' | 'Ambidextre';
-  goals: number;
-  fouls: number;
+  position?: 'Gardien' | 'Défenseur' | 'Ailier' | 'Pivot' | '';
+  preferred_foot?: 'Droit' | 'Gauche' | 'Ambidextre' | '';
+  goals?: number;
+  fouls?: number;
 }
 
 export interface PlayerPosition extends Player {
@@ -47,4 +47,10 @@ export interface Match {
   team: PlayerPosition[];
   substitutes: PlayerPosition[];
   scoreboard: Scoreboard;
+}
+
+export interface Opponent {
+    id: string; // uuid
+    name: string;
+    logo_url?: string;
 }
