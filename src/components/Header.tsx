@@ -3,13 +3,14 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users } from "lucide-react";
 import Image from "next/image";
 import type { Role } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -48,6 +49,7 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
         toast({ title: "Erreur", description: "Impossible de se déconnecter.", variant: "destructive" });
     } else {
         toast({ title: "Déconnecté", description: "Vous êtes repassé en mode joueur." });
+        router.push('/');
     }
   };
 
@@ -79,10 +81,19 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {role === 'coach' ? (
-             <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Se déconnecter</span>
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/players">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Gérer les joueurs</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Se déconnecter</span>
+              </DropdownMenuItem>
+            </>
           ) : (
             <DropdownMenuItem onClick={onCoachClick}>
                 <ShieldCheck className="mr-2 h-4 w-4" />

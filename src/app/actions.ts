@@ -4,6 +4,7 @@
 import { createClient } from '@/lib/supabase/server';
 import type { Match, Player } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
 export async function getMatches(): Promise<Match[]> {
   const supabase = createClient();
@@ -35,9 +36,36 @@ export async function deleteMatch(matchId: string): Promise<{ success: boolean, 
     }
 
     revalidatePath('/');
+    revalidatePath('/match');
 
     return { success: true };
 }
+
+// Player related actions
+
+const PlayerSchema = z.object({
+  name: z.string().min(3, "Le nom doit contenir au moins 3 caractères."),
+  team: z.enum(['D1', 'D2', 'Autre']),
+  position: z.enum(['Goalkeeper', 'Defender', 'Winger', 'Pivot', '']).optional(),
+  preferred_foot: z.enum(['Right', 'Left', 'Both', '']).optional(),
+  avatar_url: z.string().url("L'URL de l'avatar n'est pas valide.").optional().or(z.literal('')),
+});
+
+
+export async function getPlayers(): Promise<Player[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('players')
+    .select('*')
+    .order('name', { ascending: true });
+    
+  if (error) {
+    console.error("Failed to fetch players:", error);
+    return [];
+  }
+  return data as Player[];
+}
+
 
 export async function getPlayerById(playerId: string): Promise<Player | null> {
     const supabase = createClient();
@@ -52,6 +80,80 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
         return null;
     }
     return data;
+}
+
+export async function createPlayer(formData: FormData) {
+  const supabase = createClient();
+  const values = Object.fromEntries(formData.entries());
+  const validatedFields = PlayerSchema.safeParse(values);
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+  
+  const { data, error } = await supabase
+    .from('players')
+    .insert([validatedFields.data])
+    .select();
+
+  if (error) {
+    console.error("Failed to create player:", error);
+    return {
+      error: error.message
+    };
+  }
+
+  revalidatePath('/admin/players');
+  revalidatePath('/');
+  return { data };
+}
+
+export async function updatePlayer(playerId: string, formData: FormData) {
+  const supabase = createClient();
+  const values = Object.fromEntries(formData.entries());
+  const validatedFields = PlayerSchema.safeParse(values);
+  
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('players')
+    .update(validatedFields.data)
+    .eq('id', playerId)
+    .select();
+
+  if (error) {
+     console.error(`Failed to update player ${playerId}:`, error);
+    return {
+      error: error.message
+    };
+  }
+
+  revalidatePath('/admin/players');
+  revalidatePath(`/player/${playerId}`);
+  return { data };
+}
+
+
+export async function deletePlayer(playerId: string) {
+    const supabase = createClient();
+    const { error } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', playerId);
+
+    if (error) {
+        console.error(`Failed to delete player ${playerId}:`, error);
+        return { error: error.message };
+    }
+
+    revalidatePath('/admin/players');
+    revalidatePath('/');
 }
 
 
@@ -91,6 +193,7 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
     // Revalider les chemins où les stats pourraient être affichées
     revalidatePath(`/player/${playerId}`);
     revalidatePath(`/match/*`); // Revalide toutes les pages de match
+    revalidatePath('/admin/players');
 
     return { success: true };
 }
