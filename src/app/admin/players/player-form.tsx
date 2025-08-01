@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useActionState, useEffect } from 'react';
@@ -17,7 +16,7 @@ import Link from 'next/link';
 
 export function PlayerForm({ player }: { player?: Player }) {
     const isEditing = !!player;
-    const action = isEditing ? updatePlayer.bind(null, player.id) : createPlayer;
+    const action = isEditing ? updatePlayer : createPlayer;
     const [state, formAction] = useActionState(action, { errors: {} });
     const router = useRouter();
     const { toast } = useToast();
@@ -57,6 +56,7 @@ export function PlayerForm({ player }: { player?: Player }) {
                 </CardHeader>
                 <CardContent>
                     <form action={formAction} className="space-y-6">
+                         {isEditing && <input type="hidden" name="id" value={player.id} />}
                         <div className="space-y-2">
                             <Label htmlFor="name">Nom complet</Label>
                             <Input id="name" name="name" defaultValue={player?.name} required />

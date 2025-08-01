@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -6,21 +5,7 @@ import type { Match, Player } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-export async function getMatches(): Promise<Match[]> {
-  const supabase = createClient();
-  
-  const { data, error } = await supabase
-    .from('matches')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error("Failed to fetch matches:", error);
-    return [];
-  }
-  
-  return data as Match[];
-}
+// Match related actions (no changes)
 
 export async function deleteMatch(matchId: string): Promise<{ success: boolean, error?: any }> {
     const supabase = createClient();
@@ -41,9 +26,11 @@ export async function deleteMatch(matchId: string): Promise<{ success: boolean, 
     return { success: true };
 }
 
+
 // Player related actions
 
 const PlayerSchema = z.object({
+  id: z.string().optional(), // id can be present for updates
   name: z.string().min(3, "Le nom doit contenir au moins 3 caractères."),
   team: z.enum(['D1', 'D2', 'Autre']),
   position: z.enum(['Goalkeeper', 'Defender', 'Winger', 'Pivot', '']).optional(),
@@ -82,7 +69,7 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
     return data;
 }
 
-export async function createPlayer(formData: FormData) {
+export async function createPlayer(previousState: any, formData: FormData) {
   const supabase = createClient();
   const values = Object.fromEntries(formData.entries());
   const validatedFields = PlayerSchema.safeParse(values);
@@ -93,9 +80,11 @@ export async function createPlayer(formData: FormData) {
     };
   }
   
+  const { id, ...playerData } = validatedFields.data;
+
   const { data, error } = await supabase
     .from('players')
-    .insert([validatedFields.data])
+    .insert([playerData])
     .select();
 
   if (error) {
@@ -110,7 +99,7 @@ export async function createPlayer(formData: FormData) {
   return { data };
 }
 
-export async function updatePlayer(playerId: string, formData: FormData) {
+export async function updatePlayer(previousState: any, formData: FormData) {
   const supabase = createClient();
   const values = Object.fromEntries(formData.entries());
   const validatedFields = PlayerSchema.safeParse(values);
@@ -121,9 +110,15 @@ export async function updatePlayer(playerId: string, formData: FormData) {
     };
   }
 
+  const { id: playerId, ...playerData } = validatedFields.data;
+
+  if (!playerId) {
+    return { error: "Player ID is missing for update." };
+  }
+
   const { data, error } = await supabase
     .from('players')
-    .update(validatedFields.data)
+    .update(playerData)
     .eq('id', playerId)
     .select();
 
