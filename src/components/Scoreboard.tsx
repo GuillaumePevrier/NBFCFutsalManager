@@ -163,25 +163,105 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersO
      toast({ title: "Tableau de marque réinitialisé." });
   }
 
-  const ScoreDisplay = ({ score }: { score: number }) => (
-    <div className="text-5xl sm:text-6xl md:text-7xl font-['Orbitron',_sans-serif] text-destructive">
+  const ScoreDisplay = ({ score, isFullScreen }: { score: number, isFullScreen?: boolean }) => (
+    <div className={cn(
+        "font-['Orbitron',_sans-serif] text-destructive",
+        isFullScreen ? "text-8xl" : "text-5xl sm:text-6xl md:text-7xl"
+    )}>
       {score.toString().padStart(2, '0')}
     </div>
   );
 
-  const FoulDisplay = ({ count }: { count: number }) => (
-    <div className="flex gap-1 md:gap-2">
+  const FoulDisplay = ({ count, isFullScreen }: { count: number, isFullScreen?: boolean }) => (
+    <div className={cn(
+        "flex gap-1 md:gap-2",
+        isFullScreen && "gap-3"
+        )}>
       {[...Array(5)].map((_, i) => (
         <div
           key={i}
           className={cn(
-            'h-2 w-4 md:h-3 md:w-8 rounded-sm',
-            i < count ? 'bg-destructive' : 'bg-destructive/20'
+            'rounded-sm',
+            i < count ? 'bg-destructive' : 'bg-destructive/20',
+             isFullScreen ? "h-4 w-12" : "h-2 w-4 md:h-3 md:w-8"
           )}
         />
       ))}
     </div>
   );
+
+  const renderContent = () => (
+    <>
+      {/* Home Team */}
+      <div className={cn("flex flex-col items-center flex-1", isFullScreen ? "justify-around p-4" : "gap-1 sm:gap-2")}>
+        <h2 className={cn("font-bold uppercase tracking-wider text-center", isFullScreen ? "text-2xl" : "text-xs sm:text-sm md:text-lg")} >NBFC Futsal</h2>
+        <ScoreDisplay score={scoreboard.homeScore} isFullScreen={isFullScreen} />
+        <div className="flex flex-col items-center gap-2">
+            <FoulDisplay count={scoreboard.homeFouls} isFullScreen={isFullScreen} />
+            {isCoach && isFullScreen && (
+                <div className="flex items-center gap-4 mt-4">
+                    <Button onClick={() => handleStatChange('home', 'goal', -1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Minus/></Button>
+                    <span className="text-lg w-20 text-center font-semibold">Score</span>
+                    <Button onClick={() => handleStatChange('home', 'goal', 1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Plus/></Button>
+                </div>
+            )}
+             {isCoach && isFullScreen && (
+                <div className="flex items-center gap-4">
+                    <Button onClick={() => handleStatChange('home', 'foul', -1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Minus/></Button>
+                    <span className="text-lg w-20 text-center font-semibold">Fautes</span>
+                    <Button onClick={() => handleStatChange('home', 'foul', 1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Plus/></Button>
+                </div>
+            )}
+        </div>
+      </div>
+
+      {/* Center Controls */}
+      <div className={cn("flex flex-col items-center mx-2", isFullScreen ? "justify-around p-4" : "gap-1 sm:gap-2")}>
+        <div className={cn("font-semibold text-yellow-400", isFullScreen ? "text-2xl" : "text-xs sm:text-sm")}>P{scoreboard.period}</div>
+        <div className={cn("font-['Orbitron',_sans-serif] text-yellow-400 font-bold", isFullScreen ? "text-8xl" : "text-4xl sm:text-5xl md:text-6xl")}>
+            {formatTime(localTime)}
+        </div>
+        <div className={cn("font-semibold uppercase text-neutral-400", isFullScreen ? "text-lg" : "text-xs")}>Fautes</div>
+         {isCoach && isFullScreen && (
+            <div className="flex flex-col items-center justify-center gap-4 mt-4">
+                <div className="flex items-center gap-4">
+                    <Button onClick={handleTimerToggle} size="lg" variant="secondary" className="h-16 w-16">
+                        {scoreboard.isRunning ? <Pause size={32} /> : <Play size={32} />}
+                    </Button>
+                    <Button onClick={handleTimerReset} size="lg" variant="secondary" className="h-16 w-16"><RefreshCw size={32}/></Button>
+                </div>
+                <div className="flex items-center gap-4">
+                    <Button onClick={handleNextPeriod} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 text-base px-6">Période Suiv.</Button>
+                    <Button onClick={handleFullReset} size="lg" variant="destructive" className="h-16 w-16"><Trophy size={32}/></Button>
+                </div>
+            </div>
+        )}
+      </div>
+
+      {/* Away Team */}
+      <div className={cn("flex flex-col items-center flex-1", isFullScreen ? "justify-around p-4" : "gap-1 sm:gap-2")}>
+        <h2 className={cn("font-bold uppercase tracking-wider text-center truncate", isFullScreen ? "text-2xl" : "text-xs sm:text-sm md:text-lg")} title={details.opponent}>{details.opponent}</h2>
+        <ScoreDisplay score={scoreboard.awayScore} isFullScreen={isFullScreen} />
+         <div className="flex flex-col items-center gap-2">
+            <FoulDisplay count={scoreboard.awayFouls} isFullScreen={isFullScreen} />
+            {isCoach && isFullScreen && (
+                <div className="flex items-center gap-4 mt-4">
+                    <Button onClick={() => handleStatChange('away', 'goal', -1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Minus/></Button>
+                    <span className="text-lg w-20 text-center font-semibold">Score</span>
+                    <Button onClick={() => handleStatChange('away', 'goal', 1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Plus/></Button>
+                </div>
+            )}
+             {isCoach && isFullScreen && (
+                <div className="flex items-center gap-4">
+                    <Button onClick={() => handleStatChange('away', 'foul', -1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Minus/></Button>
+                    <span className="text-lg w-20 text-center font-semibold">Fautes</span>
+                    <Button onClick={() => handleStatChange('away', 'foul', 1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Plus/></Button>
+                </div>
+            )}
+        </div>
+      </div>
+    </>
+  )
 
   return (
     <>
@@ -198,42 +278,22 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersO
     )}>
         <Card className={cn(
             "w-full bg-black/80 backdrop-blur-sm border-neutral-700 shadow-lg relative",
-             isFullScreen && "w-[95%] max-w-4xl scale-110 transform"
+             isFullScreen ? "w-full h-full rounded-none border-0 flex flex-col" : "w-[95%] max-w-4xl"
         )}>
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-1 right-1 text-white/50 hover:text-white hover:bg-white/10 z-10"
+                className="absolute top-1 right-1 text-white/50 hover:text-white hover:bg-white/10 z-20"
                 onClick={() => setIsFullScreen(!isFullScreen)}
             >
                 {isFullScreen ? <Shrink className="h-5 w-5" /> : <Expand className="h-5 w-5" />}
             </Button>
-
-            <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 text-white">
-                {/* Home Team */}
-                <div className="flex flex-col items-center gap-1 sm:gap-2 flex-1">
-                <h2 className="text-xs sm:text-sm md:text-lg font-bold uppercase tracking-wider text-center">NBFC Futsal</h2>
-                <ScoreDisplay score={scoreboard.homeScore} />
-                <FoulDisplay count={scoreboard.homeFouls} />
-                </div>
-
-                {/* Center Controls */}
-                <div className="flex flex-col items-center gap-1 sm:gap-2 mx-2">
-                <div className="text-xs sm:text-sm font-semibold text-yellow-400">P{scoreboard.period}</div>
-                <div className="text-4xl sm:text-5xl md:text-6xl font-['Orbitron',_sans-serif] text-yellow-400 font-bold">
-                    {formatTime(localTime)}
-                </div>
-                <div className="text-xs font-semibold uppercase text-neutral-400">Fautes</div>
-                </div>
-
-                {/* Away Team */}
-                <div className="flex flex-col items-center gap-1 sm:gap-2 flex-1">
-                <h2 className="text-xs sm:text-sm md:text-lg font-bold uppercase tracking-wider text-center truncate" title={details.opponent}>{details.opponent}</h2>
-                <ScoreDisplay score={scoreboard.awayScore} />
-                <FoulDisplay count={scoreboard.awayFouls} />
-                </div>
+            
+            <div className={cn("flex text-white", isFullScreen ? "flex-grow flex-col md:flex-row" : "items-center justify-between p-2 sm:p-3 md:p-4")}>
+                {renderContent()}
             </div>
-            {isCoach && (
+
+            {isCoach && !isFullScreen && (
                 <div className="bg-neutral-900/50 p-2 border-t border-neutral-700">
                 <div className="grid grid-cols-3 gap-2">
                         {/* Left Controls (Home) */}
