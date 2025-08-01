@@ -1,82 +1,81 @@
--- ===============================================================================================
--- CONSOLIDATED PLAYER MANAGEMENT SCRIPT
--- ===============================================================================================
--- This single script handles the complete setup for the 'players' table.
--- It is idempotent, meaning it can be run multiple times without causing errors.
---
--- It includes:
--- 1. Table Creation ('players')
--- 2. Column additions ('goals', 'fouls')
--- 3. Row Level Security (RLS) Policies for read, insert, update, delete.
--- 4. Data Cleanup (removes duplicates).
--- ===============================================================================================
+-- supabase/migrations/0_consolidated_players_setup.sql
 
--- Step 1: Create the players table if it doesn't exist
+-- 1. Create the players table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.players (
     id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
     name text NOT NULL,
+    email text,
+    age integer,
+    avatar_url text,
     team text,
     "position" text,
     preferred_foot text,
-    avatar_url text
+    goals integer DEFAULT 0,
+    fouls integer DEFAULT 0,
+    created_at timestamp with time zone DEFAULT now()
 );
 
--- Step 2: Add statistics columns if they don't exist
-ALTER TABLE public.players
-ADD COLUMN IF NOT EXISTS goals integer DEFAULT 0 NOT NULL,
-ADD COLUMN IF NOT EXISTS fouls integer DEFAULT 0 NOT NULL;
-
--- Step 3: Ensure the 'name' column is unique to prevent duplicates
--- This is crucial for the ON CONFLICT clause to work during inserts.
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint 
-        WHERE conrelid = 'public.players'::regclass 
-        AND conname = 'players_name_key'
-    ) THEN
-        ALTER TABLE public.players ADD CONSTRAINT players_name_key UNIQUE (name);
-    END IF;
-END$$;
-
-
--- Step 4: Clean up duplicate players by name, keeping the first one created.
-DELETE FROM players a
-USING players b
-WHERE
-    a.id > b.id
-    AND a.name = b.name;
-
--- Step 5: Enable Row Level Security on the table
+-- Make sure RLS is enabled
 ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
 
--- Step 6: Drop existing policies to avoid conflicts and ensure a clean slate
-DROP POLICY IF EXISTS "Players are viewable by everyone." ON public.players;
-DROP POLICY IF EXISTS "Users can insert their own players." ON public.players;
-DROP POLICY IF EXISTS "Users can update their own players." ON public.players;
-DROP POLICY IF EXISTS "Users can delete their own players." ON public.players;
-DROP POLICY IF EXISTS "Authenticated users can manage players" ON public.players;
-DROP POLICY IF EXISTS "Allow public read access to players" ON public.players;
-DROP POLICY IF EXISTS "Allow authenticated users to manage players" ON public.players;
+-- Remove old policies to avoid conflicts
+DROP POLICY IF EXISTS "Allow all users to read players" ON public.players;
+DROP POLICY IF EXISTS "Allow authenticated users (coaches) to do everything" ON public.players;
+DROP POLICY IF EXISTS "Allow authenticated users to insert players" ON public.players;
+DROP POLICY IF EXISTS "Allow authenticated users to update players" ON public.players;
+DROP POLICY IF EXISTS "Allow authenticated users to delete players" ON public.players;
 
 
--- Step 7: Create the new, correct policies
--- Policy 1: Allow anyone to read player data (for stats, public profiles, etc.)
-CREATE POLICY "Allow public read access to players"
+-- 2. Define Row Level Security (RLS) policies
+-- Policy: Allow all users (public) to read player data
+CREATE POLICY "Allow all users to read players"
 ON public.players
 FOR SELECT
-TO public
 USING (true);
 
--- Policy 2: Allow ONLY authenticated users (coaches) to do everything else (create, update, delete)
-CREATE POLICY "Allow authenticated users to manage players"
+-- Policy: Allow authenticated users (coaches) to insert, update, and delete players
+CREATE POLICY "Allow authenticated users (coaches) to do everything"
 ON public.players
-FOR ALL -- Covers INSERT, UPDATE, DELETE
-TO authenticated
-USING (true)
-WITH CHECK (true);
+FOR ALL
+USING (auth.role() = 'authenticated')
+WITH CHECK (auth.role() = 'authenticated');
 
--- ===============================================================================================
--- End of Script
--- ===============================================================================================
+
+-- 3. Add CHECK constraints for specific columns, now with French values
+-- Drop old constraints if they exist
+ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_position_check;
+ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_preferred_foot_check;
+ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_team_check;
+
+-- Add new constraints with French vocabulary
+ALTER TABLE public.players ADD CONSTRAINT players_position_check
+CHECK (("position" = ANY (ARRAY['Gardien'::text, 'Défenseur'::text, 'Ailier'::text, 'Pivot'::text, ''::text, NULL])));
+
+ALTER TABLE public.players ADD CONSTRAINT players_preferred_foot_check
+CHECK ((preferred_foot = ANY (ARRAY['Droit'::text, 'Gauche'::text, 'Ambidextre'::text, ''::text, NULL])));
+
+ALTER TABLE public.players ADD CONSTRAINT players_team_check
+CHECK ((team = ANY (ARRAY['D1'::text, 'D2'::text, 'Autre'::text])));
+
+
+-- 4. Clean up duplicates
+-- This command will keep the first created record for each player with the same name and delete the others.
+DELETE FROM public.players
+WHERE id NOT IN (
+  SELECT MIN(id)
+  FROM public.players
+  GROUP BY name
+);
+
+-- 5. Add a UNIQUE constraint on the name to prevent future duplicates
+ALTER TABLE public.players
+ADD CONSTRAINT players_name_unique UNIQUE (name);
+
+-- Reset sequence for IDs if needed (though UUIDs don't strictly need it, it's good practice for other types)
+-- This step is generally not required for UUIDs but is included for completeness.
+-- No action needed for UUID primary keys.
+
+-- Grant usage permissions to the public schema and the players table
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON TABLE public.players TO postgres, anon, authenticated, service_role;
+GRANT ALL ON SEQUENCE players_id_seq TO postgres, anon, authenticated, service_role; -- If you were using SERIAL instead of UUID
