@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useActionState, useFormStatus } from 'react';
+import { useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,6 @@ import type { Player } from "@/lib/types";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { createPlayer, updatePlayer } from "@/app/actions";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
