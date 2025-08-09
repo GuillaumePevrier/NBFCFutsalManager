@@ -26,6 +26,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'futsal.noyalbrecefc.com',
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
 };

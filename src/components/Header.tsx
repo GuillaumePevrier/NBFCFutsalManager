@@ -55,7 +55,7 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
     <header className="flex items-center justify-between p-2 border-b bg-card">
       <div className="flex items-center gap-3">
         <Image 
-            src="/logo.png" 
+            src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png" 
             alt="Club Logo" 
             width={40} 
             height={40} 
