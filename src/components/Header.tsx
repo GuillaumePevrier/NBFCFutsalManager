@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Users, Globe } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users, Globe, Home } from "lucide-react";
 import Image from "next/image";
 import type { Role } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -54,13 +54,15 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
   return (
     <header className="flex items-center justify-between p-2 border-b bg-card">
       <div className="flex items-center gap-3">
-        <Image 
-            src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png" 
-            alt="Club Logo" 
-            width={40} 
-            height={40} 
-            className="rounded-sm"
-        />
+        <Link href="/" aria-label="Retour à l'accueil">
+            <Image 
+                src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png" 
+                alt="Club Logo" 
+                width={40} 
+                height={40} 
+                className="rounded-sm"
+            />
+        </Link>
       </div>
       <div className="flex items-center gap-2">
       {children}
@@ -71,6 +73,12 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+               <Link href="/">
+                  <Home className="mr-2 h-4 w-4" />
+                  <span>Accueil</span>
+                </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
                <Link href="/admin/players">
                   <Users className="mr-2 h-4 w-4" />
