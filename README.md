@@ -36,8 +36,7 @@ L'application est construite sur un socle de technologies modernes, choisies pou
 -   **Notifications Push** : **OneSignal**
     -   Un service tiers qui gère de manière fiable la collecte des abonnés aux notifications et la livraison des messages push sur les navigateurs web (desktop et mobile).
     -   L'intégration se fait via le package `react-onesignal` côté client et une API REST côté serveur.
-
--   **Orchestration de la Logique Backend** : **Google AI Genkit**
+- 
     -   Bien que le nom suggère une IA, nous utilisons Genkit comme un "orchestrateur" de tâches backend sécurisées.
     -   Un **Flow Genkit** (`send-onesignal-notification`) est défini côté serveur. Il contient la logique pour appeler l'API de OneSignal avec la clé secrète (REST API Key).
-    -   Cela permet de ne jamais exposer les clés secrètes côté client, renforçant ainsi la sécurité de l'application. Le composant `Scoreboard` appelle ce flow lorsqu'un but est marqué.
+    -   Cela permet de ne jamais exposer les clés secrètes côté client, renforçant ainsi la sécurité de l'application. Le composant `Scoreboard` appelle ce flow lorsqu'un but est marqué.z
