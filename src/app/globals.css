@@ -8,25 +8,25 @@ body {
 
 @layer base {
   :root {
-    --background: 212 96% 8%; /* #01182a */
-    --foreground: 210 40% 98%;
-    --card: 212 90% 12%;
-    --card-foreground: 210 40% 98%;
-    --popover: 212 96% 8%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 358 98% 65%; /* #fd5156 */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 358 98% 55%; /* Adjusted for better contrast on light bg */
     --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 25%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 358 98% 75%;
-    --accent-foreground: 210 40% 9.8%;
-    --destructive: 0 63% 31%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 358 98% 65%; /* Keeping accent vibrant */
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 20%;
-    --input: 217 33% 25%;
-    --ring: 358 98% 70%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 358 98% 60%;
     --radius: 0.5rem;
   }
 
@@ -63,10 +63,18 @@ body {
 
   .main-bg {
     background-color: hsl(var(--background));
+    /* Dark mode grid */
     background-image: 
       linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
     background-size: 20px 20px;
     position: relative;
+  }
+
+  .light .main-bg {
+     /* Light mode grid */
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
   }
 }

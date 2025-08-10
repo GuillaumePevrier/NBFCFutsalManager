@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -66,6 +67,7 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
       </div>
       <div className="flex items-center gap-2">
       {children}
+      <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon">

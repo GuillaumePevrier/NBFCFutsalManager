@@ -4,6 +4,7 @@
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import OneSignalProvider from '@/components/OneSignalProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="fr" className="dark">
+    <html lang="fr" suppressHydrationWarning>
       <head>
         <title>NBFC Futsal Manager</title>
         <meta name="description" content="Application de gestion de tactique et de match pour le NBFC Futsal." />
@@ -34,9 +35,16 @@ export default function RootLayout({
 
       </head>
       <body className="font-body antialiased min-h-screen">
-        <OneSignalProvider />
-        {children}
-        <Toaster />
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+        >
+          <OneSignalProvider />
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
