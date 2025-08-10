@@ -2,7 +2,7 @@
 import { getPlayerById } from '@/app/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Footprints, Shield, Star, Target, Zap } from 'lucide-react';
+import { ArrowLeft, Shield, Star, Target } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
@@ -13,12 +13,12 @@ interface StatRowProps {
     icon: React.ElementType;
     label: string;
     value: string | number;
-    barValue?: number; // Value from 0 to 100 for the stat bar
+    barValue?: number;
     barColorClass: string;
 }
 
-const StatRow = ({ icon: Icon, label, value, barValue, barColorClass }: StatRowProps) => (
-  <div className="flex items-center gap-4 text-white">
+const StatRow = ({ icon: Icon, label, value }: StatRowProps) => (
+  <div className="flex items-center gap-4 text-card-foreground">
     <Icon className="w-5 h-5 text-primary" />
     <span className="font-semibold text-sm flex-1">{label}</span>
     <span className="text-xl font-bold">{value}</span>
@@ -58,13 +58,13 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                             <AvatarFallback className="text-5xl bg-primary text-primary-foreground">{fallbackInitials}</AvatarFallback>
                         </Avatar>
                         <div className="text-center">
-                            <h1 className="text-3xl font-bold text-white tracking-tight">{player.name}</h1>
+                            <h1 className="text-3xl font-bold text-card-foreground tracking-tight">{player.name}</h1>
                             <p className="text-lg font-semibold text-primary">{player.position || 'Non spécifié'}</p>
                         </div>
                     </div>
                 </div>
                 <CardContent className="p-6 space-y-5">
-                    <div className="flex justify-around text-center text-white">
+                    <div className="flex justify-around text-center text-card-foreground">
                         <div>
                             <p className="text-sm text-muted-foreground">Équipe</p>
                             <p className="font-bold text-lg">{player.team}</p>
