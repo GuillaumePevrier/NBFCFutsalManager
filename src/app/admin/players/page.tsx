@@ -10,7 +10,7 @@ import Link from "next/link";
 import { getPlayers } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlayerActions } from "./player-actions";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import type { Player, Role } from "@/lib/types";
 import Header from "@/components/Header";
 import CoachAuthDialog from '@/components/CoachAuthDialog';
