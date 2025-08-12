@@ -54,7 +54,7 @@ COMMENT ON COLUMN public.opponents.goals_against IS 'Total goals conceded agains
 
 -- =================================================================
 -- 3. ENABLING ROW LEVEL SECURITY (RLS)
--- This is a crucial security step.
+-- This is a crucial security step
 -- =================================================================
 ALTER TABLE public.opponents ENABLE ROW LEVEL SECURITY;
 
@@ -82,5 +82,5 @@ USING (auth.role() = 'authenticated')
 WITH CHECK (auth.role() = 'authenticated');
 
 -- =================================================================
--- Script End. You can now manage opponents in your application.
+-- Script End. You can now manage opponents in your application
 -- =================================================================
