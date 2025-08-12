@@ -1,30 +1,61 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, MoreHorizontal, Users, ArrowLeft, View } from "lucide-react";
+import { PlusCircle, ArrowLeft, View, Users } from "lucide-react";
 import Link from "next/link";
 import { getPlayers } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlayerActions } from "./player-actions";
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import type { Player } from "@/lib/types";
+import type { Player, Role } from "@/lib/types";
 import Header from "@/components/Header";
+import CoachAuthDialog from '@/components/CoachAuthDialog';
 
-
-export default async function PlayersAdminPage() {
+export default function PlayersAdminPage() {
+    const [players, setPlayers] = useState<Player[]>([]);
+    const [role, setRole] = useState<Role>('player');
+    const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
     const supabase = createClient();
-    const { data: { session }} = await supabase.auth.getSession();
-    const isCoach = !!session;
 
-    const players = await getPlayers();
+    useEffect(() => {
+        const fetchPlayers = async () => {
+            const data = await getPlayers();
+            setPlayers(data);
+        };
+        fetchPlayers();
+    }, []);
 
+    useEffect(() => {
+        const checkRole = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setRole(session ? 'coach' : 'player');
+        };
+        checkRole();
+
+        const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+            setRole(session ? 'coach' : 'player');
+        });
+
+        return () => {
+            authListener?.subscription.unsubscribe();
+        };
+    }, [supabase.auth]);
+
+    const onCoachLogin = () => {
+        setRole('coach');
+        setIsCoachAuthOpen(false);
+    }
+    
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    const isCoach = role === 'coach';
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
-            <Header>
+            <Header onCoachClick={() => setIsCoachAuthOpen(true)}>
                 <Button asChild variant="outline" size="sm">
                    <Link href="/" className="flex items-center">
                      <ArrowLeft className="mr-2 h-4 w-4" />
@@ -32,6 +63,7 @@ export default async function PlayersAdminPage() {
                    </Link>
                  </Button>
             </Header>
+            <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
             <main className="flex-grow p-4 md:p-8 main-bg">
                 <div className="w-full max-w-5xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
