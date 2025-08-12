@@ -1,11 +1,11 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import type { Player } from '@/lib/types';
+import type { Player, Opponent } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-// Match related actions (no changes)
+// Match related actions
 
 export async function deleteMatch(matchId: string): Promise<{ success: boolean, error?: any }> {
     const supabase = createClient();
@@ -36,6 +36,8 @@ const PlayerSchema = z.object({
   position: z.enum(['Gardien', 'Défenseur', 'Ailier', 'Pivot', '']).optional(),
   preferred_foot: z.enum(['Droit', 'Gauche', 'Ambidextre', '']).optional(),
   avatar_url: z.string().url("L'URL de l'avatar n'est pas valide.").optional().or(z.literal('')),
+  player_number: z.coerce.number().optional(),
+  status: z.enum(['Actif', 'Blessé', 'Suspendu', 'Inactif']).optional(),
 });
 
 
@@ -191,4 +193,130 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
     revalidatePath('/admin/players');
 
     return { success: true };
+}
+
+
+// Opponent related actions
+
+const OpponentSchema = z.object({
+  id: z.string().optional(),
+  team_name: z.string().min(3, "Le nom de l'équipe doit contenir au moins 3 caractères."),
+  club_name: z.string().optional(),
+  logo_url: z.string().url("L'URL du logo n'est pas valide.").optional().or(z.literal('')),
+  championship: z.string().optional(),
+  coach_name: z.string().optional(),
+  coach_email: z.string().email("L'email du coach n'est pas valide.").optional().or(z.literal('')),
+  coach_phone: z.string().optional(),
+  address: z.string().optional(),
+});
+
+
+export async function getOpponents(): Promise<Opponent[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('opponents')
+    .select('*')
+    .order('team_name', { ascending: true });
+    
+  if (error) {
+    console.error("Failed to fetch opponents:", error);
+    return [];
+  }
+  return data as Opponent[];
+}
+
+export async function getOpponentById(opponentId: string): Promise<Opponent | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('opponents')
+      .select('*')
+      .eq('id', opponentId)
+      .single();
+      
+    if (error) {
+        console.error(`Failed to fetch opponent ${opponentId}:`, error);
+        return null;
+    }
+    return data;
+}
+
+export async function createOpponent(previousState: any, formData: FormData) {
+  const supabase = createClient();
+  const values = Object.fromEntries(formData.entries());
+  const validatedFields = OpponentSchema.safeParse(values);
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+  
+  const { id, ...opponentData } = validatedFields.data;
+
+  const { data, error } = await supabase
+    .from('opponents')
+    .insert([opponentData])
+    .select();
+
+  if (error) {
+    console.error("Failed to create opponent:", error);
+    return {
+      error: error.message
+    };
+  }
+
+  revalidatePath('/admin/opponents');
+  return { data };
+}
+
+
+export async function updateOpponent(previousState: any, formData: FormData) {
+  const supabase = createClient();
+  const values = Object.fromEntries(formData.entries());
+  const validatedFields = OpponentSchema.safeParse(values);
+  
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+
+  const { id: opponentId, ...opponentData } = validatedFields.data;
+
+  if (!opponentId) {
+    return { error: "Opponent ID is missing for update." };
+  }
+
+  const { data, error } = await supabase
+    .from('opponents')
+    .update(opponentData)
+    .eq('id', opponentId)
+    .select();
+
+  if (error) {
+     console.error(`Failed to update opponent ${opponentId}:`, error);
+    return {
+      error: error.message
+    };
+  }
+
+  revalidatePath('/admin/opponents');
+  revalidatePath(`/opponent/${opponentId}`);
+  return { data };
+}
+
+
+export async function deleteOpponent(opponentId: string) {
+    const supabase = createClient();
+    const { error } = await supabase
+        .from('opponents')
+        .delete()
+        .eq('id', opponentId);
+
+    if (error) {
+        console.error(`Failed to delete opponent ${opponentId}:`, error);
+        return { error: error.message };
+    }
+
+    revalidatePath('/admin/opponents');
 }

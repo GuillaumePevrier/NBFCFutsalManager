@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Users, Globe, Home } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield } from "lucide-react";
 import Image from "next/image";
 import type { Role } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -85,6 +85,12 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
                <Link href="/admin/players">
                   <Users className="mr-2 h-4 w-4" />
                   <span>Effectif</span>
+                </Link>
+            </DropdownMenuItem>
+             <DropdownMenuItem asChild>
+               <Link href="/admin/opponents">
+                  <Shield className="mr-2 h-4 w-4" />
+                  <span>Équipes adverses</span>
                 </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

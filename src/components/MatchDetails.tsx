@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { MatchDetails as MatchDetailsType } from '@/lib/types';
+import type { MatchDetails as MatchDetailsType, Opponent } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { Button } from './ui/button';
 import { CalendarDays, Clock, MapPin, Users, Info, Save, Swords } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useDebounce } from '@/hooks/use-debounce';
+import { getOpponents } from '@/app/actions';
 
 interface MatchDetailsProps {
   details: MatchDetailsType;
@@ -20,7 +21,16 @@ interface MatchDetailsProps {
 
 export default function MatchDetails({ details, onDetailsChange, isCoach }: MatchDetailsProps) {
   const [currentDetails, setCurrentDetails] = useState<MatchDetailsType>(details);
+  const [opponents, setOpponents] = useState<Opponent[]>([]);
   const debouncedDetails = useDebounce(currentDetails, 500);
+
+  useEffect(() => {
+    const fetchOpponents = async () => {
+      const data = await getOpponents();
+      setOpponents(data);
+    };
+    fetchOpponents();
+  }, []);
 
   // Update internal state if props change from server
   useEffect(() => {
@@ -29,8 +39,6 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
 
   // Effect to call the parent onDetailsChange when debouncedDetails change
   useEffect(() => {
-    // We only call the update if there's an actual change,
-    // and to avoid calling it on initial mount with the same data.
     if (JSON.stringify(debouncedDetails) !== JSON.stringify(details)) {
         onDetailsChange(debouncedDetails);
     }
@@ -41,6 +49,19 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setCurrentDetails(prev => ({ ...prev, [name]: value as any }));
+  };
+  
+  const handleOpponentChange = (opponentId: string) => {
+    const selectedOpponent = opponents.find(o => o.id === opponentId);
+    if (selectedOpponent) {
+      const newDetails = { 
+        ...currentDetails, 
+        opponentId: selectedOpponent.id, 
+        opponent: selectedOpponent.team_name 
+      };
+      setCurrentDetails(newDetails);
+      onDetailsChange(newDetails);
+    }
   };
 
   const handleSelectChange = (value: '20min' | '25min') => {
@@ -95,7 +116,18 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
-          <DetailItem icon={Users} label="Adversaire" value={currentDetails.opponent} name="opponent" placeholder="Nom de l'équipe" isCoach={isCoach} />
+          <DetailItem icon={Users} label="Adversaire" name="opponent" isCoach={isCoach} value={currentDetails.opponent}>
+             <Select onValueChange={handleOpponentChange} value={currentDetails.opponentId} name="opponentId" disabled={!isCoach}>
+                <SelectTrigger className="mt-1 bg-transparent border-0 border-b rounded-none px-0 h-8 focus:ring-0 focus:ring-offset-0 focus:border-primary disabled:opacity-100 disabled:cursor-default">
+                    <SelectValue placeholder="Choisir une équipe..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {opponents.map(o => (
+                       <SelectItem key={o.id} value={o.id}>{o.team_name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </DetailItem>
           <DetailItem icon={CalendarDays} label="Date" value={currentDetails.date} name="date" placeholder="JJ/MM/AAAA" isCoach={isCoach} />
           <DetailItem icon={Clock} label="Heure" value={currentDetails.time} name="time" placeholder="HH:MM" isCoach={isCoach} />
           <DetailItem icon={MapPin} label="Lieu" value={currentDetails.location} name="location" placeholder="Adresse du match" isCoach={isCoach} />
@@ -120,5 +152,3 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
     </Card>
   );
 }
-
-    

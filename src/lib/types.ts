@@ -9,6 +9,8 @@ export interface Player {
   preferred_foot?: 'Droit' | 'Gauche' | 'Ambidextre' | '';
   goals?: number;
   fouls?: number;
+  player_number?: number;
+  status?: 'Actif' | 'Blessé' | 'Suspendu' | 'Inactif';
 }
 
 export interface PlayerPosition extends Player {
@@ -21,6 +23,7 @@ export type Role = 'coach' | 'player';
 
 export interface MatchDetails {
   opponent: string;
+  opponentId?: string; // uuid of the opponent from the opponents table
   date: string;
   time: string;
   location: string;
@@ -51,6 +54,13 @@ export interface Match {
 
 export interface Opponent {
     id: string; // uuid
-    name: string;
+    team_name: string;
+    club_name?: string;
     logo_url?: string;
+    championship?: string;
+    coach_name?: string;
+    coach_email?: string;
+    coach_phone?: string;
+    address?: string;
+    created_at: string;
 }

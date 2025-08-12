@@ -1,6 +1,6 @@
 -- =================================================================
 -- 1. CLEANUP: Drop the old "opponents" table if it exists
--- This ensures we start with a clean slate.
+-- This ensures we start with aa clean slate.
 -- =================================================================
 DROP TABLE IF EXISTS public.opponents;
 
