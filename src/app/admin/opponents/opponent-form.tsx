@@ -13,6 +13,7 @@ import { createOpponent, updateOpponent } from "@/app/actions";
 import { useRouter } from "next/navigation";
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function OpponentForm({ opponent }: { opponent?: Opponent }) {
     const isEditing = !!opponent;
@@ -75,7 +76,17 @@ export function OpponentForm({ opponent }: { opponent?: Opponent }) {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="championship">Championnat / Compétition</Label>
-                            <Input id="championship" name="championship" defaultValue={opponent?.championship} />
+                            <Select name="championship" defaultValue={opponent?.championship}>
+                                <SelectTrigger id="championship">
+                                    <SelectValue placeholder="Sélectionner le championnat" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="D2 Nationale">D2 Nationale</SelectItem>
+                                    <SelectItem value="Régionale 1">Régionale 1</SelectItem>
+                                    <SelectItem value="District 1">District 1</SelectItem>
+                                    <SelectItem value="District 2">District 2</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div className="space-y-2">
