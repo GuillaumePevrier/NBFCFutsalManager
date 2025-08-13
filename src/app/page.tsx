@@ -1,31 +1,28 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import CoachAuthDialog from '@/components/CoachAuthDialog';
+import { useState } from 'react';
 import type { Role } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { Trophy, Users, Shield, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { generateCardImage } from './ai-actions';
-import { Skeleton } from '@/components/ui/skeleton';
+import CoachAuthDialog from '@/components/CoachAuthDialog';
 
 const MotionCard = motion(Card);
 
 interface NavCardProps {
   title: string;
-  image: string | null;
+  imageUrl: string;
   href: string;
   rotation: number;
   translationX: number;
-  isLoading: boolean;
 }
 
-const NavCard = ({ title, image, href, rotation, translationX, isLoading }: NavCardProps) => {
+const NavCard = ({ title, imageUrl, href, rotation, translationX }: NavCardProps) => {
   const router = useRouter();
   
   return (
@@ -42,14 +39,8 @@ const NavCard = ({ title, image, href, rotation, translationX, isLoading }: NavC
       className="absolute w-52 h-64 bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-md border-2 border-primary/20 shadow-2xl rounded-2xl cursor-grab overflow-hidden"
     >
       <CardContent className="flex flex-col h-full text-center p-0">
-        <div className="flex-grow flex items-center justify-center bg-black/10">
-            {isLoading ? (
-              <Skeleton className="w-full h-full" />
-            ) : image ? (
-              <Image src={image} alt={`Illustration pour ${title}`} width={208} height={160} className="object-cover w-full h-full"/>
-            ) : (
-              <Shield className="w-16 h-16 text-primary/50 drop-shadow-lg" />
-            )}
+        <div className="flex-grow flex items-center justify-center bg-black/10 relative">
+            <Image src={imageUrl} alt={`Illustration pour ${title}`} fill className="object-cover"/>
         </div>
         <Separator className="bg-primary/20" />
         <div className="p-4 bg-black/20">
@@ -66,57 +57,19 @@ const NavCard = ({ title, image, href, rotation, translationX, isLoading }: NavC
 export default function Home() {
   const [role, setRole] = useState<Role>('player');
   const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
-  const [cardImages, setCardImages] = useState<(string | null)[]>([null, null, null]);
-  const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
   
-  useEffect(() => {
-    const checkRole = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        setRole(session ? 'coach' : 'player');
-    };
-    checkRole();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-        setRole(session ? 'coach' : 'player');
-    });
-
-    return () => {
-        authListener?.subscription.unsubscribe();
-    };
-  }, [supabase.auth]);
-
-  useEffect(() => {
-    const fetchImages = async () => {
-      setIsLoading(true);
-      try {
-        const prompts = [
-          "A dynamic manga-style illustration of a futsal match in full action, with a player about to score a goal.",
-          "A manga-style illustration of a diverse group of determined futsal players, ready for the match.",
-          "A manga-style illustration of two futsal teams facing off, with their shields and logos in the background, showing rivalry and sportsmanship."
-        ];
-        const imagePromises = prompts.map(prompt => generateCardImage({ prompt }));
-        const images = await Promise.all(imagePromises);
-        setCardImages(images.map(result => result.imageUrl || null));
-      } catch (error) {
-        console.error("Failed to generate card images:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchImages();
-  }, []);
+  const cardData = [
+    { id: 1, title: 'Matchs', href: '/matches', rotation: -15, translationX: -120, imageUrl: 'https://placehold.co/208x160.png' },
+    { id: 2, title: 'Effectif', href: '/admin/players', rotation: 0, translationX: 0, imageUrl: 'https://placehold.co/208x160.png' },
+    { id: 3, title: 'Adversaires', href: '/admin/opponents', rotation: 15, translationX: 120, imageUrl: 'https://placehold.co/208x160.png' },
+  ];
 
   const onCoachLogin = () => {
     setRole('coach');
     setIsCoachAuthOpen(false);
   }
 
-  const cardData = [
-    { id: 1, title: 'Matchs', href: '/matches', rotation: -15, translationX: -120 },
-    { id: 2, title: 'Effectif', href: '/admin/players', rotation: 0, translationX: 0 },
-    { id: 3, title: 'Adversaires', href: '/admin/opponents', rotation: 15, translationX: 120 },
-  ];
 
   return (
     <div className="flex flex-col min-h-screen text-foreground">
@@ -152,12 +105,10 @@ export default function Home() {
 
         {/* Interactive Card Deck */}
         <div className="relative w-full h-80 flex items-center justify-center mb-8">
-            {cardData.map((card, index) => (
+            {cardData.map((card) => (
               <NavCard 
                 key={card.id} 
                 {...card} 
-                image={cardImages[index]} 
-                isLoading={isLoading} 
               />
             ))}
         </div>
