@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Trophy, Users, Shield, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Separator } from '@/components/ui/separator';
 
 const MotionCard = motion(Card);
 
@@ -28,20 +29,25 @@ const NavCard = ({ title, icon: Icon, href, rotation, translationX }: NavCardPro
     <MotionCard
       drag
       dragConstraints={{ left: -100, right: 100, top: -50, bottom: 50 }}
-      dragElastic={0.1}
-      whileHover={{ scale: 1.1, zIndex: 10 }}
+      dragElastic={0.2}
+      whileHover={{ scale: 1.1, zIndex: 10, rotate: rotation + (Math.random() - 0.5) * 5 }}
       whileTap={{ scale: 0.95, cursor: 'grabbing' }}
-      initial={{ rotate: rotation, x: translationX, y: 20 }}
-      animate={{ rotate: rotation, x: translationX, y: 0 }}
+      initial={{ rotate: rotation, x: translationX, y: 20, opacity: 0 }}
+      animate={{ rotate: rotation, x: translationX, y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 100, damping: 10 }}
       onClick={() => router.push(href)}
-      className="absolute w-52 h-64 bg-card/80 backdrop-blur-md border-2 border-primary/20 shadow-2xl rounded-2xl cursor-grab overflow-hidden"
+      className="absolute w-52 h-64 bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-md border-2 border-primary/20 shadow-2xl rounded-2xl cursor-grab overflow-hidden"
     >
-      <CardContent className="flex flex-col items-center justify-center h-full text-center p-4">
-        <Icon className="w-16 h-16 text-primary mb-4" />
-        <h3 className="text-xl font-bold text-card-foreground">{title}</h3>
-        <div className="flex items-center text-sm text-primary mt-auto">
-          Accéder <ArrowRight className="w-4 h-4 ml-1" />
+      <CardContent className="flex flex-col h-full text-center p-0">
+        <div className="flex-grow flex items-center justify-center">
+            <Icon className="w-16 h-16 text-primary drop-shadow-lg" />
+        </div>
+        <Separator className="bg-primary/20" />
+        <div className="p-4 bg-black/20">
+            <h3 className="text-xl font-bold text-card-foreground">{title}</h3>
+            <div className="flex items-center justify-center text-sm text-primary mt-2">
+            Accéder <ArrowRight className="w-4 h-4 ml-1" />
+            </div>
         </div>
       </CardContent>
     </MotionCard>
