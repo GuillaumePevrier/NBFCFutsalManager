@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Header from '@/components/Header';
 import CoachAuthDialog from '@/components/CoachAuthDialog';
 import type { Role } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
@@ -11,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Trophy, Users, Shield, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
 
 const MotionCard = motion(Card);
 
@@ -82,17 +82,16 @@ export default function Home() {
   }
 
   const cards = [
-    { id: 1, title: 'Matchs', icon: Trophy, href: '/matches', rotation: -10, translationX: -80 },
+    { id: 1, title: 'Matchs', icon: Trophy, href: '/matches', rotation: -10, translationX: -100 },
     { id: 2, title: 'Effectif', icon: Users, href: '/admin/players', rotation: 0, translationX: 0 },
-    { id: 3, title: 'Adversaires', icon: Shield, href: '/admin/opponents', rotation: 10, translationX: 80 },
+    { id: 3, title: 'Adversaires', icon: Shield, href: '/admin/opponents', rotation: 10, translationX: 100 },
   ];
 
   return (
     <div className="flex flex-col min-h-screen text-foreground">
-      <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       
-      <main className="flex-grow flex flex-col items-center justify-end relative pb-24">
+      <main className="flex-grow flex flex-col items-center justify-between relative p-4">
         {/* Background Video */}
         <div className="absolute inset-0 w-full h-full -z-10">
           <video 
@@ -109,8 +108,20 @@ export default function Home() {
           <div className="absolute inset-0 bg-black/50" />
         </div>
         
+        {/* Logo */}
+        <div className="flex-shrink-0 pt-8">
+            <Image
+                src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png"
+                alt="Logo du club NBFC Futsal"
+                width={128}
+                height={128}
+                className="w-24 h-24 md:w-32 md:h-32 drop-shadow-2xl"
+                priority
+            />
+        </div>
+
         {/* Interactive Card Deck */}
-        <div className="relative w-full h-72 flex items-center justify-center">
+        <div className="relative w-full h-72 flex items-center justify-center mb-16">
             {cards.map(card => (
               <NavCard key={card.id} {...card} />
             ))}
