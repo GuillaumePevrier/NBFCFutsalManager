@@ -20,8 +20,7 @@ export async function deleteMatch(matchId: string): Promise<{ success: boolean, 
         return { success: false, error };
     }
 
-    revalidatePath('/');
-    revalidatePath('/match');
+    revalidatePath('/matches');
 
     return { success: true };
 }

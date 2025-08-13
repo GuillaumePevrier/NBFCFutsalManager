@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -11,7 +10,7 @@ import Header from '@/components/Header';
 import MatchDetails from '@/components/MatchDetails';
 import Scoreboard from '@/components/Scoreboard';
 import { useRouter, useParams } from 'next/navigation';
-import { Home } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
@@ -81,8 +80,8 @@ export default function MatchPage() {
 
       if (error || !data) {
         console.error("Failed to fetch match from Supabase", error);
-        toast({ title: "Match non trouvé", description: "Redirection vers la page d'accueil.", variant: "destructive" });
-        router.push('/');
+        toast({ title: "Match non trouvé", description: "Redirection vers la liste des matchs.", variant: "destructive" });
+        router.push('/matches');
       } else {
         setMatch(data as Match);
       }
@@ -268,7 +267,7 @@ export default function MatchPage() {
         updateMatchData(match); 
     }
     
-  }, [draggingPlayer, match, updateMatchData, handlePlayerClick]);
+  }, [draggingPlayer, match, updateMatchData, router]);
 
   useEffect(() => {
     if (draggingPlayer) {
@@ -354,9 +353,9 @@ export default function MatchPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
        <Header onCoachClick={() => setIsCoachAuthOpen(true)}>
-            <Button variant="outline" size="sm" onClick={() => router.push('/')}>
-                <Home className="mr-2 h-4 w-4"/>
-                <span className="hidden sm:inline">Retour</span>
+            <Button variant="outline" size="sm" onClick={() => router.push('/matches')}>
+                <Trophy className="mr-2 h-4 w-4"/>
+                <span className="hidden sm:inline">Retour aux matchs</span>
             </Button>
        </Header>
        <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
