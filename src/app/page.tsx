@@ -11,24 +11,27 @@ import { Trophy, Users, Shield, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
+import { generateCardImage } from './ai-actions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MotionCard = motion(Card);
 
 interface NavCardProps {
   title: string;
-  icon: React.ElementType;
+  image: string | null;
   href: string;
   rotation: number;
   translationX: number;
+  isLoading: boolean;
 }
 
-const NavCard = ({ title, icon: Icon, href, rotation, translationX }: NavCardProps) => {
+const NavCard = ({ title, image, href, rotation, translationX, isLoading }: NavCardProps) => {
   const router = useRouter();
   
   return (
     <MotionCard
       drag
-      dragConstraints={{ left: -100, right: 100, top: -50, bottom: 50 }}
+      dragConstraints={{ left: -150, right: 150, top: -50, bottom: 50 }}
       dragElastic={0.2}
       whileHover={{ scale: 1.1, zIndex: 10, rotate: rotation + (Math.random() - 0.5) * 5 }}
       whileTap={{ scale: 0.95, cursor: 'grabbing' }}
@@ -39,8 +42,14 @@ const NavCard = ({ title, icon: Icon, href, rotation, translationX }: NavCardPro
       className="absolute w-52 h-64 bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-md border-2 border-primary/20 shadow-2xl rounded-2xl cursor-grab overflow-hidden"
     >
       <CardContent className="flex flex-col h-full text-center p-0">
-        <div className="flex-grow flex items-center justify-center">
-            <Icon className="w-16 h-16 text-primary drop-shadow-lg" />
+        <div className="flex-grow flex items-center justify-center bg-black/10">
+            {isLoading ? (
+              <Skeleton className="w-full h-full" />
+            ) : image ? (
+              <Image src={image} alt={`Illustration pour ${title}`} width={208} height={160} className="object-cover w-full h-full"/>
+            ) : (
+              <Shield className="w-16 h-16 text-primary/50 drop-shadow-lg" />
+            )}
         </div>
         <Separator className="bg-primary/20" />
         <div className="p-4 bg-black/20">
@@ -54,10 +63,11 @@ const NavCard = ({ title, icon: Icon, href, rotation, translationX }: NavCardPro
   );
 };
 
-
 export default function Home() {
   const [role, setRole] = useState<Role>('player');
   const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+  const [cardImages, setCardImages] = useState<(string | null)[]>([null, null, null]);
+  const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
   
   useEffect(() => {
@@ -76,24 +86,41 @@ export default function Home() {
     };
   }, [supabase.auth]);
 
+  useEffect(() => {
+    const fetchImages = async () => {
+      setIsLoading(true);
+      try {
+        const prompts = [
+          "A dynamic manga-style illustration of a futsal match in full action, with a player about to score a goal.",
+          "A manga-style illustration of a diverse group of determined futsal players, ready for the match.",
+          "A manga-style illustration of two futsal teams facing off, with their shields and logos in the background, showing rivalry and sportsmanship."
+        ];
+        const imagePromises = prompts.map(prompt => generateCardImage({ prompt }));
+        const images = await Promise.all(imagePromises);
+        setCardImages(images.map(result => result.imageUrl || null));
+      } catch (error) {
+        console.error("Failed to generate card images:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchImages();
+  }, []);
+
   const onCoachLogin = () => {
     setRole('coach');
     setIsCoachAuthOpen(false);
   }
 
-  const cards = [
-    { id: 1, title: 'Matchs', icon: Trophy, href: '/matches', rotation: -10, translationX: -100 },
-    { id: 2, title: 'Effectif', icon: Users, href: '/admin/players', rotation: 0, translationX: 0 },
-    { id: 3, title: 'Adversaires', icon: Shield, href: '/admin/opponents', rotation: 10, translationX: 100 },
+  const cardData = [
+    { id: 1, title: 'Matchs', href: '/matches', rotation: -15, translationX: -120 },
+    { id: 2, title: 'Effectif', href: '/admin/players', rotation: 0, translationX: 0 },
+    { id: 3, title: 'Adversaires', href: '/admin/opponents', rotation: 15, translationX: 120 },
   ];
 
   return (
     <div className="flex flex-col min-h-screen text-foreground">
-      <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
-      
-      <main className="flex-grow flex flex-col items-center justify-between relative p-4">
-        {/* Background Video */}
-        <div className="absolute inset-0 w-full h-full -z-10">
+       <div className="absolute inset-0 w-full h-full -z-10">
           <video 
             autoPlay 
             loop 
@@ -107,7 +134,10 @@ export default function Home() {
           {/* Overlay */}
           <div className="absolute inset-0 bg-black/50" />
         </div>
-        
+
+      <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
+      
+      <main className="flex-grow flex flex-col items-center justify-between relative p-4">
         {/* Logo */}
         <div className="flex-shrink-0 pt-8">
             <Image
@@ -121,9 +151,14 @@ export default function Home() {
         </div>
 
         {/* Interactive Card Deck */}
-        <div className="relative w-full h-72 flex items-center justify-center mb-16">
-            {cards.map(card => (
-              <NavCard key={card.id} {...card} />
+        <div className="relative w-full h-80 flex items-center justify-center mb-8">
+            {cardData.map((card, index) => (
+              <NavCard 
+                key={card.id} 
+                {...card} 
+                image={cardImages[index]} 
+                isLoading={isLoading} 
+              />
             ))}
         </div>
       </main>
