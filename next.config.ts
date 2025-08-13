@@ -34,6 +34,14 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'futsal.noyalbrecefc.com',
+        port: '',
+        pathname: '/**',
+      },
+  ]
 };
 
 export default pwaConfig(nextConfig);
