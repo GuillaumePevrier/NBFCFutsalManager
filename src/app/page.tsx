@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -42,28 +43,28 @@ export default function Home() {
       <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       
-      <main className="flex-grow flex flex-col items-center justify-center p-4 md:p-8 main-bg">
+       <main className="flex-grow flex flex-col items-center justify-center p-4 md:p-8 relative">
+        <div className="fixed inset-0 w-full h-full -z-10">
+          <video 
+            autoPlay 
+            loop 
+            muted 
+            playsInline 
+            className="w-full h-full object-cover"
+            src="https://futsal.noyalbrecefc.com/wp-content/uploads/2025/07/telechargement-1.mp4"
+          >
+            Votre navigateur ne supporte pas la vidéo.
+          </video>
+          <div className="absolute inset-0 bg-black/60"></div>
+        </div>
         
-        <div className="w-full max-w-4xl mx-auto text-center">
+        <div className="w-full max-w-4xl mx-auto text-center z-10">
             <h1 className="text-4xl md:text-6xl font-bold mb-4 text-foreground">
                 Bienvenue sur <span className="text-primary">NBFC Futsal Manager</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8">
                 Votre outil tout-en-un pour la gestion tactique et le suivi des matchs.
             </p>
-
-             <div className="my-8 rounded-lg overflow-hidden shadow-2xl border border-border">
-              <video 
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
-                className="w-full h-full object-cover"
-                src="https://futsal.noyalbrecefc.com/wp-content/uploads/2025/07/telechargement-1.mp4"
-              >
-                Votre navigateur ne supporte pas la vidéo.
-              </video>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="bg-card/80 backdrop-blur-sm border-border text-foreground hover:border-primary transition-colors">
