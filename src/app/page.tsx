@@ -82,7 +82,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-foreground">
+    <div className="flex flex-col min-h-screen text-foreground">
       <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       
