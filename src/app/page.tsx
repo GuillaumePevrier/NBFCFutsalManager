@@ -21,9 +21,9 @@ interface NavCardData {
 }
 
 const initialCardData: NavCardData[] = [
-  { id: 1, title: 'Matchs', href: '/matches', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal goal celebration' },
-  { id: 2, title: 'Effectif', href: '/admin/players', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal team huddle' },
-  { id: 3, title: 'Adversaires', href: '/admin/opponents', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal defensive wall' },
+  { id: 1, title: 'Effectif', href: '/admin/players', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal team huddle' },
+  { id: 2, title: 'Adversaires', href: '/admin/opponents', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal defensive wall' },
+  { id: 3, title: 'Matchs', href: '/matches', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal goal celebration' },
   { id: 4, title: 'Statistiques', href: '/stats', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'sports statistics chart' },
   { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal club logo', target: '_blank' },
 ];
@@ -31,7 +31,7 @@ const initialCardData: NavCardData[] = [
 
 export default function Home() {
   const router = useRouter();
-  const [activeIndex, setActiveIndex] = useState(2); // Start with the 3rd card (index 2) in center
+  const [activeIndex, setActiveIndex] = useState(2); // Start with the 3rd card (index 2) -> "Matchs"
 
   const handleCardClick = (card: NavCardData) => {
     if (card.target === '_blank') {
@@ -46,10 +46,10 @@ export default function Home() {
     // Using velocity and offset to determine swipe strength and direction
     const swipePower = Math.abs(info.offset.x) * info.velocity.x;
 
-    if (swipePower < -swipeThreshold) {
+    if (info.offset.x < -swipeThreshold || swipePower < -1000) {
       // Swipe left
       setActiveIndex(prev => Math.min(initialCardData.length - 1, prev + 1));
-    } else if (swipePower > swipeThreshold) {
+    } else if (info.offset.x > swipeThreshold || swipePower > 1000) {
       // Swipe right
       setActiveIndex(prev => Math.max(0, prev - 1));
     }
@@ -77,7 +77,7 @@ export default function Home() {
                 alt="Logo du club NBFC Futsal"
                 width={160}
                 height={160}
-                className="w-32 h-32 md:w-40 md:h-40 drop-shadow-2xl"
+                className="w-40 h-40 md:w-48 md:h-48 drop-shadow-2xl"
                 priority
             />
         </div>
@@ -116,9 +116,10 @@ export default function Home() {
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
                             animate={{
-                                x: offset * 80,
-                                scale: 1 - Math.abs(offset) * 0.2,
-                                rotateY: offset * -25,
+                                x: offset * 110, // Increased spacing
+                                y: Math.abs(offset) * 20, // Creates more of a fan/arc
+                                scale: 1 - Math.abs(offset) * 0.15,
+                                rotateY: offset * -15,
                                 zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
