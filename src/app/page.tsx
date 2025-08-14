@@ -76,16 +76,16 @@ export default function Home() {
             <Image
                 src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png"
                 alt="Logo du club NBFC Futsal"
-                width={128}
-                height={128}
-                className="w-24 h-24 md:w-32 md:h-32 drop-shadow-2xl"
+                width={160}
+                height={160}
+                className="w-32 h-32 md:w-40 md:h-40 drop-shadow-2xl"
                 priority
             />
         </div>
       
       <main className="flex-grow flex flex-col items-center justify-end relative pb-8 md:pb-12">
          <motion.div 
-            className="relative w-full h-[320px] md:h-[400px] flex items-center justify-center"
+            className="relative w-full h-[280px] md:h-[320px] flex items-center justify-center md:mt-8"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
