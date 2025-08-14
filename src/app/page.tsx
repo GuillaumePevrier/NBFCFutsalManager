@@ -44,6 +44,7 @@ export default function Home() {
 
   const handleDragEnd = (event: any, info: any) => {
     const swipeThreshold = 50;
+    // Using velocity and offset to determine swipe strength and direction
     const swipePower = Math.abs(info.offset.x) * info.velocity.x;
 
     if (swipePower < -swipeThreshold) {
@@ -108,16 +109,16 @@ export default function Home() {
                         <motion.div
                             key={card.id}
                             className="absolute"
-                            initial={{
+                            initial={{ // Initial state before animation
                                 x: offset * 80,
-                                scale: isActive ? 1 : 0.8,
-                                rotateY: offset * -20,
+                                scale: 1 - Math.abs(offset) * 0.15,
+                                rotateY: offset * -25,
                                 zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
-                            animate={{
+                            animate={{ // Target state for the animation
                                 x: offset * 80,
-                                scale: isActive ? 1 : 0.85,
+                                scale: 1 - Math.abs(offset) * 0.15,
                                 rotateY: offset * -25,
                                 zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
