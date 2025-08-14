@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, ChevronsLeftRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -24,7 +24,7 @@ interface NavCardData {
 const initialCardData: NavCardData[] = [
   { id: 1, title: 'Effectif', href: '/admin/players', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal team huddle' },
   { id: 2, title: 'Adversaires', href: '/admin/opponents', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal defensive wall' },
-  { id: 3, title: 'Matchs', href: '/matches', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal goal celebration' },
+  { id: 3, title: 'Matchs', href: '/matches', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCMatchLive.png', dataAiHint: 'futsal goal celebration' },
   { id: 4, title: 'Statistiques', href: '/stats', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'sports statistics chart' },
   { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal club logo', target: '_blank' },
 ];
@@ -73,8 +73,8 @@ export default function Home() {
             <Image
                 src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png"
                 alt="Logo du club NBFC Futsal"
-                width={160}
-                height={160}
+                width={200}
+                height={200}
                 className="w-40 h-40 md:w-48 md:h-48 drop-shadow-2xl"
                 priority
             />
