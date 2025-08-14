@@ -83,7 +83,7 @@ export default function Home() {
             />
         </div>
       
-      <main className="flex-grow flex flex-col items-center justify-end relative pb-8 md:pb-12">
+      <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12">
          <motion.div 
             className="relative w-full h-[280px] md:h-[320px] flex items-center justify-center md:mt-8"
             drag="x"
