@@ -1,13 +1,14 @@
 
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, ChevronsLeftRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const MotionCard = motion(Card);
 
@@ -31,7 +32,7 @@ const initialCardData: NavCardData[] = [
 
 export default function Home() {
   const router = useRouter();
-  const [activeIndex, setActiveIndex] = useState(2); // Start with the 3rd card (index 2) -> "Matchs"
+  const [activeIndex, setActiveIndex] = useState(2); 
 
   const handleCardClick = (card: NavCardData) => {
     if (card.target === '_blank') {
@@ -43,14 +44,11 @@ export default function Home() {
 
   const handleDragEnd = (event: any, info: any) => {
     const swipeThreshold = 50;
-    // Using velocity and offset to determine swipe strength and direction
     const swipePower = Math.abs(info.offset.x) * info.velocity.x;
 
-    if (info.offset.x < -swipeThreshold || swipePower < -1000) {
-      // Swipe left
+    if (info.offset.x < -swipeThreshold || swipePower < -10000) {
       setActiveIndex(prev => Math.min(initialCardData.length - 1, prev + 1));
-    } else if (info.offset.x > swipeThreshold || swipePower > 1000) {
-      // Swipe right
+    } else if (info.offset.x > swipeThreshold || swipePower > 10000) {
       setActiveIndex(prev => Math.max(0, prev - 1));
     }
   };
@@ -116,8 +114,8 @@ export default function Home() {
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
                             animate={{
-                                x: offset * 110, // Increased spacing
-                                y: Math.abs(offset) * 20, // Creates more of a fan/arc
+                                x: offset * 110,
+                                y: Math.abs(offset) * 20,
                                 scale: 1 - Math.abs(offset) * 0.15,
                                 rotateY: offset * -15,
                                 zIndex: initialCardData.length - Math.abs(offset),
@@ -127,8 +125,6 @@ export default function Home() {
                         >
                             <MotionCard
                                 whileHover={isActive ? { y: -20, scale: 1.05 } : {}}
-                                whileTap={isActive ? { scale: 1.1 } : {}}
-                                onClick={() => isActive && handleCardClick(card)}
                                 className={cn(
                                     "w-[180px] h-[280px] md:w-[220px] md:h-[320px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
                                     isActive ? "cursor-pointer border-primary/50" : "cursor-grab border-blue-500/30",
@@ -140,15 +136,20 @@ export default function Home() {
                                     <div className="flex-grow h-3/5 flex items-center justify-center bg-black/20 relative">
                                         <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className="object-cover opacity-80" data-ai-hint={card.dataAiHint} />
                                     </div>
-                                    <div className="p-4 bg-gradient-to-t from-black/60 to-black/30 flex-grow h-2/5 flex flex-col justify-center">
+                                    <div className="p-4 bg-gradient-to-t from-black/60 to-black/30 flex-grow h-2/5 flex flex-col justify-center items-center">
                                         <h3 className="text-lg md:text-xl font-bold text-card-foreground tracking-wide">{card.title}</h3>
                                         {isActive && (
-                                            <motion.div 
-                                              initial={{ opacity: 0 }}
-                                              animate={{ opacity: 1 }}
-                                              className="flex items-center justify-center text-sm text-primary mt-2 opacity-80 group-hover:opacity-100"
+                                            <motion.div
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                onPointerDown={(e) => e.stopPropagation()} // Empêche le drag en cliquant sur le bouton
+                                                onClick={() => handleCardClick(card)}
+                                                className="mt-2"
                                             >
-                                                Accéder <ArrowRight className="w-4 h-4 ml-1" />
+                                                <Button size="sm" variant="default" className="bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+                                                    Accéder
+                                                    <ArrowRight className="w-4 h-4 ml-2" />
+                                                </Button>
                                             </motion.div>
                                         )}
                                     </div>
