@@ -82,7 +82,7 @@ export default function Home() {
       
       <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12">
          <motion.div 
-            className="relative w-full h-[280px] md:h-[320px] flex items-center justify-center md:mt-8"
+            className="relative w-full h-[320px] md:h-[400px] flex items-center justify-center"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
@@ -142,11 +142,14 @@ export default function Home() {
                                             <motion.div
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
-                                                onPointerDown={(e) => e.stopPropagation()} // Empêche le drag en cliquant sur le bouton
-                                                onClick={() => handleCardClick(card)}
-                                                className="mt-2"
+                                                onPointerDown={(e) => e.stopPropagation()}
                                             >
-                                                <Button size="sm" variant="default" className="bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+                                               <Button 
+                                                 size="sm" 
+                                                 variant="default" 
+                                                 className="mt-2 bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                                                 onClick={() => handleCardClick(card)}
+                                                >
                                                     Accéder
                                                     <ArrowRight className="w-4 h-4 ml-2" />
                                                 </Button>
