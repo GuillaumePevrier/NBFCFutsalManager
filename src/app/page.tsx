@@ -24,7 +24,7 @@ interface NavCardData {
 const initialCardData: NavCardData[] = [
   { id: 1, title: 'Effectif', href: '/admin/players', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal team huddle' },
   { id: 2, title: 'Adversaires', href: '/admin/opponents', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal defensive wall' },
-  { id: 3, title: 'Matchs', href: '/matches', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCMatchLive.png', dataAiHint: 'futsal goal celebration' },
+  { id: 3, title: 'Matchs', href: '/matches', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCMatch.png', dataAiHint: 'futsal goal celebration' },
   { id: 4, title: 'Statistiques', href: '/stats', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'sports statistics chart' },
   { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal club logo', target: '_blank' },
 ];
@@ -134,7 +134,7 @@ export default function Home() {
                             >
                                 <CardContent className="flex flex-col h-full text-center p-0">
                                     <div className="flex-grow h-3/5 flex items-center justify-center bg-black/20 relative">
-                                        <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className="object-cover opacity-80" data-ai-hint={card.dataAiHint} />
+                                        <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className="object-cover object-top opacity-80" data-ai-hint={card.dataAiHint} />
                                     </div>
                                     <div className="p-4 bg-gradient-to-t from-black/60 to-black/30 flex-grow h-2/5 flex flex-col justify-center items-center">
                                         <h3 className="text-lg md:text-xl font-bold text-card-foreground tracking-wide">{card.title}</h3>
