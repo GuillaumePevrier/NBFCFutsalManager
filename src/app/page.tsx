@@ -82,7 +82,7 @@ export default function Home() {
       
       <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12">
          <motion.div 
-            className="relative w-full h-[320px] md:h-[400px] flex items-center justify-center"
+            className="relative w-full h-[400px] md:h-[450px] flex items-center justify-center"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
@@ -136,7 +136,7 @@ export default function Home() {
                                     <div className="flex-grow h-3/5 flex items-center justify-center bg-black/20 relative">
                                         <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className={cn("object-cover opacity-80", card.objectPosition)} data-ai-hint={card.dataAiHint} />
                                     </div>
-                                    <div className="p-4 bg-gradient-to-t from-black/60 to-black/30 flex-grow h-2/5 flex flex-col justify-center items-center">
+                                    <div className="p-4 bg-gradient-to-t from-black/50 to-black/10 flex-grow h-2/5 flex flex-col justify-center items-center">
                                         <h3 className="text-lg md:text-xl font-bold text-card-foreground tracking-wide">{card.title}</h3>
                                         {isActive && (
                                             <motion.div
