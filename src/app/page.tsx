@@ -83,9 +83,9 @@ export default function Home() {
             />
         </div>
       
-      <main className="flex-grow flex flex-col items-center justify-end relative pb-12">
+      <main className="flex-grow flex flex-col items-center justify-end relative pb-8 md:pb-12">
          <motion.div 
-            className="relative w-full h-[400px] flex items-center justify-center"
+            className="relative w-full h-[320px] md:h-[400px] flex items-center justify-center"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
@@ -98,27 +98,27 @@ export default function Home() {
                     const isActive = offset === 0;
 
                     const activeNeonStyle = {
-                      boxShadow: `0 0 5px hsl(var(--primary) / 0.6), 0 0 10px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3), inset 0 0 15px hsl(var(--primary) / 0.3)`
+                      boxShadow: `0 0 5px hsl(var(--primary) / 0.8), 0 0 10px hsl(var(--primary) / 0.6), 0 0 20px hsl(var(--primary) / 0.4), inset 0 0 15px hsl(var(--primary) / 0.4)`
                     };
 
                     const inactiveNeonStyle = {
-                      boxShadow: `0 0 5px hsl(212 96% 48% / 0.5), 0 0 10px hsl(212 96% 48% / 0.4), inset 0 0 10px hsl(212 96% 48% / 0.2)`
+                      boxShadow: `0 0 5px hsl(212 96% 48% / 0.6), 0 0 10px hsl(212 96% 48% / 0.5), inset 0 0 10px hsl(212 96% 48% / 0.3)`
                     };
 
                     return (
                         <motion.div
                             key={card.id}
                             className="absolute"
-                            initial={{ // Initial state before animation
+                            initial={{
                                 x: offset * 80,
-                                scale: 1 - Math.abs(offset) * 0.15,
+                                scale: 1 - Math.abs(offset) * 0.2,
                                 rotateY: offset * -25,
                                 zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
-                            animate={{ // Target state for the animation
+                            animate={{
                                 x: offset * 80,
-                                scale: 1 - Math.abs(offset) * 0.15,
+                                scale: 1 - Math.abs(offset) * 0.2,
                                 rotateY: offset * -25,
                                 zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
@@ -130,7 +130,7 @@ export default function Home() {
                                 whileTap={isActive ? { scale: 1.1 } : {}}
                                 onClick={() => isActive && handleCardClick(card)}
                                 className={cn(
-                                    "w-[220px] h-[320px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                                    "w-[180px] h-[280px] md:w-[220px] md:h-[320px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
                                     isActive ? "cursor-pointer border-primary/50" : "cursor-grab border-blue-500/30",
                                     "hover:shadow-primary/60"
                                 )}
@@ -139,10 +139,10 @@ export default function Home() {
                                 <CardContent className="flex flex-col h-full text-center p-0">
                                     <div className="flex-grow h-3/5 flex items-center justify-center bg-black/20 relative">
                                         <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className="object-cover opacity-80" data-ai-hint={card.dataAiHint} />
-                                        <card.icon className="w-16 h-16 text-white/80 drop-shadow-lg relative" />
+                                        <card.icon className="w-12 h-12 md:w-16 md:h-16 text-white/80 drop-shadow-lg relative" />
                                     </div>
                                     <div className="p-4 bg-gradient-to-t from-black/60 to-black/30 flex-grow h-2/5 flex flex-col justify-center">
-                                        <h3 className="text-xl font-bold text-card-foreground tracking-wide">{card.title}</h3>
+                                        <h3 className="text-lg md:text-xl font-bold text-card-foreground tracking-wide">{card.title}</h3>
                                         {isActive && (
                                             <motion.div 
                                               initial={{ opacity: 0 }}
