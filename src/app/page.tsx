@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, BarChart3, Shield, Users, Trophy, Globe, ChevronsLeftRight } from 'lucide-react';
+import { ArrowRight, ChevronsLeftRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -15,18 +15,17 @@ interface NavCardData {
   id: number;
   title: string;
   href: string;
-  icon: React.ElementType;
   imageUrl: string;
   target?: string;
   dataAiHint: string;
 }
 
 const initialCardData: NavCardData[] = [
-  { id: 1, title: 'Matchs', href: '/matches', icon: Trophy, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal goal celebration' },
-  { id: 2, title: 'Effectif', href: '/admin/players', icon: Users, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal team huddle' },
-  { id: 3, title: 'Adversaires', href: '/admin/opponents', icon: Shield, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal defensive wall' },
-  { id: 4, title: 'Statistiques', href: '/stats', icon: BarChart3, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'sports statistics chart' },
-  { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', icon: Globe, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal club logo', target: '_blank' },
+  { id: 1, title: 'Matchs', href: '/matches', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal goal celebration' },
+  { id: 2, title: 'Effectif', href: '/admin/players', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal team huddle' },
+  { id: 3, title: 'Adversaires', href: '/admin/opponents', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal defensive wall' },
+  { id: 4, title: 'Statistiques', href: '/stats', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'sports statistics chart' },
+  { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal club logo', target: '_blank' },
 ];
 
 
@@ -139,7 +138,6 @@ export default function Home() {
                                 <CardContent className="flex flex-col h-full text-center p-0">
                                     <div className="flex-grow h-3/5 flex items-center justify-center bg-black/20 relative">
                                         <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className="object-cover opacity-80" data-ai-hint={card.dataAiHint} />
-                                        <card.icon className="w-12 h-12 md:w-16 md:h-16 text-white/80 drop-shadow-lg relative" />
                                     </div>
                                     <div className="p-4 bg-gradient-to-t from-black/60 to-black/30 flex-grow h-2/5 flex flex-col justify-center">
                                         <h3 className="text-lg md:text-xl font-bold text-card-foreground tracking-wide">{card.title}</h3>
