@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -24,7 +23,7 @@ interface NavCardData {
 
 const initialCardData: NavCardData[] = [
   { id: 1, title: 'Effectif', href: '/admin/players', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCffectif.png', dataAiHint: 'futsal team huddle', objectPosition: 'object-top' },
-  { id: 2, title: 'Adversaires', href: '/admin/opponents', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal defensive wall' },
+  { id: 2, title: 'Adversaires', href: '/admin/opponents', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCAdversaires.png', dataAiHint: 'futsal defensive wall', objectPosition: 'object-top' },
   { id: 3, title: 'Matchs', href: '/matches', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCMatch.png', dataAiHint: 'futsal goal celebration', objectPosition: 'object-top' },
   { id: 4, title: 'Statistiques', href: '/stats', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'sports statistics chart' },
   { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal club logo', target: '_blank' },
