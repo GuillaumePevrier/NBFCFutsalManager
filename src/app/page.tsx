@@ -2,12 +2,11 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, BarChart3, Shield, Users, Trophy, Globe } from 'lucide-react';
+import { ArrowRight, BarChart3, Shield, Users, Trophy, Globe, ChevronsLeftRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import CoachAuthDialog from '@/components/CoachAuthDialog';
 import { cn } from '@/lib/utils';
 
 const MotionCard = motion(Card);
@@ -19,22 +18,21 @@ interface NavCardData {
   icon: React.ElementType;
   imageUrl: string;
   target?: string;
+  dataAiHint: string;
 }
 
 const initialCardData: NavCardData[] = [
-  { id: 1, title: 'Matchs', href: '/matches', icon: Trophy, imageUrl: 'https://placehold.co/220x300.png' },
-  { id: 2, title: 'Effectif', href: '/admin/players', icon: Users, imageUrl: 'https://placehold.co/220x300.png' },
-  { id: 3, title: 'Adversaires', href: '/admin/opponents', icon: Shield, imageUrl: 'https://placehold.co/220x300.png' },
-  { id: 4, title: 'Statistiques', href: '/stats', icon: BarChart3, imageUrl: 'https://placehold.co/220x300.png' },
-  { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', icon: Globe, imageUrl: 'https://placehold.co/220x300.png', target: '_blank' },
+  { id: 1, title: 'Matchs', href: '/matches', icon: Trophy, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal goal celebration' },
+  { id: 2, title: 'Effectif', href: '/admin/players', icon: Users, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal team huddle' },
+  { id: 3, title: 'Adversaires', href: '/admin/opponents', icon: Shield, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal defensive wall' },
+  { id: 4, title: 'Statistiques', href: '/stats', icon: BarChart3, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'sports statistics chart' },
+  { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', icon: Globe, imageUrl: 'https://placehold.co/220x320.png', dataAiHint: 'futsal club logo', target: '_blank' },
 ];
 
 
 export default function Home() {
   const router = useRouter();
-  const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(2); // Start with the 3rd card in center
-  const [cards, setCards] = useState(initialCardData);
+  const [activeIndex, setActiveIndex] = useState(2); // Start with the 3rd card (index 2) in center
 
   const handleCardClick = (card: NavCardData) => {
     if (card.target === '_blank') {
@@ -46,12 +44,14 @@ export default function Home() {
 
   const handleDragEnd = (event: any, info: any) => {
     const swipeThreshold = 50;
-    if (info.offset.x > swipeThreshold) {
+    const swipePower = Math.abs(info.offset.x) * info.velocity.x;
+
+    if (swipePower < -swipeThreshold) {
+      // Swipe left
+      setActiveIndex(prev => Math.min(initialCardData.length - 1, prev + 1));
+    } else if (swipePower > swipeThreshold) {
       // Swipe right
       setActiveIndex(prev => Math.max(0, prev - 1));
-    } else if (info.offset.x < -swipeThreshold) {
-      // Swipe left
-      setActiveIndex(prev => Math.min(cards.length - 1, prev + 1));
     }
   };
   
@@ -81,8 +81,6 @@ export default function Home() {
                 priority
             />
         </div>
-
-      <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={() => {}} />
       
       <main className="flex-grow flex flex-col items-center justify-end relative pb-12">
          <motion.div 
@@ -94,9 +92,17 @@ export default function Home() {
             style={{ cursor: 'grab' }}
          >
              <AnimatePresence>
-                {cards.map((card, index) => {
+                {initialCardData.map((card, index) => {
                     const offset = index - activeIndex;
                     const isActive = offset === 0;
+
+                    const activeNeonStyle = {
+                      boxShadow: `0 0 5px hsl(var(--primary) / 0.6), 0 0 10px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3), inset 0 0 15px hsl(var(--primary) / 0.3)`
+                    };
+
+                    const inactiveNeonStyle = {
+                      boxShadow: `0 0 5px hsl(212 96% 48% / 0.5), 0 0 10px hsl(212 96% 48% / 0.4), inset 0 0 10px hsl(212 96% 48% / 0.2)`
+                    };
 
                     return (
                         <motion.div
@@ -106,14 +112,14 @@ export default function Home() {
                                 x: offset * 80,
                                 scale: isActive ? 1 : 0.8,
                                 rotateY: offset * -20,
-                                zIndex: cards.length - Math.abs(offset),
-                                opacity: Math.abs(offset) > 1 ? 0 : 1,
+                                zIndex: initialCardData.length - Math.abs(offset),
+                                opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
                             animate={{
                                 x: offset * 80,
-                                scale: isActive ? 1 : 0.8,
-                                rotateY: offset * -20,
-                                zIndex: cards.length - Math.abs(offset),
+                                scale: isActive ? 1 : 0.85,
+                                rotateY: offset * -25,
+                                zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
                             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
@@ -123,25 +129,27 @@ export default function Home() {
                                 whileTap={isActive ? { scale: 1.1 } : {}}
                                 onClick={() => isActive && handleCardClick(card)}
                                 className={cn(
-                                    "w-[220px] h-[320px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 border-primary/30 transition-all duration-300 shadow-2xl",
-                                    isActive ? "cursor-pointer" : "cursor-grab",
+                                    "w-[220px] h-[320px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                                    isActive ? "cursor-pointer border-primary/50" : "cursor-grab border-blue-500/30",
                                     "hover:shadow-primary/60"
                                 )}
-                                style={{
-                                    boxShadow: `0 0 5px hsl(var(--primary) / 0.4), 0 0 10px hsl(var(--primary) / 0.3), 0 0 20px hsl(var(--primary) / 0.2), inset 0 0 15px hsl(var(--primary) / 0.2)`,
-                                }}
+                                style={isActive ? activeNeonStyle : inactiveNeonStyle}
                             >
                                 <CardContent className="flex flex-col h-full text-center p-0">
                                     <div className="flex-grow h-3/5 flex items-center justify-center bg-black/20 relative">
-                                        <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className="object-cover opacity-80" data-ai-hint="futsal action" />
+                                        <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className="object-cover opacity-80" data-ai-hint={card.dataAiHint} />
                                         <card.icon className="w-16 h-16 text-white/80 drop-shadow-lg relative" />
                                     </div>
                                     <div className="p-4 bg-gradient-to-t from-black/60 to-black/30 flex-grow h-2/5 flex flex-col justify-center">
                                         <h3 className="text-xl font-bold text-card-foreground tracking-wide">{card.title}</h3>
                                         {isActive && (
-                                            <div className="flex items-center justify-center text-sm text-primary mt-2 opacity-80 group-hover:opacity-100">
+                                            <motion.div 
+                                              initial={{ opacity: 0 }}
+                                              animate={{ opacity: 1 }}
+                                              className="flex items-center justify-center text-sm text-primary mt-2 opacity-80 group-hover:opacity-100"
+                                            >
                                                 Accéder <ArrowRight className="w-4 h-4 ml-1" />
-                                            </div>
+                                            </motion.div>
                                         )}
                                     </div>
                                 </CardContent>
@@ -151,10 +159,11 @@ export default function Home() {
                 })}
             </AnimatePresence>
         </motion.div>
+         <div className="absolute bottom-4 text-center text-white/50 flex items-center gap-2 text-xs">
+            <ChevronsLeftRight className="w-3 h-3" />
+            <span>Glisser pour naviguer</span>
+        </div>
       </main>
     </div>
   );
 }
-
-
-    
