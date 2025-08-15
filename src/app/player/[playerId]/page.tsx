@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Player } from '@/lib/types';
+import PointsScaleDialog from '@/components/PointsScaleDialog';
 
 const POINTS_CONFIG = {
     availability: 10,
@@ -52,10 +53,13 @@ async function PlayerActivityHistory({ activity, player }: { activity: PlayerAct
     return (
         <Card className="w-full max-w-sm mx-auto bg-card/80 mt-4">
             <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                    <Star className="text-yellow-400"/>
-                    Récapitulatif des Points
-                </CardTitle>
+                 <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl flex items-center gap-2">
+                        <Star className="text-yellow-400"/>
+                        Récapitulatif des Points
+                    </CardTitle>
+                    <PointsScaleDialog />
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
