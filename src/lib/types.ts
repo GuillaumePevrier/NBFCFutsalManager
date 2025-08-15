@@ -47,7 +47,7 @@ export interface MatchDetails {
   competition?: string; // e.g. 'd1', 'coupe_de_france'
   matchday?: number; // e.g. 1, 2, 3 for league matches
   jerseyWasherPlayerId?: string; // uuid of the player assigned to wash jerseys
-  poll?: MatchPoll; // Poll is now nested within details
+  poll: MatchPoll; // Poll is now nested within details
 }
 
 export interface Scoreboard {

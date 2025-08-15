@@ -159,6 +159,16 @@ export async function deletePlayer(playerId: string) {
 export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: string, goals?: number, fouls?: number }): Promise<{ success: boolean }> {
     const supabase = createClient();
     
+    // Using Supabase RPC to handle the increment atomically for stats
+    // Note: You would need to create these RPC functions in your database.
+    // Example for goals:
+    // CREATE OR REPLACE FUNCTION increment_player_goals(player_id_arg UUID, goals_to_add INT)
+    // RETURNS void AS $$
+    //   UPDATE players
+    //   SET goals = goals + goals_to_add
+    //   WHERE id = player_id_arg;
+    // $$ LANGUAGE sql;
+
     const { data: currentPlayer, error: fetchError } = await supabase
       .from('players')
       .select('goals, fouls')
@@ -197,7 +207,7 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
     const supabase = createClient();
     
     // Using Supabase RPC to handle the increment atomically
-    const { data, error } = await supabase.rpc('increment_player_points', {
+    const { error } = await supabase.rpc('increment_player_points', {
       player_id_arg: playerId,
       points_to_add: points
     });

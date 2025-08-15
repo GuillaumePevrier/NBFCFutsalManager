@@ -96,15 +96,18 @@ export default function MatchPage() {
   const updateMatchData = useCallback(async (updatedMatch: Match, showToast = false) => {
     // Optimistically update local state first
     setMatch(updatedMatch);
+    
+    // Ensure poll data is nested within details for the update
+    const updatePayload = {
+      details: updatedMatch.details,
+      team: updatedMatch.team,
+      substitutes: updatedMatch.substitutes,
+      scoreboard: updatedMatch.scoreboard,
+    };
 
     const { error } = await supabase
       .from('matches')
-      .update({
-        details: updatedMatch.details,
-        team: updatedMatch.team,
-        substitutes: updatedMatch.substitutes,
-        scoreboard: updatedMatch.scoreboard,
-      })
+      .update(updatePayload)
       .eq('id', matchId);
 
     if (error) {
@@ -368,6 +371,9 @@ export default function MatchPage() {
     if (!match || role !== 'coach') return;
     const previousWasherId = match.details.jerseyWasherPlayerId;
     
+    // We need to pass the full details object, not just the changed part
+    const newDetails = { ...match.details, jerseyWasherPlayerId: playerId };
+
     const result = await updateJerseyWasher({
       matchId: match.id,
       newWasherPlayerId: playerId,
@@ -375,11 +381,12 @@ export default function MatchPage() {
     });
 
     if (result.success) {
+      // Optimistically update the local state. The subscription will handle the final state.
+      setMatch(m => m ? ({ ...m, details: newDetails }) : null);
       toast({
         title: "Responsable maillots mis à jour",
         description: result.message,
       });
-      // The optimistic update will be replaced by the realtime subscription update
     } else {
       toast({
         title: "Erreur",
@@ -428,10 +435,10 @@ export default function MatchPage() {
   };
 
 
-  if (!match || allPlayers.length === 0) {
+  if (!match) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <p>Chargement du match et des joueurs...</p>
+        <p>Chargement du match...</p>
       </div>
     );
   }
@@ -456,7 +463,7 @@ export default function MatchPage() {
             playersOnField={match.team}
           />
           <MatchPollComponent
-            poll={match.details.poll!}
+            poll={match.details.poll}
             allPlayers={allPlayers}
             onPollChange={handlePollChange}
             role={role}
@@ -508,7 +515,7 @@ export default function MatchPage() {
           allPlayers={allPlayers}
           team={match.team}
           substitutes={match.substitutes}
-          poll={match.details.poll!}
+          poll={match.details.poll}
           role={role}
           onAddPlayer={handleAddPlayer}
           onRemovePlayer={handleRemovePlayer}

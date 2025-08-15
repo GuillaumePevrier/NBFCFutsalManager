@@ -130,7 +130,7 @@ export default function MatchPollComponent({ poll, allPlayers, onPollChange, rol
   };
   
   const getPlayerById = (id: string) => allPlayers.find(p => p.id === id);
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '';
 
   const availabilityCounts = poll.availabilities.reduce((acc, curr) => {
     acc[curr.status] = (acc[curr.status] || 0) + 1;
