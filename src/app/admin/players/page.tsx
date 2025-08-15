@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, ArrowLeft, View, Users } from "lucide-react";
+import { PlusCircle, ArrowLeft, View, Users, Medal, Star } from "lucide-react";
 import Link from "next/link";
 import { getPlayers } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +14,27 @@ import { createClient } from "@/lib/supabase/client";
 import type { Player, Role } from "@/lib/types";
 import Header from "@/components/Header";
 import CoachAuthDialog from '@/components/CoachAuthDialog';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+
+const getRankingClass = (rank: number) => {
+    switch (rank) {
+        case 0: return 'bg-yellow-500/10 hover:bg-yellow-500/20'; // Gold
+        case 1: return 'bg-gray-400/10 hover:bg-gray-400/20'; // Silver
+        case 2: return 'bg-orange-600/10 hover:bg-orange-600/20'; // Bronze
+        default: return '';
+    }
+}
+
+const getRankingBadge = (rank: number) => {
+     switch (rank) {
+        case 0: return 'bg-yellow-400 text-yellow-900 hover:bg-yellow-400/90'; // Gold
+        case 1: return 'bg-gray-400 text-gray-900 hover:bg-gray-400/90'; // Silver
+        case 2: return 'bg-orange-500 text-orange-950 hover:bg-orange-500/90'; // Bronze
+        default: return null;
+    }
+}
+
 
 export default function PlayersAdminPage() {
     const [players, setPlayers] = useState<Player[]>([]);
@@ -81,21 +102,22 @@ export default function PlayersAdminPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Users/>
-                                Liste des Joueurs ({players.length})
+                                Classement des Joueurs ({players.length})
                             </CardTitle>
                             <CardDescription>
-                                Consultez les informations et les statistiques de chaque joueur de l'effectif.
+                                Consultez le classement des joueurs en fonction de leurs points d'implication.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>#</TableHead>
                                         <TableHead>Joueur</TableHead>
                                         <TableHead className="hidden md:table-cell">Équipe</TableHead>
-                                        <TableHead className="hidden md:table-cell">Poste</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Buts</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Fautes</TableHead>
+                                        <TableHead className="text-right">Points</TableHead>
+                                        <TableHead className="hidden sm:table-cell text-right">Buts</TableHead>
+                                        <TableHead className="hidden sm:table-cell text-right">Fautes</TableHead>
                                         <TableHead>
                                             <span className="sr-only">Actions</span>
                                         </TableHead>
@@ -103,21 +125,30 @@ export default function PlayersAdminPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {players.length > 0 ? (
-                                        players.map((player: Player) => (
-                                            <TableRow key={player.id}>
+                                        players.map((player: Player, index) => (
+                                            <TableRow key={player.id} className={cn(getRankingClass(index))}>
+                                                <TableCell className="font-bold text-lg">{index + 1}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
                                                         <Avatar>
                                                             <AvatarImage src={player.avatar_url} alt={player.name} />
                                                             <AvatarFallback>{getInitials(player.name)}</AvatarFallback>
                                                         </Avatar>
-                                                        <div className="font-medium">{player.name}</div>
+                                                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                                                            <span className="font-medium">{player.name}</span>
+                                                             {index < 3 && (
+                                                                <Badge variant="default" className={cn("w-fit", getRankingBadge(index))}>
+                                                                    <Medal className="mr-1 h-3 w-3"/>
+                                                                    {index === 0 ? 'Or' : index === 1 ? 'Argent' : 'Bronze'}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="hidden md:table-cell">{player.team}</TableCell>
-                                                <TableCell className="hidden md:table-cell">{player.position || 'N/A'}</TableCell>
-                                                <TableCell className="hidden sm:table-cell">{player.goals}</TableCell>
-                                                <TableCell className="hidden sm:table-cell">{player.fouls}</TableCell>
+                                                <TableCell className="text-right font-bold text-primary text-lg">{player.points || 0}</TableCell>
+                                                <TableCell className="hidden sm:table-cell text-right">{player.goals || 0}</TableCell>
+                                                <TableCell className="hidden sm:table-cell text-right">{player.fouls || 0}</TableCell>
                                                 <TableCell>
                                                     {isCoach ? (
                                                         <PlayerActions player={player}/>
@@ -125,7 +156,7 @@ export default function PlayersAdminPage() {
                                                         <Button asChild variant="outline" size="sm">
                                                             <Link href={`/player/${player.id}`}>
                                                                 <View className="mr-2 h-4 w-4" />
-                                                                Voir la fiche
+                                                                <span className="hidden sm:inline">Voir</span>
                                                             </Link>
                                                         </Button>
                                                     )}
@@ -134,7 +165,7 @@ export default function PlayersAdminPage() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center h-24">
+                                            <TableCell colSpan={7} className="text-center h-24">
                                                 Aucun joueur trouvé. {isCoach && "Commencez par en ajouter un."}
                                             </TableCell>
                                         </TableRow>

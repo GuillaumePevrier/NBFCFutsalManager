@@ -2,28 +2,40 @@
 import { getPlayerById } from '@/app/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Shield, Star, Target, CalendarCheck } from 'lucide-react';
+import { ArrowLeft, Shield, Star, Target, Shirt, CheckSquare } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
-interface StatRowProps {
+interface InfoRowProps {
     icon: React.ElementType;
     label: string;
-    value: string | number;
-    barValue?: number;
-    barColorClass: string;
+    value?: string | number;
+    colorClass?: string;
 }
 
-const StatRow = ({ icon: Icon, label, value }: StatRowProps) => (
-  <div className="flex items-center gap-4 text-card-foreground">
-    <Icon className="w-5 h-5 text-primary" />
-    <span className="font-semibold text-sm flex-1">{label}</span>
-    <span className="text-xl font-bold">{value}</span>
-  </div>
-);
+const InfoRow = ({ icon: Icon, label, value, colorClass = 'text-primary' }: InfoRowProps) => {
+  if (value === undefined || value === null) return null;
+  return (
+    <div className="flex items-center gap-4 text-card-foreground">
+      <Icon className={`w-5 h-5 ${colorClass}`} />
+      <div className="flex flex-col">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="font-semibold text-sm">{value}</span>
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({ icon: Icon, label, value, colorClass }: { icon: React.ElementType, label: string, value: string | number, colorClass: string}) => (
+    <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-background/50 text-center">
+        <Icon className={`w-6 h-6 mb-1 ${colorClass}`} />
+        <p className="text-2xl font-bold text-card-foreground">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+    </div>
+)
 
 
 export default async function PlayerPage({ params }: { params: { playerId: string } }) {
@@ -47,7 +59,7 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
         </Header>
         <main className="flex-grow flex items-center justify-center p-4">
             <Card className="w-full max-w-sm mx-auto bg-gradient-to-br from-card to-background border-2 border-primary/20 shadow-2xl rounded-2xl overflow-hidden">
-                <div className="p-6 bg-gradient-to-b from-primary/20 via-transparent to-transparent relative">
+                <CardHeader className="p-6 bg-gradient-to-b from-primary/20 via-transparent to-transparent relative">
                    <div 
                         className="absolute inset-0 bg-cover bg-center opacity-10" 
                         style={{ backgroundImage: "url('https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png')" }}
@@ -62,19 +74,19 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                             <p className="text-lg font-semibold text-primary">{player.position || 'Non spécifié'}</p>
                         </div>
                     </div>
-                </div>
-                <CardContent className="p-6 space-y-5">
-                    <div className="flex justify-around text-center text-card-foreground">
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                    <div className="grid grid-cols-3 gap-2 text-center text-card-foreground">
                         <div>
                             <p className="text-sm text-muted-foreground">Équipe</p>
                             <p className="font-bold text-lg">{player.team}</p>
                         </div>
-                        <Separator orientation="vertical" className="h-10 bg-border" />
+                        <Separator orientation="vertical" className="h-10 bg-border mx-auto" />
                         <div>
                             <p className="text-sm text-muted-foreground">Pied Fort</p>
                             <p className="font-bold text-lg">{player.preferred_foot || 'N/A'}</p>
                         </div>
-                         <Separator orientation="vertical" className="h-10 bg-border" />
+                         <Separator orientation="vertical" className="h-10 bg-border mx-auto" />
                          <div>
                             <p className="text-sm text-muted-foreground">Numéro</p>
                             <p className="font-bold text-lg">{player.player_number || 'N/A'}</p>
@@ -83,12 +95,21 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                     
                     <Separator className="bg-border/50" />
                     
-                    <div className="space-y-4">
-                        <StatRow icon={Star} label="Points d'Implication" value={player.points || 0} barColorClass="bg-yellow-500" />
-                        <StatRow icon={Target} label="Buts" value={player.goals || 0} barColorClass="bg-green-500" />
-                        <StatRow icon={Shield} label="Fautes" value={player.fouls || 0} barColorClass="bg-yellow-500" />
-                        <StatRow icon={CalendarCheck} label="Présences" value={"N/A"} barColorClass="bg-blue-500" />
-                    </div>
+                    <Card className="bg-background/40">
+                         <CardHeader><CardTitle className='text-lg'>Statistiques & Implication</CardTitle></CardHeader>
+                         <CardContent>
+                            <div className="grid grid-cols-2 gap-4">
+                                <StatCard icon={Star} label="Points" value={player.points || 0} colorClass="text-yellow-400" />
+                                <StatCard icon={Target} label="Buts" value={player.goals || 0} colorClass="text-green-400" />
+                                <StatCard icon={Shield} label="Fautes" value={player.fouls || 0} colorClass="text-orange-400" />
+                                <StatCard icon={CheckSquare} label="Présences" value={"N/A"} colorClass="text-blue-400" />
+                                <StatCard icon={Shirt} label="Lavage Maillots" value={"N/A"} colorClass="text-indigo-400" />
+                            </div>
+                         </CardContent>
+                    </Card>
+
+                    <InfoRow icon={Star} label="Statut" value={player.status} />
+
                 </CardContent>
             </Card>
         </main>

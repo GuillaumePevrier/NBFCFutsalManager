@@ -46,6 +46,8 @@ export async function getPlayers(): Promise<Player[]> {
   const { data, error } = await supabase
     .from('players')
     .select('*')
+    // Tri par points (décroissant), puis par nom (alphabétique)
+    .order('points', { ascending: false, nullsFirst: false })
     .order('name', { ascending: true });
     
   if (error) {
@@ -194,8 +196,9 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
 export async function incrementPlayerPoints(playerId: string, points: number): Promise<{ success: boolean }> {
     const supabase = createClient();
     
+    // Using Supabase RPC to handle the increment atomically
     const { data, error } = await supabase.rpc('increment_player_points', {
-      player_id: playerId,
+      player_id_arg: playerId,
       points_to_add: points
     });
 
