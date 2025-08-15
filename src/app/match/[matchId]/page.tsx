@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -16,6 +17,33 @@ import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 
 const MAX_ON_FIELD = 5;
+
+// Function to ensure a match object has default values for new fields
+const ensureMatchDefaults = (match: Match): Match => {
+  const details = match.details || {};
+  const scoreboard = match.scoreboard || {};
+
+  return {
+    ...match,
+    details: {
+      ...details,
+      competition: details.competition || 'amical', // Default to 'amical'
+      matchday: details.matchday || 1, // Default to day 1
+    },
+    scoreboard: {
+       ...scoreboard,
+        homeScore: scoreboard.homeScore ?? 0,
+        awayScore: scoreboard.awayScore ?? 0,
+        homeFouls: scoreboard.homeFouls ?? 0,
+        awayFouls: scoreboard.awayFouls ?? 0,
+        time: scoreboard.time ?? 1200,
+        isRunning: scoreboard.isRunning ?? false,
+        period: scoreboard.period ?? 1,
+        timerLastStarted: scoreboard.timerLastStarted ?? null,
+    }
+  };
+};
+
 
 export default function MatchPage() {
   const params = useParams();
@@ -83,7 +111,7 @@ export default function MatchPage() {
         toast({ title: "Match non trouvé", description: "Redirection vers la liste des matchs.", variant: "destructive" });
         router.push('/matches');
       } else {
-        setMatch(data as Match);
+        setMatch(ensureMatchDefaults(data as Match));
       }
     };
 
@@ -92,7 +120,7 @@ export default function MatchPage() {
 
       const channel = supabase.channel(`match-${matchId}`)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches', filter: `id=eq.${matchId}` }, (payload) => {
-          setMatch(payload.new as Match);
+          setMatch(ensureMatchDefaults(payload.new as Match));
         })
         .subscribe();
 
@@ -419,5 +447,7 @@ export default function MatchPage() {
     </div>
   );
 }
+
+    
 
     
