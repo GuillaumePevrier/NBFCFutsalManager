@@ -99,6 +99,6 @@ FOR DELETE
 USING (auth.role() = 'authenticated');
 
 -- =================================================================
---  Fin du
+--  Fin du 
 -- =================================================================
--- test feuille de sondage
+-- test feuille d'entrainement
