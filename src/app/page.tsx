@@ -26,8 +26,8 @@ const initialCardData: NavCardData[] = [
   { id: 1, title: 'Effectif', href: '/admin/players', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCffectif.png', dataAiHint: 'futsal team huddle', objectPosition: 'object-top' },
   { id: 2, title: 'Adversaires', href: '/admin/opponents', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCAdversaires.png', dataAiHint: 'futsal defensive wall', objectPosition: 'object-top' },
   { id: 3, title: 'Matchs', href: '/matches', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCMatch.png', dataAiHint: 'futsal goal celebration', objectPosition: 'object-top' },
-  { id: 4, title: 'Entraînements', href: '/trainings', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCTraining.png', dataAiHint: 'futsal training session', objectPosition: 'object-center' },
-  { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCWebsite.png', dataAiHint: 'futsal club logo', target: '_blank', objectPosition: 'object-center' },
+  { id: 4, title: 'Entraînements', href: '/trainings', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCTraining.png', dataAiHint: 'futsal training session', objectPosition: 'object-top' },
+  { id: 5, title: 'Site du Club', href: 'https://futsal.noyalbrecefc.com/', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCWebsite.png', dataAiHint: 'futsal club logo', target: '_blank', objectPosition: 'object-top' },
 ];
 
 
