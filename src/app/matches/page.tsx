@@ -149,7 +149,7 @@ export default function MatchesPage() {
   };
   
   const TeamDisplay = ({ name, logoUrl, fallback }: { name: string, logoUrl?: string, fallback: string }) => (
-     <div className="flex flex-1 items-center gap-2 truncate">
+     <div className="flex items-center gap-2 truncate">
         <Avatar className="w-8 h-8">
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
@@ -170,11 +170,13 @@ export default function MatchesPage() {
     return (
         <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-colors duration-200 overflow-hidden">
             <CardContent className="p-3 flex items-center justify-between gap-2">
-                <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
+                <div className="flex-1">
+                  <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
+                </div>
                 <div className="w-48">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
-                <div className="flex-1 justify-end flex">
+                <div className="flex-1 flex justify-end">
                   <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} />
                 </div>
             </CardContent>
