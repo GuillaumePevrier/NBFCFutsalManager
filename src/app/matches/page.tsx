@@ -189,7 +189,7 @@ export default function MatchesPage() {
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
         </Avatar>
-        <div className="font-bold truncate hidden sm:block">{name}</div>
+        <div className="font-bold truncate hidden sm:block text-blue-400">{name}</div>
     </div>
   )
 
@@ -203,12 +203,12 @@ export default function MatchesPage() {
     const awayTeam = isHome ? { name: opponentName, logo: opponentLogo, fallback: opponentName ? opponentName.substring(0,1) : 'A' } : { name: nbfcName, logo: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png", fallback: "N" };
 
     return (
-        <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-colors duration-200 overflow-hidden">
+        <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-all duration-300 overflow-hidden border border-blue-500/20 hover:border-blue-500/80 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]">
             <CardContent className="p-3 flex items-center justify-between gap-2">
                  <div className="flex-1 min-w-0">
                     <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
                 </div>
-                <div className="flex-shrink-0 w-44 sm:w-48 md:w-64">
+                <div className="w-40 sm:w-48 md:w-64 flex-shrink-0">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
                 <div className="flex-1 min-w-0">

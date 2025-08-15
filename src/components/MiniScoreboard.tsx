@@ -71,7 +71,7 @@ const MiniScoreboard = ({ scoreboard, homeName, opponentName, venue }: MiniScore
   };
 
   return (
-    <div className="bg-black/70 border border-primary/30 rounded-lg p-2 text-white shadow-[0_0_10px_hsl(var(--primary)/0.5),inset_0_0_5px_rgba(255,255,255,0.1)]">
+    <div className="bg-black/80 border-2 border-primary/50 rounded-lg p-2 text-white shadow-[0_0_15px_hsl(var(--primary)/0.6),inset_0_0_8px_rgba(255,81,86,0.2)]">
       <div className="flex items-center justify-between text-center">
         {/* Home Score & Fouls */}
         <div className="flex-1 flex flex-col items-center justify-center gap-1">
