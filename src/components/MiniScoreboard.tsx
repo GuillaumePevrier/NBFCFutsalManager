@@ -48,14 +48,14 @@ const MiniScoreboard = ({ scoreboard, homeName, opponentName, venue }: MiniScore
 
   return (
     <div className="bg-black/70 border border-primary/30 rounded-lg p-2 text-white shadow-[0_0_10px_hsl(var(--primary)/0.5),inset_0_0_5px_rgba(255,255,255,0.1)]">
-      <div className="grid grid-cols-3 items-center text-center">
+      <div className="flex items-center justify-between text-center">
         {/* Home Score */}
-        <div className="flex justify-center items-center">
+        <div className="flex-1 flex justify-center items-center">
             <div className="text-2xl font-['Orbitron',_sans-serif] text-primary">{homeScore.toString().padStart(2, '0')}</div>
         </div>
 
         {/* Timer & Period */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center w-24">
             <div className={cn(
                 "font-bold font-['Orbitron',_sans-serif] text-lg", 
                 scoreboard.isRunning ? 'text-yellow-400 animate-pulse' : 'text-yellow-400/70'
@@ -66,7 +66,7 @@ const MiniScoreboard = ({ scoreboard, homeName, opponentName, venue }: MiniScore
         </div>
 
         {/* Away Score */}
-        <div className="flex justify-center items-center">
+        <div className="flex-1 flex justify-center items-center">
             <div className="text-2xl font-['Orbitron',_sans-serif] text-primary">{awayScore.toString().padStart(2, '0')}</div>
         </div>
       </div>
