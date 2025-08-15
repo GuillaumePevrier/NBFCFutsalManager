@@ -63,15 +63,15 @@ export default function MatchesPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error && Object.keys(error).length > 0) {
+      if (error && Object.keys(error).length > 0 && error.message) {
         console.error("Failed to fetch matches:", error);
         toast({ title: "Erreur", description: "Impossible de charger les matchs.", variant: "destructive" });
       } else {
         setMatches((data as Match[] || []).map(m => ({
           ...m,
           details: {
-            venue: m.details?.venue || 'home',
             ...m.details,
+            venue: m.details?.venue || 'home',
             competition: m.details?.competition || 'amical',
             matchday: m.details?.matchday || 1
           }
@@ -155,6 +155,17 @@ export default function MatchesPage() {
   const getOpponentLogo = (match: Match) => {
     const opponent = opponents.find(o => o.id === match.details?.opponentId);
     return opponent?.logo_url;
+  };
+
+  const handleCompetitionChange = (direction: 'next' | 'prev') => {
+    const currentIndex = competitions.findIndex(c => c.id === activeCompetition);
+    if (direction === 'next') {
+        const nextIndex = (currentIndex + 1) % competitions.length;
+        setActiveCompetition(competitions[nextIndex].id);
+    } else {
+        const prevIndex = (currentIndex - 1 + competitions.length) % competitions.length;
+        setActiveCompetition(competitions[prevIndex].id);
+    }
   };
   
   const TeamDisplay = ({ name, logoUrl, fallback, align = 'left' }: { name: string, logoUrl?: string, fallback: string, align?: 'left' | 'right' }) => (
@@ -263,23 +274,31 @@ export default function MatchesPage() {
             )}
           </div>
           
-          <div className="w-full px-4">
-            <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <Tabs value={activeCompetition} onValueChange={setActiveCompetition} className="w-full">
-                    <TabsList className="relative bg-transparent p-0 border-b border-border inline-flex">
-                    {competitions.map(comp => (
-                        <TabsTrigger key={comp.id} value={comp.id} className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none relative px-3 text-muted-foreground">
-                            {comp.name}
-                            {activeCompetition === comp.id && <motion.div layoutId="active-competition-indicator" className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary))]"></motion.div>}
-                        </TabsTrigger>
-                    ))}
-                    </TabsList>
-                </Tabs>
-            </div>
-          </div>
+           <div className="px-4 mb-4">
+             <Card className="p-2 bg-card/50">
+                <div className="flex items-center justify-between gap-2">
+                    <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('prev')}>
+                        <ChevronLeft />
+                    </Button>
+                    <Select value={activeCompetition} onValueChange={setActiveCompetition}>
+                        <SelectTrigger className="flex-grow">
+                            <SelectValue placeholder="Choisir une compétition" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {competitions.map(c => (
+                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('next')}>
+                        <ChevronRight />
+                    </Button>
+                </div>
+            </Card>
+           </div>
 
 
-           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full p-4">
+           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full px-4">
             <TabsList className="grid w-full grid-cols-3 bg-card/80">
                 <TabsTrigger value="results"><Trophy className="mr-2 h-4 w-4"/>Résultats</TabsTrigger>
                 <TabsTrigger value="ranking"><BarChart3 className="mr-2 h-4 w-4"/>Classement</TabsTrigger>
@@ -287,7 +306,7 @@ export default function MatchesPage() {
             </TabsList>
           </Tabs>
 
-          <div className="px-4 pb-4 flex-grow">
+          <div className="px-4 py-4 flex-grow">
             {renderContent()}
           </div>
 
@@ -296,3 +315,4 @@ export default function MatchesPage() {
     </div>
   );
 }
+
