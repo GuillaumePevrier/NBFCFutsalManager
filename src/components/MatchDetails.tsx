@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from './ui/button';
-import { CalendarDays, Clock, MapPin, Users, Info, Save, Swords, Trophy, Hash } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Users, Info, Save, Swords, Trophy, Hash, Home } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useDebounce } from '@/hooks/use-debounce';
 import { getOpponents } from '@/app/actions';
@@ -76,7 +76,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
     }
   };
 
-  const handleSelectChange = (name: 'matchType' | 'competition', value: string) => {
+  const handleSelectChange = (name: 'matchType' | 'competition' | 'venue', value: string) => {
     const newDetails = { ...currentDetails, [name]: value };
     setCurrentDetails(newDetails);
     onDetailsChange(newDetails); // For selects, we can update immediately
@@ -142,7 +142,19 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
           </DetailItem>
           <DetailItem icon={CalendarDays} label="Date" value={currentDetails.date} name="date" placeholder="JJ/MM/AAAA" isCoach={isCoach} type="date" />
           <DetailItem icon={Clock} label="Heure" value={currentDetails.time} name="time" placeholder="HH:MM" isCoach={isCoach} type="time"/>
-          <DetailItem icon={MapPin} label="Lieu" value={currentDetails.location} name="location" placeholder="Adresse du match" isCoach={isCoach} />
+          
+          <DetailItem icon={Home} label="Lieu de la rencontre" name="venue" isCoach={isCoach} value={currentDetails.venue === 'home' ? "Domicile" : "Extérieur"}>
+             <Select onValueChange={(val) => handleSelectChange('venue', val)} value={currentDetails.venue} name="venue" disabled={!isCoach}>
+                <SelectTrigger className="mt-1 bg-transparent border-0 border-b rounded-none px-0 h-8 focus:ring-0 focus:ring-offset-0 focus:border-primary disabled:opacity-100 disabled:cursor-default">
+                    <SelectValue placeholder="Choisir le lieu..." />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="home">Domicile</SelectItem>
+                    <SelectItem value="away">Extérieur</SelectItem>
+                </SelectContent>
+            </Select>
+          </DetailItem>
+          <DetailItem icon={MapPin} label="Adresse" value={currentDetails.location} name="location" placeholder="Adresse du match" isCoach={isCoach} />
           
           <DetailItem icon={Swords} label="Type de Match" name="matchType" isCoach={isCoach} value={currentDetails.matchType === '20min' ? "20 min (arrêté)" : "25 min (continu)"}>
              <Select onValueChange={(val) => handleSelectChange('matchType', val)} value={currentDetails.matchType} name="matchType" disabled={!isCoach}>
@@ -179,4 +191,3 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
     </Card>
   );
 }
-

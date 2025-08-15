@@ -29,6 +29,7 @@ export interface MatchDetails {
   location: string;
   remarks: string;
   matchType: '20min' | '25min';
+  venue: 'home' | 'away';
   competition?: string; // e.g. 'd1', 'coupe_de_france'
   matchday?: number; // e.g. 1, 2, 3 for league matches
 }
@@ -52,6 +53,7 @@ export interface Match {
   team: PlayerPosition[];
   substitutes: PlayerPosition[];
   scoreboard: Scoreboard;
+  opponent_logo_url?: string; // Optional field from join
 }
 
 export interface Opponent {
@@ -66,5 +68,3 @@ export interface Opponent {
     address?: string;
     created_at: string;
 }
-
-    

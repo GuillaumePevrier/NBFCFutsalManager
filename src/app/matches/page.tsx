@@ -5,20 +5,17 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlusCircle, ArrowRight, Trash2, Loader2, Trophy, ArrowLeft, ChevronLeft, ChevronRight, BarChart3, Shield, Users } from 'lucide-react';
+import { PlusCircle, ArrowRight, Loader2, Trophy, ArrowLeft, ChevronLeft, ChevronRight, BarChart3, Shield, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import type { Match, Role } from '@/lib/types';
+import type { Match, Role, Opponent } from '@/lib/types';
 import CoachAuthDialog from '@/components/CoachAuthDialog';
-import { deleteMatch } from '../actions';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import MiniScoreboard from '@/components/MiniScoreboard';
 
 const competitions = [
     { id: 'd2', name: 'D2' },
@@ -33,6 +30,7 @@ export default function MatchesPage() {
   const router = useRouter();
   const supabase = createClient();
   const [matches, setMatches] = useState<Match[]>([]);
+  const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [role, setRole] = useState<Role>('player');
@@ -44,9 +42,20 @@ export default function MatchesPage() {
   const [currentMatchday, setCurrentMatchday] = useState(1);
 
   useEffect(() => {
-    const fetchMatches = async () => {
+    const fetchMatchesAndOpponents = async () => {
       setLoading(true);
-      // Corrected the query to remove the invalid join
+      
+      const { data: opponentsData, error: opponentsError } = await supabase
+        .from('opponents')
+        .select('id, logo_url');
+
+      if (opponentsError) {
+        console.error("Failed to fetch opponents:", opponentsError);
+        toast({ title: "Erreur", description: "Impossible de charger les données des adversaires.", variant: "destructive" });
+      } else {
+        setOpponents(opponentsData || []);
+      }
+      
       const { data, error } = await supabase
         .from('matches')
         .select('*')
@@ -61,7 +70,7 @@ export default function MatchesPage() {
       setLoading(false);
     };
 
-    fetchMatches();
+    fetchMatchesAndOpponents();
   }, [supabase, toast]);
 
    useEffect(() => {
@@ -94,6 +103,7 @@ export default function MatchesPage() {
         location: 'Lieu à définir',
         remarks: '',
         matchType: '20min',
+        venue: 'home',
         competition: activeCompetition,
         matchday: currentMatchday
       },
@@ -124,18 +134,6 @@ export default function MatchesPage() {
     router.push(`/match/${data.id}`);
   };
 
-  const handleDeleteMatch = async (matchId: string) => {
-    setDeletingId(matchId);
-    const result = await deleteMatch(matchId);
-    setDeletingId(null);
-    if (result.success) {
-      setMatches(prev => prev.filter(m => m.id !== matchId));
-      toast({ title: "Match Supprimé", description: "Le match a été supprimé." });
-    } else {
-      toast({ title: "Erreur", description: "La suppression du match a échoué.", variant: "destructive" });
-    }
-  };
-
   const filteredMatches = matches
     .filter(m => (m.details.competition || 'amical') === activeCompetition)
     .filter(m => activeCompetition === 'amical' || (m.details.matchday || 1) === currentMatchday)
@@ -146,35 +144,49 @@ export default function MatchesPage() {
   const maxMatchday = matchdays.length > 0 ? Math.max(...matchdays) : 1;
 
   const getOpponentLogo = (match: Match) => {
-    // Logo fetching is disabled for now to fix the bug
-    return undefined;
+    const opponent = opponents.find(o => o.id === match.details.opponentId);
+    return opponent?.logo_url;
   };
-
-  const renderMatchRow = (match: Match) => (
-    <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-colors duration-200">
-        <CardContent className="p-3 flex items-center justify-between">
-            <div className="flex-1 text-right font-bold truncate pr-3">{match.details.opponent}</div>
-            <Avatar className="w-8 h-8">
-                <AvatarImage src={getOpponentLogo(match)} />
-                <AvatarFallback>{match.details.opponent.substring(0,1)}</AvatarFallback>
-            </Avatar>
-            <div className="w-20 text-center font-['Orbitron',_sans-serif] text-lg">
-                {format(new Date(match.details.date), "HH:mm")}
-            </div>
-             <Avatar className="w-8 h-8">
-                <AvatarImage src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png" />
-                <AvatarFallback>N</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 font-bold truncate pl-3">NBFC Futsal</div>
-        </CardContent>
-        <Button asChild variant="ghost" size="sm" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center bg-primary/20 backdrop-blur-sm">
-             <Link href={`/match/${match.id}`}>
-                 Gérer le match
-                 <ArrowRight className="ml-2 h-4 w-4" />
-             </Link>
-        </Button>
-    </Card>
+  
+  const TeamDisplay = ({ name, logoUrl, fallback }: { name: string, logoUrl?: string, fallback: string }) => (
+     <div className="flex flex-1 items-center gap-2 truncate">
+        <Avatar className="w-8 h-8">
+            <AvatarImage src={logoUrl} />
+            <AvatarFallback>{fallback}</AvatarFallback>
+        </Avatar>
+        <div className="font-bold truncate">{name}</div>
+    </div>
   )
+
+  const renderMatchRow = (match: Match) => {
+    const isHome = match.details.venue === 'home';
+    const nbfcName = "NBFC Futsal";
+    const opponentName = match.details.opponent;
+    const opponentLogo = getOpponentLogo(match);
+
+    const homeTeam = isHome ? { name: nbfcName, logo: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png", fallback: "N" } : { name: opponentName, logo: opponentLogo, fallback: opponentName.substring(0,1) };
+    const awayTeam = isHome ? { name: opponentName, logo: opponentLogo, fallback: opponentName.substring(0,1) } : { name: nbfcName, logo: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png", fallback: "N" };
+
+    return (
+        <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-colors duration-200 overflow-hidden">
+            <CardContent className="p-3 flex items-center justify-between gap-2">
+                <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
+                <div className="w-48">
+                    <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
+                </div>
+                <div className="flex-1 justify-end flex">
+                  <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} />
+                </div>
+            </CardContent>
+            <Button asChild variant="ghost" size="sm" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center bg-primary/20 backdrop-blur-sm">
+                 <Link href={`/match/${match.id}`}>
+                     Gérer le match
+                     <ArrowRight className="ml-2 h-4 w-4" />
+                 </Link>
+            </Button>
+        </Card>
+    )
+  }
 
   const renderContent = () => {
     if (loading) {

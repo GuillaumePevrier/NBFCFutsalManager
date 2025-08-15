@@ -33,6 +33,7 @@ const ensureMatchDefaults = (match: Match): Match => {
       remarks: '',
       matchType: '20min',
       ...details,
+      venue: details.venue || 'home', // Default to home
       competition: details.competition || 'amical', // Default to 'amical'
       matchday: details.matchday || 1, // Default to day 1
     },

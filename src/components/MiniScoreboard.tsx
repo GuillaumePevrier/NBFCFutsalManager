@@ -7,11 +7,16 @@ import type { Scoreboard as ScoreboardType } from '@/lib/types';
 
 interface MiniScoreboardProps {
   scoreboard: ScoreboardType;
+  homeName: string;
   opponentName: string;
+  venue: 'home' | 'away';
 }
 
-const MiniScoreboard = ({ scoreboard, opponentName }: MiniScoreboardProps) => {
+const MiniScoreboard = ({ scoreboard, homeName, opponentName, venue }: MiniScoreboardProps) => {
   const [localTime, setLocalTime] = useState(scoreboard.time);
+  
+  const homeScore = venue === 'home' ? scoreboard.homeScore : scoreboard.awayScore;
+  const awayScore = venue === 'home' ? scoreboard.awayScore : scoreboard.homeScore;
 
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
@@ -43,27 +48,19 @@ const MiniScoreboard = ({ scoreboard, opponentName }: MiniScoreboardProps) => {
   };
 
   return (
-    <div className="bg-black/80 border border-neutral-700 rounded-md p-2 text-white">
-      <div className="flex items-center justify-center gap-3">
+    <div className="bg-black/70 border border-neutral-700 rounded-lg p-2 text-white shadow-[0_0_10px_rgba(0,0,0,0.5),inset_0_0_5px_rgba(255,255,255,0.1)]">
+      <div className="flex items-center justify-between gap-3">
         {/* Home Score */}
-        <div className="flex-1 text-center">
-            <div className="text-xs font-semibold uppercase truncate" title="NBFC Futsal">NBFC</div>
-            <div className="text-2xl font-['Orbitron',_sans-serif] text-destructive">{scoreboard.homeScore.toString().padStart(2, '0')}</div>
-        </div>
+        <div className="text-2xl font-['Orbitron',_sans-serif] text-primary">{homeScore.toString().padStart(2, '0')}</div>
 
         {/* Timer & Period */}
         <div className="text-center">
-            <div className="text-xs font-semibold text-yellow-400">P{scoreboard.period}</div>
-            <div className="text-2xl font-['Orbitron',_sans-serif] text-yellow-400 font-bold">
-                {formatTime(localTime)}
-            </div>
+            <div className={cn("text-xs font-semibold uppercase", scoreboard.isRunning ? 'text-yellow-400 animate-pulse' : 'text-neutral-400')}>{formatTime(localTime)}</div>
+            <div className="text-xs font-semibold text-neutral-400">P{scoreboard.period}</div>
         </div>
 
         {/* Away Score */}
-        <div className="flex-1 text-center">
-            <div className="text-xs font-semibold uppercase truncate" title={opponentName}>{opponentName.substring(0,4)}</div>
-            <div className="text-2xl font-['Orbitron',_sans-serif] text-destructive">{scoreboard.awayScore.toString().padStart(2, '0')}</div>
-        </div>
+        <div className="text-2xl font-['Orbitron',_sans-serif] text-primary">{awayScore.toString().padStart(2, '0')}</div>
       </div>
     </div>
   );
