@@ -13,14 +13,14 @@ interface MiniScoreboardProps {
 }
 
 const FoulDisplay = ({ count }: { count: number }) => (
-    <div className="flex items-center gap-1.5 mt-1">
-      <span className="text-xs font-semibold text-neutral-400">Fautes</span>
+    <div className="flex flex-col items-center gap-1">
+      <span className="text-xs font-semibold text-neutral-400 hidden sm:inline">Fautes</span>
       <div className="flex gap-1">
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
             className={cn(
-              'w-2 h-2 rounded-full transition-colors',
+              'w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors',
               i < count ? 'bg-destructive shadow-[0_0_4px_hsl(var(--destructive))]' : 'bg-destructive/20'
             )}
           />
@@ -74,15 +74,15 @@ const MiniScoreboard = ({ scoreboard, homeName, opponentName, venue }: MiniScore
     <div className="bg-black/70 border border-primary/30 rounded-lg p-2 text-white shadow-[0_0_10px_hsl(var(--primary)/0.5),inset_0_0_5px_rgba(255,255,255,0.1)]">
       <div className="flex items-center justify-between text-center">
         {/* Home Score & Fouls */}
-        <div className="flex-1 flex flex-col items-center">
-            <div className="text-2xl font-['Orbitron',_sans-serif] text-primary">{homeData.score.toString().padStart(2, '0')}</div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-1">
+            <div className="text-2xl sm:text-3xl font-['Orbitron',_sans-serif] text-primary">{homeData.score.toString().padStart(2, '0')}</div>
              <FoulDisplay count={homeData.fouls} />
         </div>
 
         {/* Timer & Period */}
-        <div className="flex flex-col items-center w-24 mx-2">
+        <div className="flex flex-col items-center w-24 mx-1">
             <div className={cn(
-                "font-bold font-['Orbitron',_sans-serif] text-xl text-yellow-400", 
+                "font-bold font-['Orbitron',_sans-serif] text-lg sm:text-xl text-yellow-400", 
                 scoreboard.isRunning && 'animate-pulse'
             )}>
                 {formatTime(localTime)}
@@ -91,8 +91,8 @@ const MiniScoreboard = ({ scoreboard, homeName, opponentName, venue }: MiniScore
         </div>
 
         {/* Away Score & Fouls */}
-        <div className="flex-1 flex flex-col items-center">
-            <div className="text-2xl font-['Orbitron',_sans-serif] text-primary">{awayData.score.toString().padStart(2, '0')}</div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-1">
+            <div className="text-2xl sm:text-3xl font-['Orbitron',_sans-serif] text-primary">{awayData.score.toString().padStart(2, '0')}</div>
             <FoulDisplay count={awayData.fouls} />
         </div>
       </div>
