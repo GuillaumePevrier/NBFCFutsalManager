@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from './ui/button';
-import { CalendarDays, Clock, MapPin, Users, Info, Save, Swords } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Users, Info, Save, Swords, Trophy, Hash } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useDebounce } from '@/hooks/use-debounce';
 import { getOpponents } from '@/app/actions';
@@ -18,6 +18,15 @@ interface MatchDetailsProps {
   onDetailsChange: (details: MatchDetailsType) => void;
   isCoach: boolean;
 }
+
+const competitions = [
+    { id: 'd2', name: 'D2' },
+    { id: 'd1', name: 'D1' },
+    { id: 'coupe_bretagne', name: 'Coupe de Bretagne' },
+    { id: 'coupe_district', name: 'Coupe du District' },
+    { id: 'coupe_france', name: 'Coupe de France' },
+    { id: 'amical', name: 'Amical' },
+];
 
 export default function MatchDetails({ details, onDetailsChange, isCoach }: MatchDetailsProps) {
   const [currentDetails, setCurrentDetails] = useState<MatchDetailsType>(details);
@@ -47,8 +56,11 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setCurrentDetails(prev => ({ ...prev, [name]: value as any }));
+    const { name, value, type } = e.target;
+    setCurrentDetails(prev => ({ 
+        ...prev, 
+        [name]: type === 'number' ? parseInt(value) || 0 : value as any 
+    }));
   };
   
   const handleOpponentChange = (opponentId: string) => {
@@ -64,8 +76,8 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
     }
   };
 
-  const handleSelectChange = (value: '20min' | '25min') => {
-    const newDetails = { ...currentDetails, matchType: value };
+  const handleSelectChange = (name: 'matchType' | 'competition', value: string) => {
+    const newDetails = { ...currentDetails, [name]: value };
     setCurrentDetails(newDetails);
     onDetailsChange(newDetails); // For selects, we can update immediately
   }
@@ -74,7 +86,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
     onDetailsChange(currentDetails);
   };
 
-  const DetailItem = ({ icon: Icon, label, value, name, placeholder, isCoach, isTextarea = false, children }: any) => (
+  const DetailItem = ({ icon: Icon, label, value, name, placeholder, isCoach, isTextarea = false, children, type = 'text' }: any) => (
     <div className="flex items-start gap-3">
       <Icon className="h-5 w-5 text-primary mt-1.5 flex-shrink-0" />
       <div className="flex-grow">
@@ -94,7 +106,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
                 <Input
                     id={name}
                     name={name}
-                    type={name === 'date' ? 'date' : name === 'time' ? 'time' : 'text'}
+                    type={type}
                     value={value}
                     onChange={handleInputChange}
                     placeholder={placeholder}
@@ -128,12 +140,12 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
                 </SelectContent>
             </Select>
           </DetailItem>
-          <DetailItem icon={CalendarDays} label="Date" value={currentDetails.date} name="date" placeholder="JJ/MM/AAAA" isCoach={isCoach} />
-          <DetailItem icon={Clock} label="Heure" value={currentDetails.time} name="time" placeholder="HH:MM" isCoach={isCoach} />
+          <DetailItem icon={CalendarDays} label="Date" value={currentDetails.date} name="date" placeholder="JJ/MM/AAAA" isCoach={isCoach} type="date" />
+          <DetailItem icon={Clock} label="Heure" value={currentDetails.time} name="time" placeholder="HH:MM" isCoach={isCoach} type="time"/>
           <DetailItem icon={MapPin} label="Lieu" value={currentDetails.location} name="location" placeholder="Adresse du match" isCoach={isCoach} />
           
           <DetailItem icon={Swords} label="Type de Match" name="matchType" isCoach={isCoach} value={currentDetails.matchType === '20min' ? "20 min (arrêté)" : "25 min (continu)"}>
-             <Select onValueChange={handleSelectChange} value={currentDetails.matchType} name="matchType" disabled={!isCoach}>
+             <Select onValueChange={(val) => handleSelectChange('matchType', val)} value={currentDetails.matchType} name="matchType" disabled={!isCoach}>
                 <SelectTrigger className="mt-1 bg-transparent border-0 border-b rounded-none px-0 h-8 focus:ring-0 focus:ring-offset-0 focus:border-primary disabled:opacity-100 disabled:cursor-default">
                     <SelectValue placeholder="Choisir le type..." />
                 </SelectTrigger>
@@ -143,7 +155,22 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
                 </SelectContent>
             </Select>
           </DetailItem>
+          
+          <DetailItem icon={Trophy} label="Compétition" name="competition" isCoach={isCoach} value={currentDetails.competition}>
+             <Select onValueChange={(val) => handleSelectChange('competition', val)} value={currentDetails.competition} name="competition" disabled={!isCoach}>
+                <SelectTrigger className="mt-1 bg-transparent border-0 border-b rounded-none px-0 h-8 focus:ring-0 focus:ring-offset-0 focus:border-primary disabled:opacity-100 disabled:cursor-default">
+                    <SelectValue placeholder="Choisir la compétition..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {competitions.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </DetailItem>
 
+          <DetailItem icon={Hash} label="Journée" value={currentDetails.matchday || ''} name="matchday" placeholder="N°" isCoach={isCoach} type="number" />
+          
           <div className="sm:col-span-2 md:col-span-3">
              <DetailItem icon={Info} label="Remarques" value={currentDetails.remarks} name="remarks" placeholder="Instructions, notes..." isCoach={isCoach} isTextarea />
           </div>
