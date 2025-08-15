@@ -174,7 +174,7 @@ export default function MatchesPage() {
   };
   
   const TeamDisplay = ({ name, logoUrl, fallback, isRight = false }: { name: string, logoUrl?: string, fallback: string, isRight?: boolean }) => (
-     <div className={cn("flex flex-1 items-center gap-2", isRight ? "flex-row-reverse justify-start" : "justify-start")}>
+     <div className={cn("flex flex-1 items-center gap-2 min-w-0", isRight ? "justify-end" : "justify-start")}>
         <Avatar className="w-8 h-8">
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
@@ -196,16 +196,10 @@ export default function MatchesPage() {
         <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-colors duration-200 overflow-hidden">
             <CardContent className="p-3 flex items-center justify-between gap-2">
                 <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
-                <div className="flex-shrink-0 w-44 sm:w-48 md:w-64">
+                <div className="flex-shrink-0 w-48 sm:w-56 md:w-64">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
-                <div className={cn("flex items-center gap-2 flex-row-reverse justify-start")}>
-                    <Avatar className="w-8 h-8">
-                        <AvatarImage src={awayTeam.logo} />
-                        <AvatarFallback>{awayTeam.fallback}</AvatarFallback>
-                    </Avatar>
-                    <div className="font-bold truncate hidden sm:block">{awayTeam.name}</div>
-                </div>
+                <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} isRight />
             </CardContent>
             <Button asChild variant="ghost" size="sm" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center bg-primary/20 backdrop-blur-sm">
                  <Link href={`/match/${match.id}`}>
@@ -224,7 +218,7 @@ export default function MatchesPage() {
 
     if (activeFilter === 'results') {
         return (
-            <div className="space-y-4">
+             <div className="space-y-4">
                  <Card className="p-2 bg-card/50">
                     <div className="flex items-center justify-between gap-2">
                         <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('prev')}>
