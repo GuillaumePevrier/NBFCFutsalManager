@@ -174,7 +174,7 @@ export default function MatchesPage() {
   };
   
   const TeamDisplay = ({ name, logoUrl, fallback, isRight = false }: { name: string, logoUrl?: string, fallback: string, isRight?: boolean }) => (
-     <div className={cn("flex items-center gap-2 shrink min-w-0", isRight && "flex-row-reverse")}>
+     <div className={cn("flex items-center gap-2 shrink-0", isRight && "flex-row-reverse")}>
         <Avatar className="w-8 h-8">
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
@@ -289,8 +289,7 @@ export default function MatchesPage() {
       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex-grow flex flex-col p-0 md:p-4 main-bg">
         <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col">
-          <div className="flex justify-between items-center p-4">
-             <h1 className="text-2xl md:text-3xl font-bold">Matchs</h1>
+          <div className="flex justify-end items-center p-4">
             {role === 'coach' && (
                 <Button onClick={handleCreateMatch} size="sm">
                     <PlusCircle className="mr-2 h-4 w-4" />
