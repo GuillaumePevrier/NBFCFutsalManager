@@ -9,17 +9,17 @@ import type { Scoreboard as ScoreboardType, MatchDetails, Player, PlayerPosition
 import { Minus, Pause, Play, Plus, RefreshCw, Trophy, Expand, Shrink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PlayerSelectionDialog from './PlayerSelectionDialog';
-import { updatePlayerStats } from '@/app/actions';
 
 interface ScoreboardProps {
   scoreboard: ScoreboardType;
   details: MatchDetails;
-  onScoreboardChange: (scoreboard: ScoreboardType, eventInfo?: { type: 'goal' | 'foul', player: Player}) => void;
+  onScoreboardChange: (scoreboard: ScoreboardType) => void;
+  onStatUpdate: (type: 'goal' | 'foul', player: Player) => void;
   isCoach: boolean;
   playersOnField: PlayerPosition[];
 }
 
-const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersOnField }: ScoreboardProps) => {
+const Scoreboard = ({ scoreboard, details, onScoreboardChange, onStatUpdate, isCoach, playersOnField }: ScoreboardProps) => {
   const { toast } = useToast();
   const [localTime, setLocalTime] = useState(scoreboard.time);
   const periodDuration = (details.matchType === '25min' ? 25 : 20) * 60;
@@ -85,7 +85,6 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersO
     setDialogState({ ...dialogState, open: false });
 
     let updatedScoreboard = { ...scoreboard, time: localTime };
-    let eventInfo: { type: 'goal' | 'foul', player: Player } | undefined = undefined;
 
     if (type === 'goal') {
         updatedScoreboard.homeScore += 1;
@@ -95,15 +94,8 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, isCoach, playersO
         toast({ title: "Faute", description: `Faute commise par ${player.name}.` });
     }
 
-    // Update player stats in the database
-    await updatePlayerStats({ 
-        playerId: player.id, 
-        goals: type === 'goal' ? 1 : 0, 
-        fouls: type === 'foul' ? 1 : 0 
-    });
-
-    eventInfo = { type, player };
-    onScoreboardChange(updatedScoreboard, eventInfo);
+    onScoreboardChange(updatedScoreboard);
+    onStatUpdate(type, player);
   };
 
 

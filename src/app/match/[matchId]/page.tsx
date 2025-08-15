@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import MatchPollComponent from '@/components/MatchPoll';
 import JerseyWasherSelector from '@/components/JerseyWasherSelector';
-import { updateJerseyWasher } from '@/app/actions';
+import { updateJerseyWasher, updatePlayerStats } from '@/app/actions';
 
 const MAX_ON_FIELD = 5;
 
@@ -100,7 +100,6 @@ export default function MatchPage() {
     const { error } = await supabase
       .from('matches')
       .update({
-        // The `poll` object is now part of the `details` JSONB field
         details: updatedMatch.details,
         team: updatedMatch.team,
         substitutes: updatedMatch.substitutes,
@@ -361,7 +360,8 @@ export default function MatchPage() {
 
   const handlePollChange = (poll: MatchPoll) => {
     if (!match) return;
-    updateMatchData({ ...match, details: { ...match.details, poll } });
+    const newDetails = { ...match.details, poll };
+    updateMatchData({ ...match, details: newDetails });
   }
 
   const handleJerseyWasherChange = async (playerId: string | null) => {
@@ -389,36 +389,43 @@ export default function MatchPage() {
     }
   };
   
-  const handleScoreboardChange = async (scoreboard: ScoreboardType, eventInfo?: { type: 'goal' | 'foul', player: Player}) => {
-    if (!match) return;
+  const handleScoreboardChange = async (scoreboard: ScoreboardType) => {
+      if (!match) return;
+      updateMatchData({ ...match, scoreboard });
+  };
+  
+  const handleStatUpdate = async (type: 'goal' | 'foul', player: Player) => {
+      if (!match) return;
+      const { success } = await updatePlayerStats({
+        playerId: player.id,
+        goals: type === 'goal' ? 1 : 0,
+        fouls: type === 'foul' ? 1 : 0,
+      });
 
-    let updatedMatch = { ...match, scoreboard };
+      if (success) {
+        // Optimistically update player stats in local state to show on token
+         setMatch(currentMatch => {
+            if (!currentMatch) return null;
 
-    // Optimistically update the player stats in the local match state
-    if (eventInfo && eventInfo.player) {
-        const { player, type } = eventInfo;
-        const playerInTeam = updatedMatch.team.find(p => p.id === player.id);
-        const playerInSubs = updatedMatch.substitutes.find(p => p.id === player.id);
+            const updatePlayerInList = (p: PlayerPosition) => {
+                if (p.id === player.id) {
+                    return {
+                        ...p,
+                        goals: (p.goals || 0) + (type === 'goal' ? 1 : 0),
+                        fouls: (p.fouls || 0) + (type === 'foul' ? 1 : 0),
+                    }
+                }
+                return p;
+            }
 
-        const updatePlayerStatsLocally = (p: PlayerPosition) => {
-            const newGoals = (p.goals || 0) + (type === 'goal' ? 1 : 0);
-            const newFouls = (p.fouls || 0) + (type === 'foul' ? 1 : 0);
             return {
-                ...p,
-                goals: newGoals,
-                fouls: newFouls
-            };
-        };
-        
-        if (playerInTeam) {
-            updatedMatch.team = updatedMatch.team.map(p => p.id === player.id ? updatePlayerStatsLocally(p) : p);
-        } else if (playerInSubs) {
-            updatedMatch.substitutes = updatedMatch.substitutes.map(p => p.id === player.id ? updatePlayerStatsLocally(p) : p);
-        }
-    }
-
-    updateMatchData(updatedMatch);
-};
+                ...currentMatch,
+                team: currentMatch.team.map(updatePlayerInList),
+                substitutes: currentMatch.substitutes.map(updatePlayerInList),
+            }
+         });
+      }
+  };
 
 
   if (!match || allPlayers.length === 0) {
@@ -443,6 +450,7 @@ export default function MatchPage() {
           <Scoreboard 
             scoreboard={match.scoreboard}
             onScoreboardChange={handleScoreboardChange}
+            onStatUpdate={handleStatUpdate}
             details={match.details}
             isCoach={role === 'coach'}
             playersOnField={match.team}
