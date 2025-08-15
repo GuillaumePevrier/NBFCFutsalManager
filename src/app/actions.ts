@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -205,8 +206,62 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
 
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
+    revalidatePath('/match/*'); // Revalidate match page to show updated points potentially
     
     return { success: true };
+}
+
+const POINTS_FOR_JERSEY_WASHING = 25;
+
+export async function updateJerseyWasher({
+  matchId,
+  newWasherPlayerId,
+  previousWasherPlayerId
+}: {
+  matchId: string,
+  newWasherPlayerId: string | null,
+  previousWasherPlayerId?: string | null,
+}): Promise<{ success: boolean, message?: string, error?: string }> {
+  const supabase = createClient();
+
+  // 1. Update the match details
+  const { data: matchData, error: matchUpdateError } = await supabase
+    .from('matches')
+    .update({ details: { jerseyWasherPlayerId: newWasherPlayerId } })
+    .eq('id', matchId)
+    .select('details')
+    .single();
+
+  if (matchUpdateError) {
+    console.error("Failed to update jersey washer in match:", matchUpdateError);
+    return { success: false, error: "Impossible de mettre à jour le match." };
+  }
+  
+  // 2. Adjust points if the washer has changed
+  if (newWasherPlayerId !== previousWasherPlayerId) {
+    // Revoke points from the previous washer, if there was one
+    if (previousWasherPlayerId) {
+      const { success } = await incrementPlayerPoints(previousWasherPlayerId, -POINTS_FOR_JERSEY_WASHING);
+      if(!success) console.warn(`Failed to revoke points from ${previousWasherPlayerId}`);
+    }
+    // Grant points to the new washer, if there is one
+    if (newWasherPlayerId) {
+      const { success } = await incrementPlayerPoints(newWasherPlayerId, POINTS_FOR_JERSEY_WASHING);
+      if(!success) {
+          console.error(`Failed to grant points to ${newWasherPlayerId}`);
+          return { success: false, error: "Le match a été mis à jour, mais l'attribution des points a échoué." };
+      }
+    }
+  }
+
+  revalidatePath(`/match/${matchId}`);
+  if(newWasherPlayerId) revalidatePath(`/player/${newWasherPlayerId}`);
+  if(previousWasherPlayerId) revalidatePath(`/player/${previousWasherPlayerId}`);
+
+  const newPlayer = newWasherPlayerId ? await getPlayerById(newWasherPlayerId) : null;
+  const message = newWasherPlayerId ? `${newPlayer?.name} est maintenant responsable des maillots et a reçu ${POINTS_FOR_JERSEY_WASHING} points.` : "Le responsable des maillots a été retiré.";
+
+  return { success: true, message: message };
 }
 
 

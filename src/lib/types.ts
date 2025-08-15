@@ -34,6 +34,7 @@ export interface MatchDetails {
   venue: 'home' | 'away';
   competition?: string; // e.g. 'd1', 'coupe_de_france'
   matchday?: number; // e.g. 1, 2, 3 for league matches
+  jerseyWasherPlayerId?: string; // uuid of the player assigned to wash jerseys
 }
 
 export interface Scoreboard {

@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import MatchPollComponent from '@/components/MatchPoll';
+import JerseyWasherSelector from '@/components/JerseyWasherSelector';
+import { updateJerseyWasher } from '@/app/actions';
 
 const MAX_ON_FIELD = 5;
 
@@ -38,6 +40,7 @@ const ensureMatchDefaults = (match: Match): Match => {
       venue: details.venue || 'home', // Default to home
       competition: details.competition || 'amical', // Default to 'amical'
       matchday: details.matchday || 1, // Default to day 1
+      jerseyWasherPlayerId: details.jerseyWasherPlayerId || undefined,
     },
     scoreboard: {
         homeScore: 0,
@@ -311,7 +314,7 @@ export default function MatchPage() {
         updateMatchData(match); 
     }
     
-  }, [draggingPlayer, match, updateMatchData, router]);
+  }, [draggingPlayer, match, updateMatchData]);
 
   useEffect(() => {
     if (draggingPlayer) {
@@ -332,7 +335,7 @@ export default function MatchPage() {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleDragEnd);
     };
-  }, [draggingPlayer, handleMouseMove, handleDragEnd, handleTouchMove]);
+  }, [draggingPlayer, handleMouseMove, handleDragEnd, handleTouchMove, router]);
   
   const onCoachLogin = () => {
     setRole('coach');
@@ -358,6 +361,31 @@ export default function MatchPage() {
     if (!match) return;
     updateMatchData({ ...match, poll });
   }
+
+  const handleJerseyWasherChange = async (playerId: string | null) => {
+    if (!match || role !== 'coach') return;
+    const previousWasherId = match.details.jerseyWasherPlayerId;
+    
+    const result = await updateJerseyWasher({
+      matchId: match.id,
+      newWasherPlayerId: playerId,
+      previousWasherPlayerId: previousWasherId
+    });
+
+    if (result.success) {
+      toast({
+        title: "Responsable maillots mis à jour",
+        description: result.message,
+      });
+      // The optimistic update will be replaced by the realtime subscription update
+    } else {
+      toast({
+        title: "Erreur",
+        description: result.error || "La mise à jour a échoué.",
+        variant: "destructive"
+      });
+    }
+  };
   
   const handleScoreboardChange = async (scoreboard: ScoreboardType, eventInfo?: { type: 'goal' | 'foul', player: Player}) => {
     if (!match) return;
@@ -421,6 +449,12 @@ export default function MatchPage() {
             poll={match.poll}
             allPlayers={allPlayers}
             onPollChange={handlePollChange}
+            role={role}
+          />
+          <JerseyWasherSelector
+            allPlayers={allPlayers}
+            selectedPlayerId={match.details.jerseyWasherPlayerId}
+            onPlayerSelect={handleJerseyWasherChange}
             role={role}
           />
           <FutsalCourt ref={courtRef}>
