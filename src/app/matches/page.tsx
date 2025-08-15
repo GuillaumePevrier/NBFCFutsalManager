@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MiniScoreboard from '@/components/MiniScoreboard';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const competitions = [
     { id: 'd2', name: 'D2' },
@@ -294,5 +295,3 @@ export default function MatchesPage() {
     </div>
   );
 }
-
-    
