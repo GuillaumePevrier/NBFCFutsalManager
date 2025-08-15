@@ -25,7 +25,9 @@ const MAX_ON_FIELD = 5;
 const ensureMatchDefaults = (match: Match): Match => {
   const details = match.details || {};
   const scoreboard = match.scoreboard || {};
-  const poll = match.poll || {};
+  
+  // Extract poll from details or provide a default structure
+  const poll = details.poll || {};
 
   return {
     ...match,
@@ -41,6 +43,12 @@ const ensureMatchDefaults = (match: Match): Match => {
       competition: details.competition || 'amical', // Default to 'amical'
       matchday: details.matchday || 1, // Default to day 1
       jerseyWasherPlayerId: details.jerseyWasherPlayerId || undefined,
+      poll: {
+        status: 'inactive',
+        deadline: null,
+        availabilities: [],
+        ...poll,
+      }
     },
     scoreboard: {
         homeScore: 0,
@@ -53,12 +61,6 @@ const ensureMatchDefaults = (match: Match): Match => {
         timerLastStarted: null,
        ...scoreboard,
     },
-    poll: {
-      status: 'inactive',
-      deadline: null,
-      availabilities: [],
-      ...poll,
-    }
   };
 };
 
@@ -98,11 +100,11 @@ export default function MatchPage() {
     const { error } = await supabase
       .from('matches')
       .update({
+        // The `poll` object is now part of the `details` JSONB field
         details: updatedMatch.details,
         team: updatedMatch.team,
         substitutes: updatedMatch.substitutes,
         scoreboard: updatedMatch.scoreboard,
-        poll: updatedMatch.poll,
       })
       .eq('id', matchId);
 
@@ -359,7 +361,7 @@ export default function MatchPage() {
 
   const handlePollChange = (poll: MatchPoll) => {
     if (!match) return;
-    updateMatchData({ ...match, poll });
+    updateMatchData({ ...match, details: { ...match.details, poll } });
   }
 
   const handleJerseyWasherChange = async (playerId: string | null) => {
@@ -446,7 +448,7 @@ export default function MatchPage() {
             playersOnField={match.team}
           />
           <MatchPollComponent
-            poll={match.poll}
+            poll={match.details.poll!}
             allPlayers={allPlayers}
             onPollChange={handlePollChange}
             role={role}
@@ -498,7 +500,7 @@ export default function MatchPage() {
           allPlayers={allPlayers}
           team={match.team}
           substitutes={match.substitutes}
-          poll={match.poll}
+          poll={match.details.poll!}
           role={role}
           onAddPlayer={handleAddPlayer}
           onRemovePlayer={handleRemovePlayer}

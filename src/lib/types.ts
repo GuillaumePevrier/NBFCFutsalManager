@@ -23,6 +23,18 @@ export interface PlayerPosition extends Player {
 
 export type Role = 'coach' | 'player';
 
+
+export interface PlayerAvailability {
+  playerId: string;
+  status: 'available' | 'unavailable' | 'undecided';
+}
+
+export interface MatchPoll {
+  status: 'inactive' | 'active' | 'closed';
+  deadline: string | null; // ISO string for the poll deadline
+  availabilities: PlayerAvailability[];
+}
+
 export interface MatchDetails {
   opponent: string;
   opponentId?: string; // uuid of the opponent from the opponents table
@@ -35,6 +47,7 @@ export interface MatchDetails {
   competition?: string; // e.g. 'd1', 'coupe_de_france'
   matchday?: number; // e.g. 1, 2, 3 for league matches
   jerseyWasherPlayerId?: string; // uuid of the player assigned to wash jerseys
+  poll?: MatchPoll; // Poll is now nested within details
 }
 
 export interface Scoreboard {
@@ -48,17 +61,6 @@ export interface Scoreboard {
   timerLastStarted: string | null; // ISO string
 }
 
-export interface PlayerAvailability {
-  playerId: string;
-  status: 'available' | 'unavailable' | 'undecided';
-}
-
-export interface MatchPoll {
-  status: 'inactive' | 'active' | 'closed';
-  deadline: string | null; // ISO string for the poll deadline
-  availabilities: PlayerAvailability[];
-}
-
 
 // This interface now matches the Supabase table structure
 export interface Match {
@@ -68,7 +70,6 @@ export interface Match {
   team: PlayerPosition[];
   substitutes: PlayerPosition[];
   scoreboard: Scoreboard;
-  poll: MatchPoll; // Added for availability poll
   opponent_logo_url?: string; // Optional field from join
 }
 

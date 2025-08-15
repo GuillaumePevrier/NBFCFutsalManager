@@ -73,13 +73,13 @@ export default function MatchesPage() {
             competition: 'amical', // default
             matchday: 1, // default
             ...m.details,
+             poll: { // default poll structure nested in details
+              status: 'inactive',
+              deadline: null,
+              availabilities: [],
+              ...(m.details.poll || {})
+            }
           },
-           poll: { // default poll structure
-            status: 'inactive',
-            deadline: null,
-            availabilities: [],
-            ...m.poll
-          }
         })));
       }
       setLoading(false);
@@ -120,7 +120,12 @@ export default function MatchesPage() {
         matchType: '20min',
         venue: 'home',
         competition: activeCompetition,
-        matchday: currentMatchday
+        matchday: currentMatchday,
+        poll: {
+          status: 'inactive',
+          deadline: null,
+          availabilities: []
+        }
       },
       team: [],
       substitutes: [],
@@ -134,11 +139,6 @@ export default function MatchesPage() {
         period: 1,
         timerLastStarted: null,
       },
-      poll: {
-        status: 'inactive',
-        deadline: null,
-        availabilities: []
-      }
     };
 
     const { data, error } = await supabase.from('matches').insert(newMatch).select().single();
@@ -208,7 +208,7 @@ export default function MatchesPage() {
                  <div className="flex-1 min-w-0">
                     <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
                 </div>
-                <div className="w-40 sm:w-48 md:w-64 flex-shrink-0">
+                <div className="w-44 sm:w-48 md:w-64 flex-shrink-0">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
                 <div className="flex-1 min-w-0">
