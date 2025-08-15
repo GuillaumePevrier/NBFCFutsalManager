@@ -88,8 +88,7 @@ export default function PlayersAdminPage() {
             <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
             <main className="flex-grow p-4 md:p-8 main-bg">
                 <div className="w-full max-w-5xl mx-auto">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl md:text-3xl font-bold">Effectif du Club</h1>
+                    <div className="flex justify-end items-center mb-6">
                         {isCoach && (
                             <Button asChild size="sm">
                                 <Link href="/admin/players/new">
