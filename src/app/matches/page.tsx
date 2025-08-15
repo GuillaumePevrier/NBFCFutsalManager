@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -174,7 +174,7 @@ export default function MatchesPage() {
   };
   
   const TeamDisplay = ({ name, logoUrl, fallback, isRight = false }: { name: string, logoUrl?: string, fallback: string, isRight?: boolean }) => (
-     <div className={cn("flex items-center gap-2 shrink-0", isRight && "flex-row-reverse")}>
+     <div className={cn("flex items-center gap-2", isRight ? "flex-row-reverse" : "")}>
         <Avatar className="w-8 h-8">
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
@@ -198,7 +198,7 @@ export default function MatchesPage() {
                 <div className="flex-1 flex justify-start min-w-0">
                     <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
                 </div>
-                <div className="flex-shrink-0 w-36 sm:w-40 md:w-48">
+                <div className="flex-shrink-0 w-48 sm:w-56 md:w-64">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
                 <div className="flex-1 flex justify-end min-w-0">
