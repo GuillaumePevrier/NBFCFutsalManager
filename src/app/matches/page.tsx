@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MiniScoreboard from '@/components/MiniScoreboard';
+import { cn } from '@/lib/utils';
 
 const competitions = [
     { id: 'd2', name: 'D2' },
@@ -68,10 +69,10 @@ export default function MatchesPage() {
         setMatches((data as Match[] || []).map(m => ({
           ...m,
           details: {
-            venue: 'home',
+            venue: m.details?.venue || 'home',
             ...m.details,
-            competition: m.details.competition || 'amical',
-            matchday: m.details.matchday || 1
+            competition: m.details?.competition || 'amical',
+            matchday: m.details?.matchday || 1
           }
         })));
       }
@@ -155,8 +156,11 @@ export default function MatchesPage() {
     return opponent?.logo_url;
   };
   
-  const TeamDisplay = ({ name, logoUrl, fallback }: { name: string, logoUrl?: string, fallback: string }) => (
-     <div className="flex items-center gap-2 truncate">
+  const TeamDisplay = ({ name, logoUrl, fallback, align = 'left' }: { name: string, logoUrl?: string, fallback: string, align?: 'left' | 'right' }) => (
+     <div className={cn(
+        "flex items-center gap-2 flex-1",
+        align === 'left' ? 'justify-start' : 'justify-end'
+        )}>
         <Avatar className="w-8 h-8">
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
@@ -171,21 +175,17 @@ export default function MatchesPage() {
     const opponentName = match.details.opponent;
     const opponentLogo = getOpponentLogo(match);
 
-    const homeTeam = isHome ? { name: nbfcName, logo: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png", fallback: "N" } : { name: opponentName, logo: opponentLogo, fallback: opponentName.substring(0,1) };
-    const awayTeam = isHome ? { name: opponentName, logo: opponentLogo, fallback: opponentName.substring(0,1) } : { name: nbfcName, logo: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png", fallback: "N" };
+    const homeTeam = isHome ? { name: nbfcName, logo: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png", fallback: "N" } : { name: opponentName, logo: opponentLogo, fallback: opponentName ? opponentName.substring(0,1) : 'A' };
+    const awayTeam = isHome ? { name: opponentName, logo: opponentLogo, fallback: opponentName ? opponentName.substring(0,1) : 'A' } : { name: nbfcName, logo: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png", fallback: "N" };
 
     return (
         <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-colors duration-200 overflow-hidden">
             <CardContent className="p-3 flex items-center justify-between gap-2">
-                <div className="flex-1">
-                  <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
-                </div>
-                <div className="w-48">
+                 <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} align="left" />
+                <div className="w-40 sm:w-48">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
-                <div className="flex-1 flex justify-end">
-                  <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} />
-                </div>
+                <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} align="right" />
             </CardContent>
             <Button asChild variant="ghost" size="sm" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center bg-primary/20 backdrop-blur-sm">
                  <Link href={`/match/${match.id}`}>
@@ -268,7 +268,7 @@ export default function MatchesPage() {
                     {competitions.map(comp => (
                         <TabsTrigger key={comp.id} value={comp.id} className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none relative px-3 text-muted-foreground">
                             {comp.name}
-                            {activeCompetition === comp.id && <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary))]"></div>}
+                            {activeCompetition === comp.id && <motion.div layoutId="active-competition-indicator" className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary))]"></motion.div>}
                         </TabsTrigger>
                     ))}
                     </TabsList>
@@ -294,3 +294,5 @@ export default function MatchesPage() {
     </div>
   );
 }
+
+    
