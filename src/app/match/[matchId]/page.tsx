@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Player, PlayerPosition, Role, MatchDetails as MatchDetailsType, Scoreboard as ScoreboardType, Match } from '@/lib/types';
+import type { Player, PlayerPosition, Role, MatchDetails as MatchDetailsType, Scoreboard as ScoreboardType, Match, MatchPoll } from '@/lib/types';
 import ControlPanel from '@/components/ControlPanel';
 import FutsalCourt from '@/components/FutsalCourt';
 import PlayerToken from '@/components/PlayerToken';
@@ -15,6 +15,7 @@ import { Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
+import MatchPollComponent from '@/components/MatchPoll';
 
 const MAX_ON_FIELD = 5;
 
@@ -22,6 +23,7 @@ const MAX_ON_FIELD = 5;
 const ensureMatchDefaults = (match: Match): Match => {
   const details = match.details || {};
   const scoreboard = match.scoreboard || {};
+  const poll = match.poll || {};
 
   return {
     ...match,
@@ -47,6 +49,12 @@ const ensureMatchDefaults = (match: Match): Match => {
         period: 1,
         timerLastStarted: null,
        ...scoreboard,
+    },
+    poll: {
+      status: 'inactive',
+      deadline: null,
+      availabilities: [],
+      ...poll,
     }
   };
 };
@@ -91,6 +99,7 @@ export default function MatchPage() {
         team: updatedMatch.team,
         substitutes: updatedMatch.substitutes,
         scoreboard: updatedMatch.scoreboard,
+        poll: updatedMatch.poll,
       })
       .eq('id', matchId);
 
@@ -344,6 +353,11 @@ export default function MatchPage() {
     
     updateMatchData({ ...match, details, scoreboard: updatedScoreboard }, true);
   };
+
+  const handlePollChange = (poll: MatchPoll) => {
+    if (!match) return;
+    updateMatchData({ ...match, poll });
+  }
   
   const handleScoreboardChange = async (scoreboard: ScoreboardType, eventInfo?: { type: 'goal' | 'foul', player: Player}) => {
     if (!match) return;
@@ -402,6 +416,12 @@ export default function MatchPage() {
             details={match.details}
             isCoach={role === 'coach'}
             playersOnField={match.team}
+          />
+          <MatchPollComponent
+            poll={match.poll}
+            allPlayers={allPlayers}
+            onPollChange={handlePollChange}
+            role={role}
           />
           <FutsalCourt ref={courtRef}>
             {[...match.team, ...match.substitutes].map(player => (
