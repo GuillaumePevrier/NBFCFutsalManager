@@ -65,7 +65,7 @@ export default function MatchesPage() {
 
       if (error && Object.keys(error).length > 0 && error.message) {
         console.error("Failed to fetch matches:", error);
-        // Do not show a toast for an empty error object, which can happen.
+        toast({ title: "Erreur", description: "Impossible de charger la liste des matchs.", variant: "destructive" });
       } else {
         setMatches(((data as Match[]) || []).map(m => ({
           ...m,
@@ -173,8 +173,8 @@ export default function MatchesPage() {
     setCurrentMatchday(newMatchdays[0] || 1);
   };
   
-  const TeamDisplay = ({ name, logoUrl, fallback }: { name: string, logoUrl?: string, fallback: string }) => (
-     <div className="flex items-center gap-2 flex-1 shrink min-w-0">
+  const TeamDisplay = ({ name, logoUrl, fallback, isRight = false }: { name: string, logoUrl?: string, fallback: string, isRight?: boolean }) => (
+     <div className={cn("flex items-center gap-2 shrink min-w-0", isRight && "flex-row-reverse")}>
         <Avatar className="w-8 h-8">
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
@@ -201,8 +201,8 @@ export default function MatchesPage() {
                 <div className="flex-shrink-0 w-36 sm:w-40 md:w-48">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
-                <div className="flex-1 flex justify-end min-w-0 text-right">
-                    <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} />
+                <div className="flex-1 flex justify-end min-w-0">
+                    <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} isRight />
                 </div>
             </CardContent>
             <Button asChild variant="ghost" size="sm" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center bg-primary/20 backdrop-blur-sm">
@@ -318,5 +318,3 @@ export default function MatchesPage() {
     </div>
   );
 }
-
-    
