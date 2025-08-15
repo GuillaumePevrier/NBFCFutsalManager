@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import type { Player, Opponent } from '@/lib/types';
+import type { Player, Opponent, Match } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -275,6 +275,35 @@ export async function updateJerseyWasher({
   const message = newWasherPlayerId ? `${newPlayer?.name} est maintenant responsable des maillots et a reçu ${POINTS_FOR_JERSEY_WASHING} points.` : "Le responsable des maillots a été retiré.";
 
   return { success: true, message: message };
+}
+
+export type PlayerActivity = {
+    jerseyWashingCount: number;
+    availabilityCount: number;
+};
+
+export async function getPlayerActivity(playerId: string): Promise<PlayerActivity> {
+    const supabase = createClient();
+    const { data: matches, error } = await supabase.from('matches').select('details');
+
+    if (error) {
+        console.error("Failed to fetch matches for player activity:", error);
+        return { jerseyWashingCount: 0, availabilityCount: 0 };
+    }
+
+    let jerseyWashingCount = 0;
+    let availabilityCount = 0;
+
+    for (const match of matches as Match[]) {
+        if (match.details?.jerseyWasherPlayerId === playerId) {
+            jerseyWashingCount++;
+        }
+        if (match.details?.poll?.availabilities.some(a => a.playerId === playerId && a.status === 'available')) {
+            availabilityCount++;
+        }
+    }
+
+    return { jerseyWashingCount, availabilityCount };
 }
 
 

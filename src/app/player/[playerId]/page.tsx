@@ -1,5 +1,5 @@
 
-import { getPlayerById } from '@/app/actions';
+import { getPlayerById, getPlayerActivity, type PlayerActivity } from '@/app/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Shield, Star, Target, Shirt, CheckSquare } from 'lucide-react';
@@ -8,25 +8,12 @@ import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-interface InfoRowProps {
-    icon: React.ElementType;
-    label: string;
-    value?: string | number;
-    colorClass?: string;
-}
-
-const InfoRow = ({ icon: Icon, label, value, colorClass = 'text-primary' }: InfoRowProps) => {
-  if (value === undefined || value === null) return null;
-  return (
-    <div className="flex items-center gap-4 text-card-foreground">
-      <Icon className={`w-5 h-5 ${colorClass}`} />
-      <div className="flex flex-col">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="font-semibold text-sm">{value}</span>
-      </div>
-    </div>
-  );
+const POINTS_CONFIG = {
+    availability: 10,
+    jerseyWashing: 25,
+    goal: 5, // Example, can be configured elsewhere
 };
 
 const StatCard = ({ icon: Icon, label, value, colorClass }: { icon: React.ElementType, label: string, value: string | number, colorClass: string}) => (
@@ -35,15 +22,80 @@ const StatCard = ({ icon: Icon, label, value, colorClass }: { icon: React.Elemen
         <p className="text-2xl font-bold text-card-foreground">{value}</p>
         <p className="text-xs text-muted-foreground">{label}</p>
     </div>
-)
+);
 
+async function PlayerActivityHistory({ activity, player }: { activity: PlayerActivity, player: NonNullable<Awaited<ReturnType<typeof getPlayerById>>> }) {
+    const activityData = [
+        {
+            action: "Disponibilité pour un match",
+            count: activity.availabilityCount,
+            pointsPerAction: POINTS_CONFIG.availability,
+            total: activity.availabilityCount * POINTS_CONFIG.availability
+        },
+        {
+            action: "Lavage des maillots",
+            count: activity.jerseyWashingCount,
+            pointsPerAction: POINTS_CONFIG.jerseyWashing,
+            total: activity.jerseyWashingCount * POINTS_CONFIG.jerseyWashing
+        },
+        {
+            action: "Buts marqués",
+            count: player.goals || 0,
+            pointsPerAction: POINTS_CONFIG.goal,
+            total: (player.goals || 0) * POINTS_CONFIG.goal,
+        }
+    ];
+
+    const totalCalculatedPoints = activityData.reduce((sum, item) => sum + item.total, 0);
+
+    return (
+        <Card className="w-full max-w-sm mx-auto bg-card/80 mt-4">
+            <CardHeader>
+                <CardTitle className="text-xl flex items-center gap-2">
+                    <Star className="text-yellow-400"/>
+                    Récapitulatif des Points
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Activité</TableHead>
+                            <TableHead className="text-center">Qté</TableHead>
+                            <TableHead className="text-right">Total Points</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {activityData.map((item) => (
+                            <TableRow key={item.action}>
+                                <TableCell className="font-medium">{item.action}</TableCell>
+                                <TableCell className="text-center">{item.count}</TableCell>
+                                <TableCell className="text-right font-semibold">{item.total}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                <Separator className="my-2 bg-border/50" />
+                <div className="flex justify-between items-center pt-2 text-lg font-bold">
+                    <span>Total Général Estimé:</span>
+                    <span className="text-primary">{totalCalculatedPoints} pts</span>
+                </div>
+                 <p className="text-xs text-muted-foreground mt-2">
+                    Le total affiché ici est calculé selon le barème actuel. Le total officiel du joueur est de <span className="font-bold">{player.points || 0}</span> points.
+                </p>
+            </CardContent>
+        </Card>
+    )
+}
 
 export default async function PlayerPage({ params }: { params: { playerId: string } }) {
   const player = await getPlayerById(params.playerId);
-
+  
   if (!player) {
     notFound();
   }
+  
+  const activity = await getPlayerActivity(params.playerId);
   
   const fallbackInitials = player.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
@@ -57,7 +109,7 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                 </Link>
             </Button>
         </Header>
-        <main className="flex-grow flex items-center justify-center p-4">
+        <main className="flex-grow flex flex-col items-center justify-center p-4">
             <Card className="w-full max-w-sm mx-auto bg-gradient-to-br from-card to-background border-2 border-primary/20 shadow-2xl rounded-2xl overflow-hidden">
                 <CardHeader className="p-6 bg-gradient-to-b from-primary/20 via-transparent to-transparent relative">
                    <div 
@@ -98,20 +150,20 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                     <Card className="bg-background/40">
                          <CardHeader><CardTitle className='text-lg'>Statistiques & Implication</CardTitle></CardHeader>
                          <CardContent>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <StatCard icon={Star} label="Points" value={player.points || 0} colorClass="text-yellow-400" />
                                 <StatCard icon={Target} label="Buts" value={player.goals || 0} colorClass="text-green-400" />
                                 <StatCard icon={Shield} label="Fautes" value={player.fouls || 0} colorClass="text-orange-400" />
-                                <StatCard icon={CheckSquare} label="Présences" value={"N/A"} colorClass="text-blue-400" />
-                                <StatCard icon={Shirt} label="Lavage Maillots" value={"N/A"} colorClass="text-indigo-400" />
+                                <StatCard icon={CheckSquare} label="Présences" value={activity.availabilityCount} colorClass="text-blue-400" />
+                                <StatCard icon={Shirt} label="Lavage Maillots" value={activity.jerseyWashingCount} colorClass="text-indigo-400" />
+                                <StatCard icon={Star} label="Statut" value={player.status || 'N/A'} colorClass="text-gray-400" />
                             </div>
                          </CardContent>
                     </Card>
 
-                    <InfoRow icon={Star} label="Statut" value={player.status} />
-
                 </CardContent>
             </Card>
+             <PlayerActivityHistory activity={activity} player={player} />
         </main>
     </div>
   );
