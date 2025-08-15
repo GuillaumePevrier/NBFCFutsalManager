@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Player, PlayerPosition, Role } from '@/lib/types';
+import type { Player, PlayerPosition, Role, MatchPoll } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +15,7 @@ interface ControlPanelProps {
   allPlayers: Player[];
   team: PlayerPosition[];
   substitutes: PlayerPosition[];
+  poll: MatchPoll;
   role: Role;
   onAddPlayer: (playerId: string) => void;
   onRemovePlayer: (playerId: string) => void;
@@ -26,6 +27,7 @@ const ControlPanel = ({
   allPlayers,
   team,
   substitutes,
+  poll,
   role,
   onAddPlayer,
   onRemovePlayer,
@@ -34,8 +36,26 @@ const ControlPanel = ({
 }: ControlPanelProps) => {
   
   const fullTeam = [...team, ...substitutes];
-  const availablePlayers = allPlayers.filter(p => !fullTeam.some(teamPlayer => teamPlayer.id === p.id));
-  const canAddMorePlayers = fullTeam.length < allPlayers.length;
+  
+  const availableForSelection = poll.status === 'active' || poll.status === 'closed' 
+    ? allPlayers.filter(p => poll.availabilities.find(a => a.playerId === p.id && a.status === 'available'))
+    : allPlayers;
+
+  const selectablePlayers = availableForSelection.filter(p => !fullTeam.some(teamPlayer => teamPlayer.id === p.id));
+  
+  const getSelectPlaceholder = () => {
+    if (poll.status === 'inactive') {
+      return "Démarrez un sondage pour sélectionner";
+    }
+    if (selectablePlayers.length > 0) {
+      return "Sélectionner un joueur...";
+    }
+    if (availableForSelection.length === 0) {
+        return "Aucun joueur disponible";
+    }
+    return "Tous les joueurs disponibles sont ajoutés";
+  };
+
 
   return (
     <Card className="w-full md:w-80 lg:w-96 bg-card border-l-0 md:border-l flex flex-col h-auto md:h-screen rounded-none">
@@ -52,12 +72,12 @@ const ControlPanel = ({
           {role === 'coach' && (
             <div className="space-y-4">
               <Label>Ajouter un joueur</Label>
-              <Select onValueChange={onAddPlayer} disabled={!canAddMorePlayers || !availablePlayers.length}>
+              <Select onValueChange={onAddPlayer} disabled={poll.status === 'inactive' || selectablePlayers.length === 0}>
                 <SelectTrigger>
-                  <SelectValue placeholder={availablePlayers.length > 0 ? "Sélectionner un joueur..." : "Tous les joueurs sont ajoutés"} />
+                  <SelectValue placeholder={getSelectPlaceholder()} />
                 </SelectTrigger>
                 <SelectContent>
-                  {availablePlayers.map(player => (
+                  {selectablePlayers.map(player => (
                     <SelectItem key={player.id} value={player.id}>
                       {player.name}
                     </SelectItem>
@@ -135,4 +155,3 @@ const ControlPanel = ({
 };
 
 export default ControlPanel;
-

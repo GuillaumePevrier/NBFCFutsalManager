@@ -156,7 +156,6 @@ export async function deletePlayer(playerId: string) {
 export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: string, goals?: number, fouls?: number }): Promise<{ success: boolean }> {
     const supabase = createClient();
     
-    // 1. Récupérer les stats actuelles du joueur
     const { data: currentPlayer, error: fetchError } = await supabase
       .from('players')
       .select('goals, fouls')
@@ -168,11 +167,9 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
       return { success: false };
     }
 
-    // 2. Préparer les nouvelles valeurs
     const newGoals = (currentPlayer.goals || 0) + (goals || 0);
     const newFouls = (currentPlayer.fouls || 0) + (fouls || 0);
 
-    // 3. Mettre à jour la base de données
     const { error: updateError } = await supabase
       .from('players')
       .update({
@@ -186,11 +183,29 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
       return { success: false };
     }
     
-    // Revalider les chemins où les stats pourraient être affichées
     revalidatePath(`/player/${playerId}`);
-    revalidatePath(`/match/*`); // Revalide toutes les pages de match
+    revalidatePath(`/match/*`);
     revalidatePath('/admin/players');
 
+    return { success: true };
+}
+
+export async function incrementPlayerPoints(playerId: string, points: number): Promise<{ success: boolean }> {
+    const supabase = createClient();
+    
+    const { data, error } = await supabase.rpc('increment_player_points', {
+      player_id: playerId,
+      points_to_add: points
+    });
+
+    if (error) {
+        console.error(`Failed to increment points for player ${playerId}:`, error);
+        return { success: false };
+    }
+
+    revalidatePath(`/player/${playerId}`);
+    revalidatePath('/admin/players');
+    
     return { success: true };
 }
 

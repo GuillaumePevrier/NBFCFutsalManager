@@ -2,7 +2,7 @@
 import { getPlayerById } from '@/app/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Shield, Star, Target } from 'lucide-react';
+import { ArrowLeft, Shield, Star, Target, CalendarCheck } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
@@ -84,9 +84,10 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                     <Separator className="bg-border/50" />
                     
                     <div className="space-y-4">
+                        <StatRow icon={Star} label="Points d'Implication" value={player.points || 0} barColorClass="bg-yellow-500" />
                         <StatRow icon={Target} label="Buts" value={player.goals || 0} barColorClass="bg-green-500" />
                         <StatRow icon={Shield} label="Fautes" value={player.fouls || 0} barColorClass="bg-yellow-500" />
-                        <StatRow icon={Star} label="Présences" value={"N/A"} barColorClass="bg-blue-500" />
+                        <StatRow icon={CalendarCheck} label="Présences" value={"N/A"} barColorClass="bg-blue-500" />
                     </div>
                 </CardContent>
             </Card>

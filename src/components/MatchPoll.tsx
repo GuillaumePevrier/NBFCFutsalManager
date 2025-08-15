@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { incrementPlayerPoints } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 interface MatchPollProps {
   poll: MatchPoll;
@@ -73,6 +75,8 @@ const Countdown = ({ deadline }: { deadline: string | null }) => {
 
 export default function MatchPollComponent({ poll, allPlayers, onPollChange, role }: MatchPollProps) {
   const [deadlineHours, setDeadlineHours] = useState(24);
+  const { toast } = useToast();
+  const POINTS_FOR_AVAILABILITY = 10;
 
   const handleStartPoll = () => {
     if (deadlineHours <= 0) return;
@@ -103,9 +107,24 @@ export default function MatchPollComponent({ poll, allPlayers, onPollChange, rol
     });
   };
 
-  const handlePlayerResponse = (playerId: string, status: 'available' | 'unavailable') => {
+  const handlePlayerResponse = (playerId: string, newStatus: 'available' | 'unavailable') => {
+    const currentAvailability = poll.availabilities.find(a => a.playerId === playerId);
+    const player = getPlayerById(playerId);
+    
+    // Grant points only if status changes from something else to 'available'
+    if (newStatus === 'available' && currentAvailability?.status !== 'available' && player) {
+        incrementPlayerPoints(playerId, POINTS_FOR_AVAILABILITY).then(result => {
+            if (result.success) {
+                toast({
+                    title: "Points de disponibilité attribués !",
+                    description: `${player.name} a gagné ${POINTS_FOR_AVAILABILITY} points pour sa réactivité.`
+                })
+            }
+        });
+    }
+
     const newAvailabilities = poll.availabilities.map(a => 
-      a.playerId === playerId ? { ...a, status } : a
+      a.playerId === playerId ? { ...a, status: newStatus } : a
     );
     onPollChange({ ...poll, availabilities: newAvailabilities });
   };
@@ -229,4 +248,3 @@ export default function MatchPollComponent({ poll, allPlayers, onPollChange, rol
     </Card>
   );
 }
-

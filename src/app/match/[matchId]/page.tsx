@@ -464,6 +464,7 @@ export default function MatchPage() {
           allPlayers={allPlayers}
           team={match.team}
           substitutes={match.substitutes}
+          poll={match.poll}
           role={role}
           onAddPlayer={handleAddPlayer}
           onRemovePlayer={handleRemovePlayer}
