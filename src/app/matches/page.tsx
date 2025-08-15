@@ -65,7 +65,15 @@ export default function MatchesPage() {
         console.error("Failed to fetch matches:", error);
         toast({ title: "Erreur", description: "Impossible de charger les matchs.", variant: "destructive" });
       } else {
-        setMatches(data as Match[]);
+        setMatches((data as Match[] || []).map(m => ({
+          ...m,
+          details: {
+            venue: 'home',
+            ...m.details,
+            competition: m.details.competition || 'amical',
+            matchday: m.details.matchday || 1
+          }
+        })));
       }
       setLoading(false);
     };
@@ -128,7 +136,6 @@ export default function MatchesPage() {
       return;
     }
     
-    // Add new match to local state to avoid refetch
     setMatches(prev => [data as Match, ...prev]);
 
     router.push(`/match/${data.id}`);
@@ -154,7 +161,7 @@ export default function MatchesPage() {
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
         </Avatar>
-        <div className="font-bold truncate">{name}</div>
+        <div className="font-bold truncate hidden sm:block">{name}</div>
     </div>
   )
 
@@ -255,14 +262,16 @@ export default function MatchesPage() {
           </div>
           
           <Tabs value={activeCompetition} onValueChange={setActiveCompetition} className="w-full px-4">
-            <TabsList className="relative bg-transparent p-0 border-b border-border">
-              {competitions.map(comp => (
-                <TabsTrigger key={comp.id} value={comp.id} className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none relative px-3 text-muted-foreground">
-                    {comp.name}
-                    {activeCompetition === comp.id && <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary))]"></div>}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="w-full overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <TabsList className="relative bg-transparent p-0 border-b border-border inline-flex">
+                  {competitions.map(comp => (
+                    <TabsTrigger key={comp.id} value={comp.id} className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none relative px-3 text-muted-foreground">
+                        {comp.name}
+                        {activeCompetition === comp.id && <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary))]"></div>}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+            </div>
           </Tabs>
 
            <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full p-4">
@@ -282,3 +291,5 @@ export default function MatchesPage() {
     </div>
   );
 }
+
+    
