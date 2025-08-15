@@ -97,7 +97,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
                 <Textarea
                     id={name}
                     name={name}
-                    value={value}
+                    value={value || ''}
                     onChange={handleInputChange}
                     placeholder={placeholder}
                     className="mt-1 bg-transparent border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary"
@@ -107,7 +107,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
                     id={name}
                     name={name}
                     type={type}
-                    value={value}
+                    value={value || ''}
                     onChange={handleInputChange}
                     placeholder={placeholder}
                     className="mt-1 bg-transparent border-0 border-b rounded-none px-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary"
@@ -157,7 +157,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
           </DetailItem>
           
           <DetailItem icon={Trophy} label="Compétition" name="competition" isCoach={isCoach} value={currentDetails.competition}>
-             <Select onValueChange={(val) => handleSelectChange('competition', val)} value={currentDetails.competition} name="competition" disabled={!isCoach}>
+             <Select onValueChange={(val) => handleSelectChange('competition', val as string)} value={currentDetails.competition} name="competition" disabled={!isCoach}>
                 <SelectTrigger className="mt-1 bg-transparent border-0 border-b rounded-none px-0 h-8 focus:ring-0 focus:ring-offset-0 focus:border-primary disabled:opacity-100 disabled:cursor-default">
                     <SelectValue placeholder="Choisir la compétition..." />
                 </SelectTrigger>
@@ -179,3 +179,4 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
     </Card>
   );
 }
+

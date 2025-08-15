@@ -136,15 +136,17 @@ export default function MatchesPage() {
   };
 
   const filteredMatches = matches
-    .filter(m => m.details.competition === activeCompetition && (activeCompetition === 'amical' || m.details.matchday === currentMatchday))
+    .filter(m => (m.details.competition || 'd2') === activeCompetition && (activeCompetition === 'amical' || (m.details.matchday || 1) === currentMatchday))
     .sort((a,b) => new Date(a.details.date).getTime() - new Date(b.details.date).getTime());
 
   const matchdays = Array.from(new Set(matches.filter(m => m.details.competition === activeCompetition).map(m => m.details.matchday || 1))).sort((a,b) => a-b);
   const maxMatchday = matchdays.length > 0 ? Math.max(...matchdays) : 1;
 
   const getOpponentLogo = (match: Match) => {
-    const opponent = (match as any).opponent;
-    return opponent?.logo_url;
+    if ((match as any).opponent && (match as any).opponent.logo_url) {
+      return (match as any).opponent.logo_url;
+    }
+    return undefined;
   };
 
   const renderMatchRow = (match: Match) => (
