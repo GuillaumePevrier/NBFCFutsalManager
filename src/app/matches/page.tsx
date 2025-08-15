@@ -218,6 +218,26 @@ export default function MatchesPage() {
     if (activeFilter === 'results') {
         return (
             <div className="space-y-4">
+                 <Card className="p-2 bg-card/50">
+                    <div className="flex items-center justify-between gap-2">
+                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('prev')}>
+                            <ChevronLeft />
+                        </Button>
+                        <Select value={activeCompetition} onValueChange={setActiveCompetition}>
+                            <SelectTrigger className="flex-grow">
+                                <SelectValue placeholder="Choisir une compétition" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {competitions.map(c => (
+                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('next')}>
+                            <ChevronRight />
+                        </Button>
+                    </div>
+                </Card>
                  {activeCompetition !== 'amical' && (
                     <Card className="p-2 bg-card/50">
                         <div className="flex items-center justify-between gap-2">
@@ -274,30 +294,6 @@ export default function MatchesPage() {
             )}
           </div>
           
-           <div className="px-4 mb-4">
-             <Card className="p-2 bg-card/50">
-                <div className="flex items-center justify-between gap-2">
-                    <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('prev')}>
-                        <ChevronLeft />
-                    </Button>
-                    <Select value={activeCompetition} onValueChange={setActiveCompetition}>
-                        <SelectTrigger className="flex-grow">
-                            <SelectValue placeholder="Choisir une compétition" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {competitions.map(c => (
-                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('next')}>
-                        <ChevronRight />
-                    </Button>
-                </div>
-            </Card>
-           </div>
-
-
            <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full px-4">
             <TabsList className="grid w-full grid-cols-3 bg-card/80">
                 <TabsTrigger value="results"><Trophy className="mr-2 h-4 w-4"/>Résultats</TabsTrigger>
