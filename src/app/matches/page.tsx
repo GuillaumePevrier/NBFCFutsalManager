@@ -63,8 +63,8 @@ export default function MatchesPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Failed to fetch matches:", error, JSON.stringify(error));
+      if (error && Object.keys(error).length > 0) {
+        console.error("Failed to fetch matches:", error);
         toast({ title: "Erreur", description: "Impossible de charger les matchs.", variant: "destructive" });
       } else {
         setMatches((data as Match[] || []).map(m => ({
@@ -144,29 +144,30 @@ export default function MatchesPage() {
   };
 
   const filteredMatches = matches
-    .filter(m => (m.details.competition || 'amical') === activeCompetition)
-    .filter(m => activeCompetition === 'amical' || (m.details.matchday || 1) === currentMatchday)
+    .filter(m => (m.details?.competition || 'amical') === activeCompetition)
+    .filter(m => activeCompetition === 'amical' || (m.details?.matchday || 1) === currentMatchday)
     .sort((a,b) => new Date(a.details.date).getTime() - new Date(b.details.date).getTime());
 
 
-  const matchdays = Array.from(new Set(matches.filter(m => m.details.competition === activeCompetition).map(m => m.details.matchday || 1))).sort((a,b) => a-b);
+  const matchdays = Array.from(new Set(matches.filter(m => m.details?.competition === activeCompetition).map(m => m.details.matchday || 1))).sort((a,b) => a-b);
   const maxMatchday = matchdays.length > 0 ? Math.max(...matchdays) : 1;
 
   const getOpponentLogo = (match: Match) => {
-    const opponent = opponents.find(o => o.id === match.details.opponentId);
+    const opponent = opponents.find(o => o.id === match.details?.opponentId);
     return opponent?.logo_url;
   };
   
   const TeamDisplay = ({ name, logoUrl, fallback, align = 'left' }: { name: string, logoUrl?: string, fallback: string, align?: 'left' | 'right' }) => (
      <div className={cn(
-        "flex items-center gap-2 flex-1",
+        "flex items-center gap-2 flex-1 shrink",
         align === 'left' ? 'justify-start' : 'justify-end'
         )}>
+         {align === 'right' && <div className="font-bold truncate hidden sm:block">{name}</div>}
         <Avatar className="w-8 h-8">
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
         </Avatar>
-        <div className="font-bold truncate hidden sm:block">{name}</div>
+        {align === 'left' && <div className="font-bold truncate hidden sm:block">{name}</div>}
     </div>
   )
 
@@ -183,7 +184,7 @@ export default function MatchesPage() {
         <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-colors duration-200 overflow-hidden">
             <CardContent className="p-3 flex items-center justify-between gap-2">
                  <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} align="left" />
-                <div className="w-40 sm:w-48">
+                <div className="w-36 sm:w-40 md:w-48 shrink-0">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
                 <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} align="right" />
