@@ -29,6 +29,8 @@ export interface MatchDetails {
   location: string;
   remarks: string;
   matchType: '20min' | '25min';
+  competition: string; // e.g. 'd1', 'coupe_de_france'
+  matchday: number; // e.g. 1, 2, 3 for league matches
 }
 
 export interface Scoreboard {
