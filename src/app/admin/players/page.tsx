@@ -117,7 +117,6 @@ export default function PlayersAdminPage() {
                                         <TableHead className="hidden md:table-cell">Équipe</TableHead>
                                         <TableHead className="text-right">Points</TableHead>
                                         <TableHead className="hidden sm:table-cell text-right">Buts</TableHead>
-                                        <TableHead className="hidden sm:table-cell text-right">Fautes</TableHead>
                                         <TableHead>
                                             <span className="sr-only">Actions</span>
                                         </TableHead>
@@ -148,7 +147,6 @@ export default function PlayersAdminPage() {
                                                 <TableCell className="hidden md:table-cell">{player.team}</TableCell>
                                                 <TableCell className="text-right font-bold text-primary text-lg">{player.points || 0}</TableCell>
                                                 <TableCell className="hidden sm:table-cell text-right">{player.goals || 0}</TableCell>
-                                                <TableCell className="hidden sm:table-cell text-right">{player.fouls || 0}</TableCell>
                                                 <TableCell>
                                                     {isCoach ? (
                                                         <PlayerActions player={player}/>
@@ -165,7 +163,7 @@ export default function PlayersAdminPage() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="text-center h-24">
+                                            <TableCell colSpan={6} className="text-center h-24">
                                                 Aucun joueur trouvé. {isCoach && "Commencez par en ajouter un."}
                                             </TableCell>
                                         </TableRow>

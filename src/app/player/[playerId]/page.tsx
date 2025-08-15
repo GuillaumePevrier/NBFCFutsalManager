@@ -9,11 +9,12 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { Player } from '@/lib/types';
 
 const POINTS_CONFIG = {
     availability: 10,
     jerseyWashing: 25,
-    goal: 5, // Example, can be configured elsewhere
+    goal: 5,
 };
 
 const StatCard = ({ icon: Icon, label, value, colorClass }: { icon: React.ElementType, label: string, value: string | number, colorClass: string}) => (
@@ -24,7 +25,7 @@ const StatCard = ({ icon: Icon, label, value, colorClass }: { icon: React.Elemen
     </div>
 );
 
-async function PlayerActivityHistory({ activity, player }: { activity: PlayerActivity, player: NonNullable<Awaited<ReturnType<typeof getPlayerById>>> }) {
+async function PlayerActivityHistory({ activity, player }: { activity: PlayerActivity, player: Player }) {
     const activityData = [
         {
             action: "Disponibilité pour un match",
