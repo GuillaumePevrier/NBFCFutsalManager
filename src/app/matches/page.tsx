@@ -62,7 +62,7 @@ export default function MatchesPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error("Failed to fetch matches:", error);
+        console.error("Failed to fetch matches:", error, JSON.stringify(error));
         toast({ title: "Erreur", description: "Impossible de charger les matchs.", variant: "destructive" });
       } else {
         setMatches((data as Match[] || []).map(m => ({
@@ -261,18 +261,21 @@ export default function MatchesPage() {
             )}
           </div>
           
-          <Tabs value={activeCompetition} onValueChange={setActiveCompetition} className="w-full px-4">
-            <div className="w-full overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <TabsList className="relative bg-transparent p-0 border-b border-border inline-flex">
-                  {competitions.map(comp => (
-                    <TabsTrigger key={comp.id} value={comp.id} className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none relative px-3 text-muted-foreground">
-                        {comp.name}
-                        {activeCompetition === comp.id && <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary))]"></div>}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+          <div className="w-full px-4">
+            <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <Tabs value={activeCompetition} onValueChange={setActiveCompetition} className="w-full">
+                    <TabsList className="relative bg-transparent p-0 border-b border-border inline-flex">
+                    {competitions.map(comp => (
+                        <TabsTrigger key={comp.id} value={comp.id} className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none relative px-3 text-muted-foreground">
+                            {comp.name}
+                            {activeCompetition === comp.id && <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary))]"></div>}
+                        </TabsTrigger>
+                    ))}
+                    </TabsList>
+                </Tabs>
             </div>
-          </Tabs>
+          </div>
+
 
            <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full p-4">
             <TabsList className="grid w-full grid-cols-3 bg-card/80">
@@ -291,5 +294,3 @@ export default function MatchesPage() {
     </div>
   );
 }
-
-    
