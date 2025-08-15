@@ -19,18 +19,18 @@ import { Badge } from '@/components/ui/badge';
 
 const getRankingClass = (rank: number) => {
     switch (rank) {
-        case 0: return 'bg-yellow-500/10 hover:bg-yellow-500/20'; // Gold
-        case 1: return 'bg-gray-400/10 hover:bg-gray-400/20'; // Silver
-        case 2: return 'bg-orange-600/10 hover:bg-orange-600/20'; // Bronze
+        case 0: return 'bg-yellow-500/20 hover:bg-yellow-500/30'; // Gold
+        case 1: return 'bg-gray-400/20 hover:bg-gray-400/30'; // Silver
+        case 2: return 'bg-orange-600/20 hover:bg-orange-600/30'; // Bronze
         default: return '';
     }
 }
 
 const getRankingBadge = (rank: number) => {
      switch (rank) {
-        case 0: return 'bg-yellow-400 text-yellow-900 hover:bg-yellow-400/90'; // Gold
-        case 1: return 'bg-gray-400 text-gray-900 hover:bg-gray-400/90'; // Silver
-        case 2: return 'bg-orange-500 text-orange-950 hover:bg-orange-500/90'; // Bronze
+        case 0: return 'bg-yellow-400 text-yellow-900 hover:bg-yellow-400/90 shadow-[0_0_8px_rgba(250,204,21,0.7)]'; // Gold
+        case 1: return 'bg-gray-400 text-gray-900 hover:bg-gray-400/90 shadow-[0_0_8px_rgba(156,163,175,0.7)]'; // Silver
+        case 2: return 'bg-orange-500 text-orange-950 hover:bg-orange-500/90 shadow-[0_0_8px_rgba(249,115,22,0.7)]'; // Bronze
         default: return null;
     }
 }
@@ -126,7 +126,7 @@ export default function PlayersAdminPage() {
                                 <TableBody>
                                     {players.length > 0 ? (
                                         players.map((player: Player, index) => (
-                                            <TableRow key={player.id} className={cn(getRankingClass(index))}>
+                                            <TableRow key={player.id} className={cn("transition-all duration-300", getRankingClass(index))}>
                                                 <TableCell className="font-bold text-lg">{index + 1}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
