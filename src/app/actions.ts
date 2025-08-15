@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import type { Player, Opponent, Match } from '@/lib/types';
+import type { Player, Opponent, Match, Training } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -220,6 +220,7 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
     revalidatePath('/match/*'); // Revalidate match page to show updated points potentially
+    revalidatePath('/trainings'); // Revalidate trainings page
     
     return { success: true };
 }
@@ -280,19 +281,22 @@ export async function updateJerseyWasher({
 export type PlayerActivity = {
     jerseyWashingCount: number;
     availabilityCount: number;
+    trainingAttendanceCount: number;
 };
 
 export async function getPlayerActivity(playerId: string): Promise<PlayerActivity> {
     const supabase = createClient();
-    const { data: matches, error } = await supabase.from('matches').select('details');
+    const { data: matches, error: matchesError } = await supabase.from('matches').select('details');
+    const { data: trainings, error: trainingsError } = await supabase.from('trainings').select('poll');
 
-    if (error) {
-        console.error("Failed to fetch matches for player activity:", error);
-        return { jerseyWashingCount: 0, availabilityCount: 0 };
+    if (matchesError || trainingsError) {
+        console.error("Failed to fetch data for player activity:", matchesError || trainingsError);
+        return { jerseyWashingCount: 0, availabilityCount: 0, trainingAttendanceCount: 0 };
     }
 
     let jerseyWashingCount = 0;
     let availabilityCount = 0;
+    let trainingAttendanceCount = 0;
 
     for (const match of matches as Match[]) {
         if (match.details?.jerseyWasherPlayerId === playerId) {
@@ -303,7 +307,13 @@ export async function getPlayerActivity(playerId: string): Promise<PlayerActivit
         }
     }
 
-    return { jerseyWashingCount, availabilityCount };
+    for (const training of trainings as Training[]) {
+        if (training.poll?.availabilities.some(a => a.playerId === playerId && a.status === 'available')) {
+            trainingAttendanceCount++;
+        }
+    }
+
+    return { jerseyWashingCount, availabilityCount, trainingAttendanceCount };
 }
 
 
@@ -430,4 +440,69 @@ export async function deleteOpponent(opponentId: string) {
     }
 
     revalidatePath('/admin/opponents');
+}
+
+
+// Training related actions
+
+const TrainingSchema = z.object({
+  title: z.string().min(3, "Le titre doit contenir au moins 3 caractères."),
+  date: z.string(),
+  time: z.string(),
+  location: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export async function createTraining(previousState: any, formData: FormData) {
+  const supabase = createClient();
+  const values = Object.fromEntries(formData.entries());
+  const validatedFields = TrainingSchema.safeParse(values);
+
+  if (!validatedFields.success) {
+    return { errors: validatedFields.error.flatten().fieldErrors };
+  }
+
+  const { data, error } = await supabase
+    .from('trainings')
+    .insert([{ ...validatedFields.data, poll: { status: 'inactive', availabilities: [], deadline: null } }])
+    .select();
+
+  if (error) {
+    console.error("Failed to create training:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/trainings');
+  return { data };
+}
+
+export async function getTrainings(): Promise<Training[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('trainings')
+    .select('*')
+    .order('date', { ascending: false })
+    .order('time', { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch trainings:", error);
+    return [];
+  }
+  return data as Training[];
+}
+
+export async function updateTrainingPoll(trainingId: string, poll: Training['poll']) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('trainings')
+    .update({ poll })
+    .eq('id', trainingId);
+
+  if (error) {
+    console.error(`Failed to update poll for training ${trainingId}:`, error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/trainings');
+  return { success: true };
 }

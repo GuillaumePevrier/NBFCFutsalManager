@@ -10,14 +10,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
-import { Info, Star, ThumbsUp, Shirt, Target, Award, ThumbsDown, XSquare, Clock } from "lucide-react";
+import { Info, Star, ThumbsUp, Shirt, Target, Award, ThumbsDown, XSquare, Clock, Footprints } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Separator } from "./ui/separator";
 
 const positiveActions = [
     { icon: Shirt, action: "Lavage des Maillots", points: "+25", description: "Récompense une tâche essentielle pour l'équipe." },
     { icon: Award, action: "Homme du Match", points: "+20", description: "Désigné par le coach pour une performance exceptionnelle." },
-    { icon: ThumbsUp, action: "Disponibilité au Sondage", points: "+10", description: "Récompense la réactivité et l'organisation." },
+    { icon: Footprints, action: "Présence à l'Entraînement", points: "+15", description: "La régularité est la clé du succès." },
+    { icon: ThumbsUp, action: "Disponibilité au Sondage (Match)", points: "+10", description: "Récompense la réactivité et l'organisation." },
     { icon: Target, action: "But Marqué", points: "+5", description: "Valorise l'efficacité offensive en match." },
 ];
 

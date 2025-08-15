@@ -42,7 +42,7 @@ export interface MatchDetails {
   time: string;
   location: string;
   remarks: string;
-  matchType: '20min' | '25min';
+  matchType: '20min' | '25min' | 'training';
   venue: 'home' | 'away';
   competition?: string; // e.g. 'd1', 'coupe_de_france'
   matchday?: number; // e.g. 1, 2, 3 for league matches
@@ -84,4 +84,16 @@ export interface Opponent {
     coach_phone?: string;
     address?: string;
     created_at: string;
+}
+
+// Corresponds to the new 'trainings' table
+export interface Training {
+  id: string; // uuid
+  created_at: string; // timestamptz
+  title: string;
+  description?: string;
+  date: string; // date
+  time: string; // time
+  location?: string;
+  poll: MatchPoll; // jsonb
 }

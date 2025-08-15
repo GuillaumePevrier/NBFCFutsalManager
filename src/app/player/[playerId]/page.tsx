@@ -2,7 +2,7 @@
 import { getPlayerById, getPlayerActivity, type PlayerActivity } from '@/app/actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Shield, Star, Target, Shirt, CheckSquare } from 'lucide-react';
+import { ArrowLeft, Shield, Star, Target, Shirt, CheckSquare, Footprints } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
@@ -16,6 +16,7 @@ const POINTS_CONFIG = {
     availability: 10,
     jerseyWashing: 25,
     goal: 5,
+    training: 15,
 };
 
 const StatCard = ({ icon: Icon, label, value, colorClass }: { icon: React.ElementType, label: string, value: string | number, colorClass: string}) => (
@@ -45,6 +46,12 @@ async function PlayerActivityHistory({ activity, player }: { activity: PlayerAct
             count: player.goals || 0,
             pointsPerAction: POINTS_CONFIG.goal,
             total: (player.goals || 0) * POINTS_CONFIG.goal,
+        },
+         {
+            action: "Présences à l'entraînement",
+            count: activity.trainingAttendanceCount,
+            pointsPerAction: POINTS_CONFIG.training,
+            total: activity.trainingAttendanceCount * POINTS_CONFIG.training
         }
     ];
 
@@ -158,10 +165,10 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                             <div className="grid grid-cols-3 gap-4">
                                 <StatCard icon={Star} label="Points" value={player.points || 0} colorClass="text-yellow-400" />
                                 <StatCard icon={Target} label="Buts" value={player.goals || 0} colorClass="text-green-400" />
-                                <StatCard icon={Shield} label="Fautes" value={player.fouls || 0} colorClass="text-orange-400" />
-                                <StatCard icon={CheckSquare} label="Présences" value={activity.availabilityCount} colorClass="text-blue-400" />
+                                <StatCard icon={Footprints} label="Entraînements" value={activity.trainingAttendanceCount} colorClass="text-purple-400" />
+                                <StatCard icon={CheckSquare} label="Dispos Matchs" value={activity.availabilityCount} colorClass="text-blue-400" />
                                 <StatCard icon={Shirt} label="Lavage Maillots" value={activity.jerseyWashingCount} colorClass="text-indigo-400" />
-                                <StatCard icon={Star} label="Statut" value={player.status || 'N/A'} colorClass="text-gray-400" />
+                                <StatCard icon={Shield} label="Fautes" value={player.fouls || 0} colorClass="text-orange-400" />
                             </div>
                          </CardContent>
                     </Card>
