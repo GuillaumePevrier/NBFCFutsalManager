@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MiniScoreboard from '@/components/MiniScoreboard';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const competitions = [
     { id: 'd2', name: 'D2' },
@@ -67,13 +67,13 @@ export default function MatchesPage() {
         console.error("Failed to fetch matches:", error);
         // Do not show a toast for an empty error object, which can happen.
       } else {
-        setMatches((data as Match[] || []).map(m => ({
+        setMatches(((data as Match[]) || []).map(m => ({
           ...m,
           details: {
+            venue: 'home', // default
+            competition: 'amical', // default
+            matchday: 1, // default
             ...m.details,
-            venue: m.details?.venue || 'home',
-            competition: m.details?.competition || 'amical',
-            matchday: m.details?.matchday || 1
           }
         })));
       }
@@ -159,13 +159,18 @@ export default function MatchesPage() {
 
   const handleCompetitionChange = (direction: 'next' | 'prev') => {
     const currentIndex = competitions.findIndex(c => c.id === activeCompetition);
+    let nextIndex;
     if (direction === 'next') {
-        const nextIndex = (currentIndex + 1) % competitions.length;
-        setActiveCompetition(competitions[nextIndex].id);
+        nextIndex = (currentIndex + 1) % competitions.length;
     } else {
-        const prevIndex = (currentIndex - 1 + competitions.length) % competitions.length;
-        setActiveCompetition(competitions[prevIndex].id);
+        nextIndex = (currentIndex - 1 + competitions.length) % competitions.length;
     }
+     const newCompetition = competitions[nextIndex].id;
+    setActiveCompetition(newCompetition);
+    
+    // Reset matchday when competition changes
+    const newMatchdays = Array.from(new Set(matches.filter(m => m.details?.competition === newCompetition).map(m => m.details.matchday || 1))).sort((a,b) => a-b);
+    setCurrentMatchday(newMatchdays[0] || 1);
   };
   
   const TeamDisplay = ({ name, logoUrl, fallback }: { name: string, logoUrl?: string, fallback: string }) => (
@@ -196,7 +201,7 @@ export default function MatchesPage() {
                 <div className="flex-shrink-0 w-36 sm:w-40 md:w-48">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
-                <div className="flex-1 flex justify-end min-w-0">
+                <div className="flex-1 flex justify-end min-w-0 text-right">
                     <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} />
                 </div>
             </CardContent>
@@ -284,7 +289,8 @@ export default function MatchesPage() {
       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex-grow flex flex-col p-0 md:p-4 main-bg">
         <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col">
-          <div className="flex justify-end items-center p-4">
+          <div className="flex justify-between items-center p-4">
+             <h1 className="text-2xl md:text-3xl font-bold">Matchs</h1>
             {role === 'coach' && (
                 <Button onClick={handleCreateMatch} size="sm">
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -293,13 +299,15 @@ export default function MatchesPage() {
             )}
           </div>
           
-           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full px-4">
-            <TabsList className="grid w-full grid-cols-3 bg-card/80">
-                <TabsTrigger value="results"><Trophy className="mr-2 h-4 w-4"/>Résultats</TabsTrigger>
-                <TabsTrigger value="ranking"><BarChart3 className="mr-2 h-4 w-4"/>Classement</TabsTrigger>
-                <TabsTrigger value="scorers"><Shield className="mr-2 h-4 w-4"/>Buteurs</TabsTrigger>
-            </TabsList>
+          <div className="px-4">
+           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 bg-card/80">
+                    <TabsTrigger value="results"><Trophy className="mr-2 h-4 w-4"/>Résultats</TabsTrigger>
+                    <TabsTrigger value="ranking"><BarChart3 className="mr-2 h-4 w-4"/>Classement</TabsTrigger>
+                    <TabsTrigger value="scorers"><Shield className="mr-2 h-4 w-4"/>Buteurs</TabsTrigger>
+                </TabsList>
           </Tabs>
+          </div>
 
           <div className="px-4 py-4 flex-grow">
             {renderContent()}
@@ -310,3 +318,5 @@ export default function MatchesPage() {
     </div>
   );
 }
+
+    
