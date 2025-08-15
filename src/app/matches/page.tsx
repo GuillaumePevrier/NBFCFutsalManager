@@ -65,7 +65,7 @@ export default function MatchesPage() {
 
       if (error && Object.keys(error).length > 0 && error.message) {
         console.error("Failed to fetch matches:", error);
-        toast({ title: "Erreur", description: "Impossible de charger les matchs.", variant: "destructive" });
+        // Do not show a toast for an empty error object, which can happen.
       } else {
         setMatches((data as Match[] || []).map(m => ({
           ...m,
@@ -168,17 +168,13 @@ export default function MatchesPage() {
     }
   };
   
-  const TeamDisplay = ({ name, logoUrl, fallback, align = 'left' }: { name: string, logoUrl?: string, fallback: string, align?: 'left' | 'right' }) => (
-     <div className={cn(
-        "flex items-center gap-2 flex-1 shrink",
-        align === 'left' ? 'justify-start' : 'justify-end'
-        )}>
-         {align === 'right' && <div className="font-bold truncate hidden sm:block">{name}</div>}
+  const TeamDisplay = ({ name, logoUrl, fallback }: { name: string, logoUrl?: string, fallback: string }) => (
+     <div className="flex items-center gap-2 flex-1 shrink min-w-0">
         <Avatar className="w-8 h-8">
             <AvatarImage src={logoUrl} />
             <AvatarFallback>{fallback}</AvatarFallback>
         </Avatar>
-        {align === 'left' && <div className="font-bold truncate hidden sm:block">{name}</div>}
+        <div className="font-bold truncate hidden sm:block">{name}</div>
     </div>
   )
 
@@ -194,11 +190,15 @@ export default function MatchesPage() {
     return (
         <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-colors duration-200 overflow-hidden">
             <CardContent className="p-3 flex items-center justify-between gap-2">
-                 <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} align="left" />
-                <div className="w-36 sm:w-40 md:w-48 shrink-0">
+                <div className="flex-1 flex justify-start min-w-0">
+                    <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
+                </div>
+                <div className="flex-shrink-0 w-36 sm:w-40 md:w-48">
                     <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
                 </div>
-                <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} align="right" />
+                <div className="flex-1 flex justify-end min-w-0">
+                    <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} />
+                </div>
             </CardContent>
             <Button asChild variant="ghost" size="sm" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center bg-primary/20 backdrop-blur-sm">
                  <Link href={`/match/${match.id}`}>
@@ -284,8 +284,7 @@ export default function MatchesPage() {
       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
       <main className="flex-grow flex flex-col p-0 md:p-4 main-bg">
         <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col">
-          <div className="flex justify-between items-center p-4">
-            <h1 className="text-2xl md:text-3xl font-bold">Matchs</h1>
+          <div className="flex justify-end items-center p-4">
             {role === 'coach' && (
                 <Button onClick={handleCreateMatch} size="sm">
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -311,4 +310,3 @@ export default function MatchesPage() {
     </div>
   );
 }
-
