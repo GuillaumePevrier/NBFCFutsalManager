@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,6 +26,7 @@ const competitions = [
     { id: 'coupe_bretagne', name: 'Coupe de Bretagne' },
     { id: 'coupe_district', name: 'Coupe du District' },
     { id: 'coupe_france', name: 'Coupe de France' },
+    { id: 'amical', name: 'Amical' },
 ];
 
 export default function MatchesPage() {
@@ -134,7 +136,7 @@ export default function MatchesPage() {
   };
 
   const filteredMatches = matches
-    .filter(m => m.details.competition === activeCompetition && m.details.matchday === currentMatchday)
+    .filter(m => m.details.competition === activeCompetition && (activeCompetition === 'amical' || m.details.matchday === currentMatchday))
     .sort((a,b) => new Date(a.details.date).getTime() - new Date(b.details.date).getTime());
 
   const matchdays = Array.from(new Set(matches.filter(m => m.details.competition === activeCompetition).map(m => m.details.matchday || 1))).sort((a,b) => a-b);
@@ -179,32 +181,34 @@ export default function MatchesPage() {
     if (activeFilter === 'results') {
         return (
             <div className="space-y-4">
-                 <Card className="p-2 bg-card/50">
-                    <div className="flex items-center justify-between gap-2">
-                        <Button variant="outline" size="icon" onClick={() => setCurrentMatchday(p => Math.max(1, p - 1))} disabled={currentMatchday === 1}>
-                            <ChevronLeft />
-                        </Button>
-                        <Select value={String(currentMatchday)} onValueChange={(val) => setCurrentMatchday(Number(val))}>
-                            <SelectTrigger className="flex-grow">
-                                <SelectValue placeholder="Choisir une journée" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {matchdays.length > 0 ? matchdays.map(day => (
-                                    <SelectItem key={day} value={String(day)}>Journée {day}</SelectItem>
-                                )) : <SelectItem value="1">Journée 1</SelectItem>}
-                            </SelectContent>
-                        </Select>
-                        <Button variant="outline" size="icon" onClick={() => setCurrentMatchday(p => Math.min(maxMatchday, p + 1))} disabled={currentMatchday === maxMatchday}>
-                            <ChevronRight />
-                        </Button>
-                    </div>
-                </Card>
+                 {activeCompetition !== 'amical' && (
+                    <Card className="p-2 bg-card/50">
+                        <div className="flex items-center justify-between gap-2">
+                            <Button variant="outline" size="icon" onClick={() => setCurrentMatchday(p => Math.max(1, p - 1))} disabled={currentMatchday === 1}>
+                                <ChevronLeft />
+                            </Button>
+                            <Select value={String(currentMatchday)} onValueChange={(val) => setCurrentMatchday(Number(val))}>
+                                <SelectTrigger className="flex-grow">
+                                    <SelectValue placeholder="Choisir une journée" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {matchdays.length > 0 ? matchdays.map(day => (
+                                        <SelectItem key={day} value={String(day)}>Journée {day}</SelectItem>
+                                    )) : <SelectItem value="1">Journée 1</SelectItem>}
+                                </SelectContent>
+                            </Select>
+                            <Button variant="outline" size="icon" onClick={() => setCurrentMatchday(p => Math.min(maxMatchday, p + 1))} disabled={currentMatchday === maxMatchday}>
+                                <ChevronRight />
+                            </Button>
+                        </div>
+                    </Card>
+                 )}
                 {filteredMatches.length > 0 ? (
                     <div className="space-y-2">
                         {filteredMatches.map(renderMatchRow)}
                     </div>
                 ) : (
-                    <p className="text-center text-muted-foreground p-8">Aucun match pour cette journée.</p>
+                    <p className="text-center text-muted-foreground p-8">Aucun match pour cette sélection.</p>
                 )}
             </div>
         )
@@ -261,3 +265,5 @@ export default function MatchesPage() {
     </div>
   );
 }
+
+    
