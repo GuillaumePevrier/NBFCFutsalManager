@@ -26,20 +26,26 @@ const ensureMatchDefaults = (match: Match): Match => {
   return {
     ...match,
     details: {
+      opponent: 'Adversaire',
+      date: new Date().toISOString().split('T')[0],
+      time: '00:00',
+      location: '',
+      remarks: '',
+      matchType: '20min',
       ...details,
       competition: details.competition || 'amical', // Default to 'amical'
       matchday: details.matchday || 1, // Default to day 1
     },
     scoreboard: {
+        homeScore: 0,
+        awayScore: 0,
+        homeFouls: 0,
+        awayFouls: 0,
+        time: 1200,
+        isRunning: false,
+        period: 1,
+        timerLastStarted: null,
        ...scoreboard,
-        homeScore: scoreboard.homeScore ?? 0,
-        awayScore: scoreboard.awayScore ?? 0,
-        homeFouls: scoreboard.homeFouls ?? 0,
-        awayFouls: scoreboard.awayFouls ?? 0,
-        time: scoreboard.time ?? 1200,
-        isRunning: scoreboard.isRunning ?? false,
-        period: scoreboard.period ?? 1,
-        timerLastStarted: scoreboard.timerLastStarted ?? null,
     }
   };
 };
@@ -447,7 +453,3 @@ export default function MatchPage() {
     </div>
   );
 }
-
-    
-
-    

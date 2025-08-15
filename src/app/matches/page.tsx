@@ -46,16 +46,17 @@ export default function MatchesPage() {
   useEffect(() => {
     const fetchMatches = async () => {
       setLoading(true);
+      // Corrected the query to remove the invalid join
       const { data, error } = await supabase
         .from('matches')
-        .select('*, opponent:opponents(logo_url)')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Failed to fetch matches:", error);
         toast({ title: "Erreur", description: "Impossible de charger les matchs.", variant: "destructive" });
       } else {
-        setMatches(data as any[] as Match[]);
+        setMatches(data as Match[]);
       }
       setLoading(false);
     };
@@ -136,16 +137,16 @@ export default function MatchesPage() {
   };
 
   const filteredMatches = matches
-    .filter(m => (m.details.competition || 'd2') === activeCompetition && (activeCompetition === 'amical' || (m.details.matchday || 1) === currentMatchday))
+    .filter(m => (m.details.competition || 'amical') === activeCompetition)
+    .filter(m => activeCompetition === 'amical' || (m.details.matchday || 1) === currentMatchday)
     .sort((a,b) => new Date(a.details.date).getTime() - new Date(b.details.date).getTime());
+
 
   const matchdays = Array.from(new Set(matches.filter(m => m.details.competition === activeCompetition).map(m => m.details.matchday || 1))).sort((a,b) => a-b);
   const maxMatchday = matchdays.length > 0 ? Math.max(...matchdays) : 1;
 
   const getOpponentLogo = (match: Match) => {
-    if ((match as any).opponent && (match as any).opponent.logo_url) {
-      return (match as any).opponent.logo_url;
-    }
+    // Logo fetching is disabled for now to fix the bug
     return undefined;
   };
 
@@ -267,5 +268,3 @@ export default function MatchesPage() {
     </div>
   );
 }
-
-    
