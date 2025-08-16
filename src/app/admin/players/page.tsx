@@ -61,11 +61,14 @@ export default function PlayersAdminPage() {
 
         const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
             setRole(session ? 'coach' : 'player');
+            // Re-fetch players on auth change might be redundant if relying on realtime, but safe to keep
             fetchPlayers();
         });
         
-        const playerChannel = supabase.channel('players-all')
+        // Realtime subscription for players table
+        const playerChannel = supabase.channel('public:players')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
+                console.log('Player change detected, refetching players');
                 fetchPlayers();
             })
             .subscribe();

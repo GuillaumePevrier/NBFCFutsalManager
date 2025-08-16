@@ -47,7 +47,7 @@ export async function getPlayers(): Promise<Player[]> {
     .from('players')
     .select('*')
     // Tri par points (décroissant), puis par nom (alphabétique)
-    .order('points', { ascending: false, nullsFirst: false })
+    .order('points', { ascending: false, nullsFirst: true })
     .order('name', { ascending: true });
     
   if (error) {
@@ -159,19 +159,6 @@ export async function deletePlayer(playerId: string) {
 export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: string, goals?: number, fouls?: number }): Promise<{ success: boolean }> {
     const supabase = createClient();
     
-    // Using Supabase RPC to handle the increment atomically for stats
-    // Note: You would need to create these RPC functions in your database.
-    // Example for goals:
-    // CREATE OR REPLACE FUNCTION increment_player_goals(player_id_arg UUID, goals_to_add INT)
-    // RETURNS void AS $$
-    //   UPDATE players
-    //   SET goals = goals + goals_to_add, points = points + (goals_to_add * 5)
-    //   WHERE id = player_id_arg;
-    // $$ LANGUAGE sql;
-
-    // Fetching player to update stats locally can lead to race conditions.
-    // It's better to use RPC functions or handle increments in a transaction.
-    // For simplicity here, we'll fetch and update, but RPC is preferred in production.
     const { data: currentPlayer, error: fetchError } = await supabase
       .from('players')
       .select('goals, fouls, points')
@@ -211,7 +198,6 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
 export async function incrementPlayerPoints(playerId: string, points: number): Promise<{ success: boolean }> {
     const supabase = createClient();
     
-    // Using Supabase RPC to handle the increment atomically
     const { error } = await supabase.rpc('increment_player_points', {
       player_id_arg: playerId,
       points_to_add: points
@@ -224,8 +210,8 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
 
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
-    revalidatePath('/match/*'); // Revalidate match page to show updated points potentially
-    revalidatePath('/trainings'); // Revalidate trainings page
+    revalidatePath('/match/*'); 
+    revalidatePath('/trainings');
     
     return { success: true };
 }
@@ -243,7 +229,6 @@ export async function updateJerseyWasher({
 }): Promise<{ success: boolean, message?: string, error?: string }> {
   const supabase = createClient();
   
-  // 1. Fetch current match details to avoid overwriting them
   const { data: currentMatch, error: fetchError } = await supabase
     .from('matches')
     .select('details')
@@ -255,10 +240,8 @@ export async function updateJerseyWasher({
     return { success: false, error: "Impossible de récupérer les informations du match." };
   }
   
-  // 2. Update the details object
   const newDetails = { ...currentMatch.details, jerseyWasherPlayerId: newWasherPlayerId };
 
-  // 3. Update the match details in the database
   const { error: matchUpdateError } = await supabase
     .from('matches')
     .update({ details: newDetails })
@@ -269,14 +252,10 @@ export async function updateJerseyWasher({
     return { success: false, error: "Impossible de mettre à jour le match." };
   }
   
-  // 4. Adjust points if the washer has changed
   if (newWasherPlayerId !== previousWasherPlayerId) {
-    // Revoke points from the previous washer, if there was one
     if (previousWasherPlayerId) {
-      const { success } = await incrementPlayerPoints(previousWasherPlayerId, -POINTS_FOR_JERSEY_WASHING);
-      if(!success) console.warn(`Failed to revoke points from ${previousWasherPlayerId}`);
+      await incrementPlayerPoints(previousWasherPlayerId, -POINTS_FOR_JERSEY_WASHING);
     }
-    // Grant points to the new washer, if there is one
     if (newWasherPlayerId) {
       const { success } = await incrementPlayerPoints(newWasherPlayerId, POINTS_FOR_JERSEY_WASHING);
       if(!success) {
@@ -287,6 +266,7 @@ export async function updateJerseyWasher({
   }
 
   revalidatePath(`/match/${matchId}`);
+  revalidatePath('/admin/players');
   if(newWasherPlayerId) revalidatePath(`/player/${newWasherPlayerId}`);
   if(previousWasherPlayerId) revalidatePath(`/player/${previousWasherPlayerId}`);
 
