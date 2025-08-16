@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, ArrowLeft, View, Users, Medal, Star, Info } from "lucide-react";
+import { PlusCircle, ArrowLeft, View, Users, Medal, Info } from "lucide-react";
 import Link from "next/link";
 import { getPlayers } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -61,11 +61,9 @@ export default function PlayersAdminPage() {
 
         const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
             setRole(session ? 'coach' : 'player');
-            // Re-fetch players on auth change to ensure consistency if points are updated by a new coach
             fetchPlayers();
         });
         
-        // Listen for player updates
         const playerChannel = supabase.channel('players-all')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
                 fetchPlayers();
