@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, ArrowLeft, View, Users, Medal } from "lucide-react";
+import { PlusCircle, ArrowLeft, View, Users, Medal, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { getPlayers } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +16,7 @@ import CoachAuthDialog from '@/components/CoachAuthDialog';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import PointsScaleDialog from '@/components/PointsScaleDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const getRankingClass = (rank: number) => {
     switch (rank) {
@@ -41,12 +41,24 @@ export default function PlayersAdminPage() {
     const [players, setPlayers] = useState<Player[]>([]);
     const [role, setRole] = useState<Role>('player');
     const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const supabase = createClient();
+    const { toast } = useToast();
 
     const fetchPlayers = async () => {
+        setIsRefreshing(true);
         const data = await getPlayers();
         setPlayers(data);
+        setIsRefreshing(false);
     };
+    
+    const handleRefresh = async () => {
+        await fetchPlayers();
+        toast({
+            title: "Classement Actualisé",
+            description: "Les points des joueurs ont été synchronisés."
+        });
+    }
 
     useEffect(() => {
         fetchPlayers();
@@ -61,15 +73,24 @@ export default function PlayersAdminPage() {
 
         const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
             setRole(session ? 'coach' : 'player');
-            // Re-fetch players on auth change might be redundant if relying on realtime, but safe to keep
-            fetchPlayers();
         });
         
         // Realtime subscription for players table
-        const playerChannel = supabase.channel('public:players')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
-                console.log('Player change detected, refetching players');
-                fetchPlayers();
+        const playerChannel = supabase.channel('public:players:points-update')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'players' }, (payload) => {
+                // Only refetch if points have changed to avoid unnecessary re-renders
+                if(payload.old.points !== payload.new.points) {
+                    console.log('Player points change detected, refetching players');
+                    fetchPlayers();
+                }
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'players' }, () => {
+                 console.log('New player detected, refetching players');
+                 fetchPlayers();
+            })
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'players' }, () => {
+                 console.log('Player deleted, refetching players');
+                 fetchPlayers();
             })
             .subscribe();
 
@@ -102,10 +123,15 @@ export default function PlayersAdminPage() {
             <main className="flex-grow p-4 md:p-8 main-bg">
                 <div className="w-full max-w-5xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
-                         <CardTitle className="flex items-center gap-2">
-                            <Users/>
-                            Classement des Joueurs ({players.length})
-                        </CardTitle>
+                         <div className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2">
+                                <Users/>
+                                Classement des Joueurs ({players.length})
+                            </CardTitle>
+                             <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing} title="Actualiser le classement">
+                                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                            </Button>
+                         </div>
                         <div className="flex items-center gap-4">
                             <PointsScaleDialog />
                             {isCoach && (
