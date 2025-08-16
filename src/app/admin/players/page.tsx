@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, ArrowLeft, View, Users, Medal, Info } from "lucide-react";
+import { PlusCircle, ArrowLeft, View, Users, Medal } from "lucide-react";
 import Link from "next/link";
 import { getPlayers } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -101,25 +101,25 @@ export default function PlayersAdminPage() {
             <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
             <main className="flex-grow p-4 md:p-8 main-bg">
                 <div className="w-full max-w-5xl mx-auto">
-                    <div className="flex justify-end items-center mb-6">
-                        {isCoach && (
-                            <Button asChild size="sm">
-                                <Link href="/admin/players/new">
-                                    <PlusCircle className="mr-2 h-4 w-4"/>
-                                    Ajouter un joueur
-                                </Link>
-                            </Button>
-                        )}
+                    <div className="flex justify-between items-center mb-6">
+                         <CardTitle className="flex items-center gap-2">
+                            <Users/>
+                            Classement des Joueurs ({players.length})
+                        </CardTitle>
+                        <div className="flex items-center gap-4">
+                            <PointsScaleDialog />
+                            {isCoach && (
+                                <Button asChild size="sm">
+                                    <Link href="/admin/players/new">
+                                        <PlusCircle className="mr-2 h-4 w-4"/>
+                                        Ajouter un joueur
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
                     </div>
                     <Card>
                         <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2">
-                                    <Users/>
-                                    Classement des Joueurs ({players.length})
-                                </CardTitle>
-                                <PointsScaleDialog />
-                            </div>
                             <CardDescription>
                                 Consultez le classement des joueurs en fonction de leurs points d'implication.
                             </CardDescription>

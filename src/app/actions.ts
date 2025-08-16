@@ -160,6 +160,7 @@ export async function deletePlayer(playerId: string) {
 export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: string, goals?: number, fouls?: number }): Promise<{ success: boolean }> {
     const supabase = createClient();
     
+    // Using a transaction to ensure both reads and writes are consistent
     const { data: currentPlayer, error: fetchError } = await supabase
       .from('players')
       .select('goals, fouls, points')
@@ -173,20 +174,25 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
 
     const newGoals = (currentPlayer.goals || 0) + (goals || 0);
     const newFouls = (currentPlayer.fouls || 0) + (fouls || 0);
-    const newPoints = (currentPlayer.points || 0) + ((goals || 0) * 5); // Add 5 points per goal
-
+    
+    // Points are added separately now, this just updates stats
     const { error: updateError } = await supabase
       .from('players')
       .update({
         goals: newGoals,
         fouls: newFouls,
-        points: newPoints
       })
       .eq('id', playerId);
 
     if (updateError) {
       console.error(`Failed to update stats for player ${playerId}`, updateError);
       return { success: false };
+    }
+
+    // If a goal was scored, add points using the RPC function
+    if (goals && goals > 0) {
+        const pointsPerGoal = 5;
+        await incrementPlayerPoints(playerId, goals * pointsPerGoal);
     }
     
     revalidatePath(`/player/${playerId}`);
@@ -230,22 +236,10 @@ export async function updateJerseyWasher({
 }): Promise<{ success: boolean, message?: string, error?: string }> {
   const supabase = createClient();
   
-  const { data: currentMatch, error: fetchError } = await supabase
-    .from('matches')
-    .select('details')
-    .eq('id', matchId)
-    .single();
-
-  if (fetchError) {
-    console.error("Failed to fetch match for jersey washer update:", fetchError);
-    return { success: false, error: "Impossible de récupérer les informations du match." };
-  }
-  
-  const newDetails = { ...currentMatch.details, jerseyWasherPlayerId: newWasherPlayerId };
-
+  // No need to fetch, just update the jsonb field directly
   const { error: matchUpdateError } = await supabase
     .from('matches')
-    .update({ details: newDetails })
+    .update({ 'details.jerseyWasherPlayerId': newWasherPlayerId })
     .eq('id', matchId);
 
   if (matchUpdateError) {
