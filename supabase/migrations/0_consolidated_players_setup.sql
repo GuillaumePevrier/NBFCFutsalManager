@@ -101,4 +101,4 @@ USING (auth.role() = 'authenticated');
 -- =================================================================
 --  Fin du 
 -- =================================================================
--- test feuille d'entrainement
+-- test feuille des points
