@@ -165,10 +165,13 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
     // CREATE OR REPLACE FUNCTION increment_player_goals(player_id_arg UUID, goals_to_add INT)
     // RETURNS void AS $$
     //   UPDATE players
-    //   SET goals = goals + goals_to_add
+    //   SET goals = goals + goals_to_add, points = points + (goals_to_add * 5)
     //   WHERE id = player_id_arg;
     // $$ LANGUAGE sql;
 
+    // Fetching player to update stats locally can lead to race conditions.
+    // It's better to use RPC functions or handle increments in a transaction.
+    // For simplicity here, we'll fetch and update, but RPC is preferred in production.
     const { data: currentPlayer, error: fetchError } = await supabase
       .from('players')
       .select('goals, fouls, points')
@@ -239,21 +242,34 @@ export async function updateJerseyWasher({
   previousWasherPlayerId?: string | null,
 }): Promise<{ success: boolean, message?: string, error?: string }> {
   const supabase = createClient();
-
-  // 1. Update the match details
-  const { data: matchData, error: matchUpdateError } = await supabase
+  
+  // 1. Fetch current match details to avoid overwriting them
+  const { data: currentMatch, error: fetchError } = await supabase
     .from('matches')
-    .update({ details: { jerseyWasherPlayerId: newWasherPlayerId } })
-    .eq('id', matchId)
     .select('details')
+    .eq('id', matchId)
     .single();
+
+  if (fetchError) {
+    console.error("Failed to fetch match for jersey washer update:", fetchError);
+    return { success: false, error: "Impossible de récupérer les informations du match." };
+  }
+  
+  // 2. Update the details object
+  const newDetails = { ...currentMatch.details, jerseyWasherPlayerId: newWasherPlayerId };
+
+  // 3. Update the match details in the database
+  const { error: matchUpdateError } = await supabase
+    .from('matches')
+    .update({ details: newDetails })
+    .eq('id', matchId);
 
   if (matchUpdateError) {
     console.error("Failed to update jersey washer in match:", matchUpdateError);
     return { success: false, error: "Impossible de mettre à jour le match." };
   }
   
-  // 2. Adjust points if the washer has changed
+  // 4. Adjust points if the washer has changed
   if (newWasherPlayerId !== previousWasherPlayerId) {
     // Revoke points from the previous washer, if there was one
     if (previousWasherPlayerId) {

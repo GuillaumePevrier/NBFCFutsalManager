@@ -369,7 +369,7 @@ export default function MatchPage() {
     updateMatchData({ ...match, details: newDetails });
   }
 
-  const handlePlayerResponse = (playerId: string, newStatus: 'available' | 'unavailable') => {
+  const handlePlayerResponse = async (playerId: string, newStatus: 'available' | 'unavailable') => {
     if (!match) return;
     const player = allPlayers.find(p => p.id === playerId);
     if (!player) return;
@@ -377,24 +377,22 @@ export default function MatchPage() {
     const currentAvailability = match.details.poll.availabilities.find(a => a.playerId === playerId);
 
     if (newStatus === 'available' && currentAvailability?.status !== 'available') {
-        incrementPlayerPoints(playerId, POINTS_FOR_AVAILABILITY).then(result => {
-            if (result.success) {
-                toast({
-                    title: "Points de disponibilité attribués !",
-                    description: `${player.name} a gagné ${POINTS_FOR_AVAILABILITY} points pour sa réactivité.`
-                })
-            }
-        });
+        const result = await incrementPlayerPoints(playerId, POINTS_FOR_AVAILABILITY);
+        if (result.success) {
+            toast({
+                title: "Points de disponibilité attribués !",
+                description: `${player.name} a gagné ${POINTS_FOR_AVAILABILITY} points pour sa réactivité.`
+            });
+        }
     } else if (newStatus !== 'available' && currentAvailability?.status === 'available') {
-        incrementPlayerPoints(playerId, -POINTS_FOR_AVAILABILITY).then(result => {
-             if (result.success) {
-                toast({
-                    title: "Points de disponibilité retirés",
-                    description: `${player.name} a perdu ${POINTS_FOR_AVAILABILITY} points.`,
-                    variant: "destructive"
-                });
-            }
-        });
+        const result = await incrementPlayerPoints(playerId, -POINTS_FOR_AVAILABILITY);
+         if (result.success) {
+            toast({
+                title: "Points de disponibilité retirés",
+                description: `${player.name} a perdu ${POINTS_FOR_AVAILABILITY} points.`,
+                variant: "destructive"
+            });
+        }
     }
 
     const newAvailabilities = match.details.poll.availabilities.map(a => 
@@ -403,7 +401,12 @@ export default function MatchPage() {
      if (!currentAvailability) {
         newAvailabilities.push({ playerId, status: newStatus });
     }
-    handlePollChange({ ...match.details.poll, availabilities: newAvailabilities });
+    
+    // Create new details object with updated poll
+    const newDetails = { ...match.details, poll: { ...match.details.poll, availabilities: newAvailabilities } };
+
+    // Update local state and push to supabase
+    updateMatchData({ ...match, details: newDetails });
   };
 
 
@@ -411,9 +414,6 @@ export default function MatchPage() {
     if (!match || role !== 'coach') return;
     const previousWasherId = match.details.jerseyWasherPlayerId;
     
-    // We need to pass the full details object, not just the changed part
-    const newDetails = { ...match.details, jerseyWasherPlayerId: playerId };
-
     const result = await updateJerseyWasher({
       matchId: match.id,
       newWasherPlayerId: playerId,
@@ -421,8 +421,6 @@ export default function MatchPage() {
     });
 
     if (result.success) {
-      // Optimistically update the local state. The subscription will handle the final state.
-      setMatch(m => m ? ({ ...m, details: newDetails }) : null);
       toast({
         title: "Responsable maillots mis à jour",
         description: result.message,
