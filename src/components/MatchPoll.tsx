@@ -232,11 +232,11 @@ export default function MatchPollComponent({ poll, allPlayers, onPollChange, onP
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className='space-y-2'>
                                   <h3 className="font-semibold text-sm flex items-center gap-2 text-green-500"><UserCheck/>Disponibles ({availablePlayers.length})</h3>
-                                  <div className="space-y-1 max-h-48 overflow-y-auto pr-2">{renderPlayerList(availablePlayers.map(p => p.playerId), 'border-green-500')}</div>
+                                  <div className="space-y-1 max-h-64 overflow-y-auto pr-2">{renderPlayerList(availablePlayers.map(p => p.playerId), 'border-green-500')}</div>
                               </div>
                               <div className='space-y-2'>
                                   <h3 className="font-semibold text-sm flex items-center gap-2 text-red-500"><UserX/>Indisponibles ({unavailablePlayers.length})</h3>
-                                  <div className="space-y-1 max-h-48 overflow-y-auto pr-2">{renderPlayerList(unavailablePlayers.map(p => p.playerId), 'border-red-500')}</div>
+                                  <div className="space-y-1 max-h-40 overflow-y-auto pr-2">{renderPlayerList(unavailablePlayers.map(p => p.playerId), 'border-red-500')}</div>
                               </div>
                           </div>
                       </div>
