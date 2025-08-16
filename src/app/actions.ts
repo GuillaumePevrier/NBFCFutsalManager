@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { Player, Opponent, Match, Training } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { redirect } from 'next/navigation';
 
 // Match related actions
 
@@ -73,70 +74,67 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
     return data;
 }
 
-export async function createPlayer(previousState: any, formData: FormData) {
+export async function createPlayer(formData: FormData) {
   const supabase = createClient();
   const values = Object.fromEntries(formData.entries());
   const validatedFields = PlayerSchema.safeParse(values);
 
   if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-    };
+    // Cette partie est principalement pour la validation côté client,
+    // mais une gestion d'erreur robuste est une bonne pratique.
+    console.error('Validation failed:', validatedFields.error.flatten().fieldErrors);
+    // On pourrait retourner une erreur, mais pour le moment on s'arrête là.
+    return;
   }
   
   const { id, ...playerData } = validatedFields.data;
 
   // Correction : Initialiser les points à 0 lors de la création.
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('players')
-    .insert([{...playerData, points: 0}])
-    .select();
+    .insert([{...playerData, points: 0}]);
 
   if (error) {
     console.error("Failed to create player:", error);
-    return {
-      error: error.message
-    };
+    // Gérer l'erreur, peut-être en retournant un message à l'utilisateur
+    return;
   }
 
+  // Invalide le cache pour la page des joueurs et redirige
   revalidatePath('/admin/players');
-  revalidatePath('/');
-  return { data };
+  redirect('/admin/players');
 }
 
-export async function updatePlayer(previousState: any, formData: FormData) {
+export async function updatePlayer(formData: FormData) {
   const supabase = createClient();
   const values = Object.fromEntries(formData.entries());
   const validatedFields = PlayerSchema.safeParse(values);
   
   if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-    };
+     console.error('Validation failed:', validatedFields.error.flatten().fieldErrors);
+    return;
   }
 
   const { id: playerId, ...playerData } = validatedFields.data;
 
   if (!playerId) {
-    return { error: "Player ID is missing for update." };
+    console.error("Player ID is missing for update.");
+    return;
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('players')
     .update(playerData)
-    .eq('id', playerId)
-    .select();
+    .eq('id', playerId);
 
   if (error) {
      console.error(`Failed to update player ${playerId}:`, error);
-    return {
-      error: error.message
-    };
+    return;
   }
 
   revalidatePath('/admin/players');
   revalidatePath(`/player/${playerId}`);
-  return { data };
+  redirect('/admin/players');
 }
 
 
@@ -196,8 +194,8 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
     }
     
     revalidatePath(`/player/${playerId}`);
-    revalidatePath(`/match/*`);
     revalidatePath('/admin/players');
+    revalidatePath(`/match/*`);
 
     return { success: true };
 }
@@ -235,11 +233,26 @@ export async function updateJerseyWasher({
   previousWasherPlayerId?: string | null,
 }): Promise<{ success: boolean, message?: string, error?: string }> {
   const supabase = createClient();
+
+  const { data: match, error: fetchError } = await supabase
+    .from('matches')
+    .select('details')
+    .eq('id', matchId)
+    .single();
+
+  if (fetchError) {
+      console.error("Failed to fetch match for jersey washer update:", fetchError);
+      return { success: false, error: "Impossible de récupérer les détails du match." };
+  }
+
+  const updatedDetails = {
+    ...match.details,
+    jerseyWasherPlayerId: newWasherPlayerId,
+  };
   
-  // No need to fetch, just update the jsonb field directly
   const { error: matchUpdateError } = await supabase
     .from('matches')
-    .update({ 'details.jerseyWasherPlayerId': newWasherPlayerId })
+    .update({ details: updatedDetails })
     .eq('id', matchId);
 
   if (matchUpdateError) {
@@ -513,5 +526,3 @@ export async function deleteTraining(trainingId: string): Promise<{ success: boo
   revalidatePath('/trainings');
   return { success: true };
 }
-
-    

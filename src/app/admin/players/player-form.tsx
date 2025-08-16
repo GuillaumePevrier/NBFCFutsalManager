@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,29 +13,55 @@ import { createPlayer, updatePlayer } from "@/app/actions";
 import { useRouter } from "next/navigation";
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { z } from 'zod';
+
+const PlayerSchema = z.object({
+  name: z.string().min(3, "Le nom doit contenir au moins 3 caractères."),
+  team: z.enum(['D1', 'D2', 'Autre']),
+  position: z.enum(['Gardien', 'Défenseur', 'Ailier', 'Pivot', '']).optional(),
+  preferred_foot: z.enum(['Droit', 'Gauche', 'Ambidextre', '']).optional(),
+  avatar_url: z.string().url("L'URL de l'avatar n'est pas valide.").optional().or(z.literal('')),
+});
+
+type FormErrors = z.ZodFormattedError<z.infer<typeof PlayerSchema>>;
 
 export function PlayerForm({ player }: { player?: Player }) {
     const isEditing = !!player;
-    const action = isEditing ? updatePlayer : createPlayer;
-    const [state, formAction] = useActionState(action, { errors: {} });
-    const router = useRouter();
     const { toast } = useToast();
+    const router = useRouter();
+    const [errors, setErrors] = useState<FormErrors | null>(null);
 
-    useEffect(() => {
-        if (state.data) {
+    const formAction = async (formData: FormData) => {
+        const values = Object.fromEntries(formData.entries());
+        const validatedFields = PlayerSchema.safeParse(values);
+
+        if (!validatedFields.success) {
+            setErrors(validatedFields.error.format());
+            return;
+        }
+
+        setErrors(null);
+        
+        try {
+            if (isEditing) {
+                formData.set('id', player.id);
+                await updatePlayer(formData);
+            } else {
+                await createPlayer(formData);
+            }
+            // La redirection est gérée dans l'action serveur
             toast({
                 title: isEditing ? "Joueur modifié" : "Joueur créé",
-                description: `${(state.data as Player[])[0].name} a été ${isEditing ? 'mis à jour' : 'ajouté'}.`
+                description: `${validatedFields.data.name} a été ${isEditing ? 'mis à jour' : 'ajouté'}.`
             });
-            router.push('/admin/players');
-        } else if (state.error) {
-             toast({
+        } catch (error) {
+            toast({
                 title: "Erreur",
-                description: state.error,
+                description: "Une erreur est survenue.",
                 variant: "destructive",
             });
         }
-    }, [state, isEditing, router, toast]);
+    };
 
     function SubmitButton() {
         const { pending } = useFormStatus();
@@ -56,11 +82,10 @@ export function PlayerForm({ player }: { player?: Player }) {
                 </CardHeader>
                 <CardContent>
                     <form action={formAction} className="space-y-6">
-                         {isEditing && <input type="hidden" name="id" value={player.id} />}
                         <div className="space-y-2">
                             <Label htmlFor="name">Nom complet</Label>
                             <Input id="name" name="name" defaultValue={player?.name} required />
-                            {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name[0]}</p>}
+                            {errors?.name && <p className="text-sm text-destructive">{errors.name._errors[0]}</p>}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
@@ -75,6 +100,7 @@ export function PlayerForm({ player }: { player?: Player }) {
                                         <SelectItem value="Autre">Autre</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                {errors?.team && <p className="text-sm text-destructive">{errors.team._errors[0]}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="position">Poste</Label>
@@ -87,6 +113,7 @@ export function PlayerForm({ player }: { player?: Player }) {
                                         <SelectItem value="Défenseur">Défenseur</SelectItem>
                                         <SelectItem value="Ailier">Ailier</SelectItem>
                                         <SelectItem value="Pivot">Pivot</SelectItem>
+                                        <SelectItem value="">Non spécifié</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -102,13 +129,14 @@ export function PlayerForm({ player }: { player?: Player }) {
                                         <SelectItem value="Droit">Droit</SelectItem>
                                         <SelectItem value="Gauche">Gauche</SelectItem>
                                         <SelectItem value="Ambidextre">Ambidextre</SelectItem>
+                                        <SelectItem value="">Non spécifié</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="avatar_url">URL de l'avatar</Label>
                                 <Input id="avatar_url" name="avatar_url" placeholder="https://..." defaultValue={player?.avatar_url} />
-                                 {state.errors?.avatar_url && <p className="text-sm text-destructive">{state.errors.avatar_url[0]}</p>}
+                                {errors?.avatar_url && <p className="text-sm text-destructive">{errors.avatar_url._errors[0]}</p>}
                             </div>
                         </div>
                         <div className="flex justify-between items-center pt-4">
