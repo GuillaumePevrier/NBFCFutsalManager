@@ -6,8 +6,8 @@ export interface Player {
   age?: number;
   avatar_url?: string;
   team: 'D1' | 'D2' | 'Autre';
-  position?: 'Gardien' | 'Défenseur' | 'Ailier' | 'Pivot' | '';
-  preferred_foot?: 'Droit' | 'Gauche' | 'Ambidextre' | '';
+  position?: 'Gardien' | 'Défenseur' | 'Ailier' | 'Pivot' | 'unspecified' | '';
+  preferred_foot?: 'Droit' | 'Gauche' | 'Ambidextre' | 'unspecified' | '';
   goals?: number;
   fouls?: number;
   player_number?: number;

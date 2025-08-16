@@ -18,8 +18,8 @@ import { z } from 'zod';
 const PlayerSchema = z.object({
   name: z.string().min(3, "Le nom doit contenir au moins 3 caractères."),
   team: z.enum(['D1', 'D2', 'Autre']),
-  position: z.enum(['Gardien', 'Défenseur', 'Ailier', 'Pivot', '']).optional(),
-  preferred_foot: z.enum(['Droit', 'Gauche', 'Ambidextre', '']).optional(),
+  position: z.enum(['Gardien', 'Défenseur', 'Ailier', 'Pivot', 'unspecified']).optional(),
+  preferred_foot: z.enum(['Droit', 'Gauche', 'Ambidextre', 'unspecified']).optional(),
   avatar_url: z.string().url("L'URL de l'avatar n'est pas valide.").optional().or(z.literal('')),
 });
 
@@ -104,7 +104,7 @@ export function PlayerForm({ player }: { player?: Player }) {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="position">Poste</Label>
-                                <Select name="position" defaultValue={player?.position}>
+                                <Select name="position" defaultValue={player?.position || 'unspecified'}>
                                     <SelectTrigger id="position">
                                         <SelectValue placeholder="Sélectionner le poste" />
                                     </SelectTrigger>
@@ -113,7 +113,7 @@ export function PlayerForm({ player }: { player?: Player }) {
                                         <SelectItem value="Défenseur">Défenseur</SelectItem>
                                         <SelectItem value="Ailier">Ailier</SelectItem>
                                         <SelectItem value="Pivot">Pivot</SelectItem>
-                                        <SelectItem value="">Non spécifié</SelectItem>
+                                        <SelectItem value="unspecified">Non spécifié</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -121,7 +121,7 @@ export function PlayerForm({ player }: { player?: Player }) {
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div className="space-y-2">
                                 <Label htmlFor="preferred_foot">Pied Fort</Label>
-                                <Select name="preferred_foot" defaultValue={player?.preferred_foot}>
+                                <Select name="preferred_foot" defaultValue={player?.preferred_foot || 'unspecified'}>
                                     <SelectTrigger id="preferred_foot">
                                         <SelectValue placeholder="Sélectionner le pied fort" />
                                     </SelectTrigger>
@@ -129,13 +129,13 @@ export function PlayerForm({ player }: { player?: Player }) {
                                         <SelectItem value="Droit">Droit</SelectItem>
                                         <SelectItem value="Gauche">Gauche</SelectItem>
                                         <SelectItem value="Ambidextre">Ambidextre</SelectItem>
-                                        <SelectItem value="">Non spécifié</SelectItem>
+                                        <SelectItem value="unspecified">Non spécifié</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="avatar_url">URL de l'avatar</Label>
-                                <Input id="avatar_url" name="avatar_url" placeholder="https://..." defaultValue={player?.avatar_url} />
+                                <Input id="avatar_url" name="avatar_url" placeholder="https://..." defaultValue={player?.avatar_url || ''} />
                                 {errors?.avatar_url && <p className="text-sm text-destructive">{errors.avatar_url._errors[0]}</p>}
                             </div>
                         </div>

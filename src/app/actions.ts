@@ -34,8 +34,8 @@ const PlayerSchema = z.object({
   id: z.string().optional(), // id can be present for updates
   name: z.string().min(3, "Le nom doit contenir au moins 3 caractères."),
   team: z.enum(['D1', 'D2', 'Autre']),
-  position: z.enum(['Gardien', 'Défenseur', 'Ailier', 'Pivot', '']).optional(),
-  preferred_foot: z.enum(['Droit', 'Gauche', 'Ambidextre', '']).optional(),
+  position: z.enum(['Gardien', 'Défenseur', 'Ailier', 'Pivot', 'unspecified']).optional(),
+  preferred_foot: z.enum(['Droit', 'Gauche', 'Ambidextre', 'unspecified']).optional(),
   avatar_url: z.string().url("L'URL de l'avatar n'est pas valide.").optional().or(z.literal('')),
   player_number: z.coerce.number().optional(),
   status: z.enum(['Actif', 'Blessé', 'Suspendu', 'Inactif']).optional(),
@@ -48,7 +48,7 @@ export async function getPlayers(): Promise<Player[]> {
     .from('players')
     .select('*')
     // Tri par points (décroissant), puis par nom (alphabétique)
-    .order('points', { ascending: false, nullsFirst: false })
+    .order('points', { ascending: false, nullsFirst: true })
     .order('name', { ascending: true });
     
   if (error) {
@@ -77,13 +77,17 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
 export async function createPlayer(formData: FormData) {
   const supabase = createClient();
   const values = Object.fromEntries(formData.entries());
+  
+  // Replace "unspecified" with empty string for DB
+  if (values.position === 'unspecified') values.position = '';
+  if (values.preferred_foot === 'unspecified') values.preferred_foot = '';
+
   const validatedFields = PlayerSchema.safeParse(values);
 
   if (!validatedFields.success) {
-    // Cette partie est principalement pour la validation côté client,
-    // mais une gestion d'erreur robuste est une bonne pratique.
+    // This part is mainly for robust error handling, as client-side validation should catch this.
     console.error('Validation failed:', validatedFields.error.flatten().fieldErrors);
-    // On pourrait retourner une erreur, mais pour le moment on s'arrête là.
+    // In a real app, you might return a more structured error.
     return;
   }
   
@@ -108,6 +112,11 @@ export async function createPlayer(formData: FormData) {
 export async function updatePlayer(formData: FormData) {
   const supabase = createClient();
   const values = Object.fromEntries(formData.entries());
+
+  // Replace "unspecified" with empty string for DB
+  if (values.position === 'unspecified') values.position = '';
+  if (values.preferred_foot === 'unspecified') values.preferred_foot = '';
+
   const validatedFields = PlayerSchema.safeParse(values);
   
   if (!validatedFields.success) {
