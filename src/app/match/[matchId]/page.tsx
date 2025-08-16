@@ -17,9 +17,11 @@ import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import MatchPollComponent from '@/components/MatchPoll';
 import JerseyWasherSelector from '@/components/JerseyWasherSelector';
-import { updateJerseyWasher, updatePlayerStats } from '@/app/actions';
+import { updateJerseyWasher, updatePlayerStats, incrementPlayerPoints } from '@/app/actions';
 
 const MAX_ON_FIELD = 5;
+const POINTS_FOR_AVAILABILITY = 10;
+
 
 // Function to ensure a match object has default values for new fields
 const ensureMatchDefaults = (match: Match): Match => {
@@ -367,6 +369,44 @@ export default function MatchPage() {
     updateMatchData({ ...match, details: newDetails });
   }
 
+  const handlePlayerResponse = (playerId: string, newStatus: 'available' | 'unavailable') => {
+    if (!match) return;
+    const player = allPlayers.find(p => p.id === playerId);
+    if (!player) return;
+
+    const currentAvailability = match.details.poll.availabilities.find(a => a.playerId === playerId);
+
+    if (newStatus === 'available' && currentAvailability?.status !== 'available') {
+        incrementPlayerPoints(playerId, POINTS_FOR_AVAILABILITY).then(result => {
+            if (result.success) {
+                toast({
+                    title: "Points de disponibilité attribués !",
+                    description: `${player.name} a gagné ${POINTS_FOR_AVAILABILITY} points pour sa réactivité.`
+                })
+            }
+        });
+    } else if (newStatus !== 'available' && currentAvailability?.status === 'available') {
+        incrementPlayerPoints(playerId, -POINTS_FOR_AVAILABILITY).then(result => {
+             if (result.success) {
+                toast({
+                    title: "Points de disponibilité retirés",
+                    description: `${player.name} a perdu ${POINTS_FOR_AVAILABILITY} points.`,
+                    variant: "destructive"
+                });
+            }
+        });
+    }
+
+    const newAvailabilities = match.details.poll.availabilities.map(a => 
+      a.playerId === playerId ? { ...a, status: newStatus } : a
+    );
+     if (!currentAvailability) {
+        newAvailabilities.push({ playerId, status: newStatus });
+    }
+    handlePollChange({ ...match.details.poll, availabilities: newAvailabilities });
+  };
+
+
   const handleJerseyWasherChange = async (playerId: string | null) => {
     if (!match || role !== 'coach') return;
     const previousWasherId = match.details.jerseyWasherPlayerId;
@@ -466,6 +506,7 @@ export default function MatchPage() {
             poll={match.details.poll}
             allPlayers={allPlayers}
             onPollChange={handlePollChange}
+            onPlayerResponse={handlePlayerResponse}
             role={role}
           />
           <JerseyWasherSelector

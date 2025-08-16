@@ -82,7 +82,7 @@ export default function TrainingCard({ training, allPlayers, role, onPollChange,
           allPlayers={allPlayers}
           onPollChange={onPollChange}
           role={role}
-          onPlayerResponse={(playerId, status) => onPlayerResponse(training, playerId, status)}
+          onPlayerResponse={onPlayerResponse}
           trainingId={training.id}
         />
       </CardContent>
