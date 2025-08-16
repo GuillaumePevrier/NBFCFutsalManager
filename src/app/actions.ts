@@ -47,7 +47,7 @@ export async function getPlayers(): Promise<Player[]> {
     .from('players')
     .select('*')
     // Tri par points (décroissant), puis par nom (alphabétique)
-    .order('points', { ascending: false, nullsFirst: true })
+    .order('points', { ascending: false, nullsFirst: false })
     .order('name', { ascending: true });
     
   if (error) {
@@ -88,7 +88,7 @@ export async function createPlayer(previousState: any, formData: FormData) {
 
   const { data, error } = await supabase
     .from('players')
-    .insert([playerData])
+    .insert([{...playerData, points: 0}]) // Set initial points to 0
     .select();
 
   if (error) {
