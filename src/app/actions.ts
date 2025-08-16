@@ -86,9 +86,10 @@ export async function createPlayer(previousState: any, formData: FormData) {
   
   const { id, ...playerData } = validatedFields.data;
 
+  // Correction : Initialiser les points à 0 lors de la création.
   const { data, error } = await supabase
     .from('players')
-    .insert([{...playerData, points: 0}]) // Set initial points to 0
+    .insert([{...playerData, points: 0}])
     .select();
 
   if (error) {
@@ -518,3 +519,5 @@ export async function deleteTraining(trainingId: string): Promise<{ success: boo
   revalidatePath('/trainings');
   return { success: true };
 }
+
+    
