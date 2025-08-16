@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, ArrowLeft, View, Users, Medal, RefreshCw, Sparkles } from "lucide-react";
+import { PlusCircle, ArrowLeft, View, Users, Medal, RefreshCw, Sparkles, Target } from "lucide-react";
 import Link from "next/link";
 import { getPlayers, resetAllPlayersStats } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -208,6 +208,7 @@ export default function PlayersAdminPage() {
                                         <TableHead>#</TableHead>
                                         <TableHead>Joueur</TableHead>
                                         <TableHead className="hidden md:table-cell">Équipe</TableHead>
+                                        <TableHead className="text-right">Buts</TableHead>
                                         <TableHead className="text-right">Points</TableHead>
                                         <TableHead>
                                             <span className="sr-only">Actions</span>
@@ -237,6 +238,7 @@ export default function PlayersAdminPage() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="hidden md:table-cell">{player.team}</TableCell>
+                                                <TableCell className="text-right font-semibold text-lg">{player.goals || 0}</TableCell>
                                                 <TableCell className="text-right font-bold text-lg text-primary">{player.points || 0}</TableCell>
                                                 <TableCell>
                                                     {isCoach ? (
@@ -254,7 +256,7 @@ export default function PlayersAdminPage() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center h-24">
+                                            <TableCell colSpan={6} className="text-center h-24">
                                                 Aucun joueur trouvé. {isCoach && "Commencez par en ajouter un."}
                                             </TableCell>
                                         </TableRow>
