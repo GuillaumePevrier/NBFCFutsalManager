@@ -221,6 +221,29 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
     return { success: true };
 }
 
+export async function resetAllPlayersStats(): Promise<{ success: boolean; error?: any }> {
+    const supabase = createClient();
+    const { error } = await supabase
+        .from('players')
+        .update({
+            points: 0,
+            goals: 0,
+            fouls: 0
+        })
+        .gt('id', '0'); // Dummy condition to update all rows
+
+    if (error) {
+        console.error("Failed to reset all player stats:", error);
+        return { success: false, error };
+    }
+
+    revalidatePath('/admin/players');
+    revalidatePath('/player');
+
+    return { success: true };
+}
+
+
 const POINTS_FOR_JERSEY_WASHING = 25;
 
 export async function updateJerseyWasher({

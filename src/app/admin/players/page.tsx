@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, ArrowLeft, View, Users, Medal, RefreshCw } from "lucide-react";
+import { PlusCircle, ArrowLeft, View, Users, Medal, RefreshCw, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { getPlayers } from "@/app/actions";
+import { getPlayers, resetAllPlayersStats } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlayerActions } from "./player-actions";
 import { createClient } from "@/lib/supabase/client";
@@ -17,6 +17,17 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import PointsScaleDialog from '@/components/PointsScaleDialog';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const getRankingClass = (rank: number) => {
     switch (rank) {
@@ -58,6 +69,22 @@ export default function PlayersAdminPage() {
             title: "Classement Actualisé",
             description: "Les points des joueurs ont été synchronisés."
         });
+    }
+
+    const handleResetAllStats = async () => {
+        const result = await resetAllPlayersStats();
+        if (result.success) {
+            toast({
+                title: "Réinitialisation réussie",
+                description: "Les statistiques de tous les joueurs ont été remises à zéro."
+            });
+        } else {
+             toast({
+                title: "Erreur",
+                description: "La réinitialisation des statistiques a échoué.",
+                variant: "destructive"
+            });
+        }
     }
 
     useEffect(() => {
@@ -135,12 +162,36 @@ export default function PlayersAdminPage() {
                         <div className="flex items-center gap-4">
                             <PointsScaleDialog />
                             {isCoach && (
+                                <>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="sm">
+                                            <Sparkles className="mr-2 h-4 w-4" />
+                                            Tout Réinitialiser
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Cette action est irréversible. Toutes les statistiques (points, buts, fautes) de TOUS les joueurs seront remises à zéro.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleResetAllStats} className="bg-destructive hover:bg-destructive/90">
+                                                Oui, tout réinitialiser
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                                 <Button asChild size="sm">
                                     <Link href="/admin/players/new">
                                         <PlusCircle className="mr-2 h-4 w-4"/>
                                         Ajouter un joueur
                                     </Link>
                                 </Button>
+                                </>
                             )}
                         </div>
                     </div>
