@@ -171,7 +171,7 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
 
     const { data: currentPlayer, error: fetchError } = await supabase
       .from('players')
-      .select('goals, fouls')
+      .select('goals, fouls, points')
       .eq('id', playerId)
       .single();
     
@@ -182,12 +182,14 @@ export async function updatePlayerStats({ playerId, goals, fouls }: { playerId: 
 
     const newGoals = (currentPlayer.goals || 0) + (goals || 0);
     const newFouls = (currentPlayer.fouls || 0) + (fouls || 0);
+    const newPoints = (currentPlayer.points || 0) + ((goals || 0) * 5); // Add 5 points per goal
 
     const { error: updateError } = await supabase
       .from('players')
       .update({
         goals: newGoals,
         fouls: newFouls,
+        points: newPoints
       })
       .eq('id', playerId);
 
@@ -501,6 +503,20 @@ export async function updateTrainingPoll(trainingId: string, poll: Training['pol
   if (error) {
     console.error(`Failed to update poll for training ${trainingId}:`, error);
     return { success: false, error: error.message };
+  }
+
+  revalidatePath('/trainings');
+  return { success: true };
+}
+
+
+export async function deleteTraining(trainingId: string): Promise<{ success: boolean; error?: any }> {
+  const supabase = createClient();
+  const { error } = await supabase.from('trainings').delete().eq('id', trainingId);
+
+  if (error) {
+    console.error(`Failed to delete training ${trainingId}:`, error);
+    return { success: false, error };
   }
 
   revalidatePath('/trainings');

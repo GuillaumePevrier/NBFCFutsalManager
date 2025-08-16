@@ -10,7 +10,7 @@ import Link from 'next/link';
 import type { Training, Role, Player } from '@/lib/types';
 import CoachAuthDialog from '@/components/CoachAuthDialog';
 import { useToast } from '@/hooks/use-toast';
-import { getTrainings, getPlayers, updateTrainingPoll, incrementPlayerPoints } from '@/app/actions';
+import { getTrainings, getPlayers, updateTrainingPoll, incrementPlayerPoints, deleteTraining } from '@/app/actions';
 import CreateTrainingDialog from '@/components/CreateTrainingDialog';
 import TrainingCard from '@/components/TrainingCard';
 
@@ -29,7 +29,13 @@ export default function TrainingsPage() {
       setLoading(true);
       const trainingsData = await getTrainings();
       const playersData = await getPlayers();
-      setTrainings(trainingsData);
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+      
+      const upcomingTrainings = trainingsData.filter(t => new Date(t.date) >= today);
+
+      setTrainings(upcomingTrainings);
       setPlayers(playersData);
       setLoading(false);
     };
@@ -97,9 +103,23 @@ export default function TrainingsPage() {
     const newAvailabilities = training.poll.availabilities.map(a => 
       a.playerId === playerId ? { ...a, status: newStatus } : a
     );
+    if (!currentAvailability) {
+        newAvailabilities.push({ playerId, status: newStatus });
+    }
+
     await handlePollChange(training.id, { ...training.poll, availabilities: newAvailabilities });
   };
   
+  const handleDeleteTraining = async (trainingId: string) => {
+      const result = await deleteTraining(trainingId);
+      if(result.success) {
+          setTrainings(prev => prev.filter(t => t.id !== trainingId));
+          toast({ title: "Entraînement supprimé", description: "La session a été annulée."});
+      } else {
+          toast({ title: "Erreur", description: "La suppression a échoué.", variant: "destructive" });
+      }
+  }
+
   const renderContent = () => {
     if (loading) {
       return <p className="text-center text-muted-foreground p-8">Chargement des entraînements...</p>;
@@ -115,13 +135,14 @@ export default function TrainingsPage() {
               role={role} 
               onPollChange={(poll) => handlePollChange(training.id, poll)}
               onPlayerResponse={(playerId, status) => handlePlayerResponse(training, playerId, status)}
+              onDelete={handleDeleteTraining}
             />
           ))
         ) : (
           <div className="text-center text-muted-foreground p-8 border-dashed border-2 rounded-lg">
             <Footprints className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 text-lg font-medium">Aucun entraînement planifié</h3>
-            {role === 'coach' && <p className="mt-1 text-sm">Commencez par créer une nouvelle session d'entraînement.</p>}
+            <h3 className="mt-4 text-lg font-medium">Aucun entraînement à venir</h3>
+            {role === 'coach' && <p className="mt-1 text-sm">Commencez par créer une nouvelle session.</p>}
           </div>
         )}
       </div>
@@ -146,7 +167,7 @@ export default function TrainingsPage() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
               <Footprints className="w-8 h-8 text-primary" />
-              Entraînements
+              Entraînements à venir
             </h1>
             {role === 'coach' && (
               <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
