@@ -4,7 +4,7 @@
 import type { MatchPoll, Player, Role, PlayerAvailability } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Clock, Play, PowerOff, RefreshCw, UserCheck, UserX, HelpCircle, Users, Check, X } from 'lucide-react';
+import { Clock, Play, PowerOff, RefreshCw, UserCheck, UserX, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   AlertDialog,
@@ -20,8 +20,10 @@ import {
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Card, CardTitle, CardContent } from './ui/card';
+import { Card, CardTitle } from './ui/card';
+import AvailabilityDialog from './AvailabilityDialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+
 
 interface TrainingPollProps {
   poll: MatchPoll;
@@ -75,6 +77,8 @@ const Countdown = ({ deadline }: { deadline: string | null }) => {
 
 export default function TrainingPoll({ poll, allPlayers, onPollChange, role, onPlayerResponse }: TrainingPollProps) {
   const [deadlineHours, setDeadlineHours] = useState(24);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+
 
   const handleStartPoll = () => {
     if (deadlineHours <= 0) return;
@@ -105,49 +109,51 @@ export default function TrainingPoll({ poll, allPlayers, onPollChange, role, onP
     });
   };
   
+  const handlePlayerResponseWithDialog = (playerId: string, status: 'available' | 'unavailable') => {
+      onPlayerResponse(playerId, status);
+      setSelectedPlayer(null); // Close the dialog
+  };
+
   const getPlayerById = (id: string) => allPlayers.find(p => p.id === id);
   const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '';
 
-  const renderPlayerList = (players: PlayerAvailability[]) => {
-     if (players.length === 0) {
+  const availablePlayers = poll.availabilities.filter(p => p.status === 'available');
+  const unavailablePlayers = poll.availabilities.filter(p => p.status === 'unavailable');
+  const undecidedPlayers = allPlayers.filter(player => 
+    !poll.availabilities.some(a => a.playerId === player.id && a.status !== 'undecided')
+  );
+
+  const renderPlayerList = (playerIds: string[]) => {
+     if (playerIds.length === 0) {
         return <p className="text-sm text-muted-foreground text-center col-span-full py-4">Aucun joueur.</p>
      }
-    return players.map(({ playerId }) => {
+    return playerIds.map(playerId => {
       const player = getPlayerById(playerId);
       if (!player) return null;
       return (
-        <Popover key={playerId}>
-          <PopoverTrigger asChild>
-            <div className="flex items-center justify-between p-2 rounded-md bg-muted hover:bg-accent transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={player.avatar_url} alt={player.name} />
-                  <AvatarFallback>{getInitials(player.name)}</AvatarFallback>
-                </Avatar>
-                <span className="font-medium text-sm">{player.name}</span>
-              </div>
+        <div key={playerId} onClick={() => setSelectedPlayer(player)} className="flex items-center justify-between p-2 rounded-md bg-muted hover:bg-accent transition-colors cursor-pointer">
+            <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
+                <AvatarImage src={player.avatar_url} alt={player.name} />
+                <AvatarFallback>{getInitials(player.name)}</AvatarFallback>
+            </Avatar>
+            <span className="font-medium text-sm">{player.name}</span>
             </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-2">
-             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" className="flex-1 bg-green-500/10 text-green-500 hover:bg-green-500/20 hover:text-green-500" onClick={() => onPlayerResponse(playerId, 'available')}>
-                <Check className="mr-2 h-4 w-4" /> Présent
-              </Button>
-              <Button size="sm" variant="ghost" className="flex-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-500" onClick={() => onPlayerResponse(playerId, 'unavailable')}>
-                <X className="mr-2 h-4 w-4"/> Absent
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
+        </div>
       );
     });
   }
 
-  const availablePlayers = poll.availabilities.filter(p => p.status === 'available');
-  const unavailablePlayers = poll.availabilities.filter(p => p.status === 'unavailable');
-  const undecidedPlayers = poll.availabilities.filter(p => p.status === 'undecided');
-
   return (
+    <>
+     {selectedPlayer && (
+         <AvailabilityDialog
+          player={selectedPlayer}
+          isOpen={!!selectedPlayer}
+          onOpenChange={(open) => !open && setSelectedPlayer(null)}
+          onRespond={handlePlayerResponseWithDialog}
+        />
+      )}
     <Card className="w-full bg-background/50">
         <Accordion type="single" collapsible className="w-full" defaultValue='item-1'>
             <AccordionItem value="item-1">
@@ -200,19 +206,28 @@ export default function TrainingPoll({ poll, allPlayers, onPollChange, role, onP
                         )}
                         
                         {poll.status !== 'inactive' && (
-                            <div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className='space-y-4'>
+                                <div className='bg-muted p-2 rounded-lg'>
+                                    <Label className='text-sm font-semibold'>Répondre au sondage</Label>
+                                    <Select onValueChange={(playerId) => setSelectedPlayer(getPlayerById(playerId) || null)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Sélectionnez votre nom pour répondre..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {undecidedPlayers.map(player => (
+                                                <SelectItem key={player.id} value={player.id}>{player.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className='space-y-2'>
                                         <h3 className="font-semibold text-sm flex items-center gap-2 text-green-500"><UserCheck/>Présents ({availablePlayers.length})</h3>
-                                        <div className="space-y-1 max-h-48 overflow-y-auto pr-2">{renderPlayerList(availablePlayers)}</div>
+                                        <div className="space-y-1 max-h-48 overflow-y-auto pr-2">{renderPlayerList(availablePlayers.map(p => p.playerId))}</div>
                                     </div>
                                     <div className='space-y-2'>
                                         <h3 className="font-semibold text-sm flex items-center gap-2 text-red-500"><UserX/>Absents ({unavailablePlayers.length})</h3>
-                                        <div className="space-y-1 max-h-48 overflow-y-auto pr-2">{renderPlayerList(unavailablePlayers)}</div>
-                                    </div>
-                                    <div className='space-y-2'>
-                                        <h3 className="font-semibold text-sm flex items-center gap-2 text-muted-foreground"><HelpCircle/>En attente ({undecidedPlayers.length})</h3>
-                                        <div className="space-y-1 max-h-48 overflow-y-auto pr-2">{renderPlayerList(undecidedPlayers)}</div>
+                                        <div className="space-y-1 max-h-48 overflow-y-auto pr-2">{renderPlayerList(unavailablePlayers.map(p => p.playerId))}</div>
                                     </div>
                                 </div>
                             </div>
@@ -222,5 +237,6 @@ export default function TrainingPoll({ poll, allPlayers, onPollChange, role, onP
             </AccordionItem>
         </Accordion>
     </Card>
+    </>
   );
 }
