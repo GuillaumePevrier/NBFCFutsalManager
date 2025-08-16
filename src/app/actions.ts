@@ -239,7 +239,7 @@ export async function resetAllPlayersStats(): Promise<{ success: boolean; error?
             goals: 0,
             fouls: 0
         })
-        .gt('id', '0'); // Dummy condition to update all rows
+        .not('id', 'is', null); // Condition to update all rows
 
     if (error) {
         console.error("Failed to reset all player stats:", error);
