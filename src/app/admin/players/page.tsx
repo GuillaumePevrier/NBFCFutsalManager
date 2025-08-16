@@ -43,11 +43,12 @@ export default function PlayersAdminPage() {
     const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
     const supabase = createClient();
 
+    const fetchPlayers = async () => {
+        const data = await getPlayers();
+        setPlayers(data);
+    };
+
     useEffect(() => {
-        const fetchPlayers = async () => {
-            const data = await getPlayers();
-            setPlayers(data);
-        };
         fetchPlayers();
     }, []);
 
@@ -60,12 +61,23 @@ export default function PlayersAdminPage() {
 
         const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
             setRole(session ? 'coach' : 'player');
+            // Re-fetch players on auth change to ensure consistency if points are updated by a new coach
+            fetchPlayers();
         });
+        
+        // Listen for player updates
+        const playerChannel = supabase.channel('players-all')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
+                fetchPlayers();
+            })
+            .subscribe();
+
 
         return () => {
             authListener?.subscription.unsubscribe();
+            supabase.removeChannel(playerChannel);
         };
-    }, [supabase.auth]);
+    }, [supabase]);
 
     const onCoachLogin = () => {
         setRole('coach');
