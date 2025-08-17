@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlusCircle, ArrowRight, Trophy, ChevronLeft, ChevronRight, BarChart3, Shield } from 'lucide-react';
+import { PlusCircle, ArrowRight, Trophy, ChevronLeft, ChevronRight, BarChart3, Shield, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Link from 'next/link';
@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MiniScoreboard from '@/components/MiniScoreboard';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import RankingTable from '@/components/RankingTable';
 
 const competitions = [
     { id: 'd2', name: 'D2' },
@@ -286,7 +287,39 @@ export default function MatchesPage() {
         )
     }
      if (activeFilter === 'ranking') {
-        return <div className="text-center text-muted-foreground p-8">Le classement sera bientôt disponible ici.</div>;
+        return (
+            <div className="space-y-4">
+                 <Card className="p-2 bg-card/50">
+                    <div className="flex items-center justify-between gap-2">
+                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('prev')}>
+                            <ChevronLeft />
+                        </Button>
+                        <Select value={activeCompetition} onValueChange={setActiveCompetition}>
+                            <SelectTrigger className="flex-grow">
+                                <SelectValue placeholder="Choisir une compétition" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {competitions.map(c => (
+                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('next')}>
+                            <ChevronRight />
+                        </Button>
+                    </div>
+                </Card>
+                {role === 'coach' && (
+                    <div className="text-right">
+                         <Button size="sm" disabled>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Saisir les résultats
+                        </Button>
+                    </div>
+                )}
+                <RankingTable opponents={opponents} />
+            </div>
+        );
     }
   }
 

@@ -1,4 +1,5 @@
 
+
 export interface Player {
   id: string; // uuid
   name: string;
@@ -96,4 +97,19 @@ export interface Training {
   time: string; // time
   location?: string;
   poll: MatchPoll; // jsonb
+}
+
+export interface Ranking {
+  rank: number;
+  teamId: string;
+  teamName: string;
+  logoUrl?: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
 }
