@@ -22,12 +22,14 @@ import RankingTable from '@/components/RankingTable';
 import { getOpponents } from '../actions';
 
 const competitions = [
-    { id: 'd2', name: 'D2' },
-    { id: 'd1', name: 'D1' },
-    { id: 'coupe_bretagne', name: 'Coupe de Bretagne' },
-    { id: 'coupe_district', name: 'Coupe du District' },
-    { id: 'coupe_france', name: 'Coupe de France' },
-    { id: 'amical', name: 'Amical' },
+    { id: 'D2 Nationale', name: 'D2 Nationale' },
+    { id: 'Régionale 1', name: 'Régionale 1' },
+    { id: 'District 1', name: 'District 1' },
+    { id: 'District 2', name: 'District 2' },
+    { id: 'Coupe de Bretagne', name: 'Coupe de Bretagne' },
+    { id: 'Coupe du District', name: 'Coupe du District' },
+    { id: 'Coupe de France', name: 'Coupe de France' },
+    { id: 'Amical', name: 'Amical' },
 ];
 
 export default function MatchesPage() {
@@ -149,7 +151,7 @@ export default function MatchesPage() {
 
   const filteredMatches = matches
     .filter(m => (m.details?.competition || 'amical') === activeCompetition)
-    .filter(m => activeCompetition === 'amical' || (m.details?.matchday || 1) === currentMatchday)
+    .filter(m => activeCompetition === 'Amical' || (m.details?.matchday || 1) === currentMatchday)
     .sort((a,b) => new Date(a.details.date).getTime() - new Date(b.details.date).getTime());
 
 
@@ -304,7 +306,7 @@ export default function MatchesPage() {
                 </Card>
                 {role === 'coach' && (
                     <div className="text-right">
-                         <Button size="sm" disabled>
+                         <Button size="sm">
                             <Pencil className="mr-2 h-4 w-4" />
                             Saisir les résultats
                         </Button>

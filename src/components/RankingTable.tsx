@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -35,13 +34,17 @@ export default function RankingTable({ opponents, matches, competition }: Rankin
             relevantMatches.forEach(match => {
                 const homeScore = match.scoreboard.homeScore;
                 const awayScore = match.scoreboard.awayScore;
+                const isNbfcHome = match.details.venue === 'home';
 
-                if(homeScore > awayScore) wins++;
-                else if (homeScore < awayScore) losses++;
+                const nbfcScore = isNbfcHome ? homeScore : awayScore;
+                const opponentScore = isNbfcHome ? awayScore : homeScore;
+
+                if(nbfcScore > opponentScore) wins++;
+                else if (nbfcScore < opponentScore) losses++;
                 else draws++;
 
-                goalsFor += homeScore;
-                goalsAgainst += awayScore;
+                goalsFor += nbfcScore;
+                goalsAgainst += opponentScore;
             });
             
             return {
@@ -49,16 +52,20 @@ export default function RankingTable({ opponents, matches, competition }: Rankin
                 team_name: 'NBFC Futsal',
                 logo_url: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
                 wins, losses, draws, goals_for: goalsFor, goals_against: goalsAgainst,
+                championship: competition, // Ensure it's part of the current competition
             };
         };
 
         const generateRankings = () => {
+            // Filter opponents based on the selected competition from their 'championship' field
             const competitionOpponents = opponents.filter(o => o.championship === competition);
             const nbfcStats = calculateNbfcStats();
             
+            // Combine NBFC stats with the filtered opponents
             const allTeams = [...competitionOpponents, nbfcStats];
 
             const calculatedRankings = allTeams.map(team => {
+                // Rule: 3 points for a win, 1 for a draw, 0 for a loss
                 const points = (team.wins * 3) + (team.draws * 1);
                 const played = team.wins + team.losses + team.draws;
                 const goalDifference = team.goals_for - team.goals_against;
