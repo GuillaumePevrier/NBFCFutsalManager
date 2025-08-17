@@ -2,15 +2,18 @@
 'use client';
 
 import React, { forwardRef } from 'react';
-import type { TacticPawn, TacticArrow } from '@/lib/types';
+import type { TacticPawn as TacticPawnType, TacticArrow } from '@/lib/types';
+import TacticPawn from './TacticPawn';
 
 interface FutsalCourtProps {
   children?: React.ReactNode;
-  pawns?: TacticPawn[];
+  pawns?: TacticPawnType[];
   arrows?: TacticArrow[];
+  onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+  onPawnClick?: (pawnId: string) => void;
 }
 
-const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows }, ref) => {
+const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows, onClick, onPawnClick }, ref) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
       {/* Substitutes Bench Area */}
@@ -21,7 +24,8 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pa
       {/* Main Court */}
       <div
         ref={ref}
-        className="relative w-full max-w-2xl aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30 overflow-hidden"
+        onClick={onClick}
+        className="relative w-full max-w-2xl aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30 overflow-hidden cursor-crosshair"
       >
         {/* Court Markings first, so they are in the background */}
         <div className="absolute inset-0">
@@ -55,11 +59,16 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pa
             <div className="w-full h-full border-r-4 border-primary"></div>
         </div>
 
-        {/* Tactical Elements */}
+        {/* Tactical Pawns */}
         {pawns && pawns.map(pawn => (
-            <div key={pawn.id} style={{ left: `${pawn.position.x}%`, top: `${pawn.position.y}%`}}>
-                {/* Pawn rendering logic will go here */}
-            </div>
+          <TacticPawn 
+            key={pawn.id} 
+            pawn={pawn} 
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent court click event
+              onPawnClick?.(pawn.id);
+            }} 
+          />
         ))}
 
         {children}
