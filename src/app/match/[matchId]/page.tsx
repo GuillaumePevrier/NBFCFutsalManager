@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Player, PlayerPosition, Role, MatchDetails as MatchDetailsType, Scoreboard as ScoreboardType, Match, MatchPoll } from '@/lib/types';
+import type { Player, PlayerPosition, Role, MatchDetails as MatchDetailsType, Scoreboard as ScoreboardType, Match, MatchPoll, TacticSequence } from '@/lib/types';
 import ControlPanel from '@/components/ControlPanel';
 import FutsalCourt from '@/components/FutsalCourt';
 import PlayerToken from '@/components/PlayerToken';
@@ -19,6 +19,7 @@ import MatchPollComponent from '@/components/MatchPoll';
 import JerseyWasherSelector from '@/components/JerseyWasherSelector';
 import { updateJerseyWasher, updatePlayerStats, incrementPlayerPoints } from '@/app/actions';
 import TacticBoard from '@/components/TacticBoard';
+import { nanoid } from 'nanoid';
 
 const MAX_ON_FIELD = 5;
 const POINTS_FOR_AVAILABILITY = 10;
@@ -64,6 +65,7 @@ const ensureMatchDefaults = (match: Match): Match => {
         timerLastStarted: null,
        ...scoreboard,
     },
+    tacticSequences: match.tacticSequences || [],
   };
 };
 
@@ -106,6 +108,7 @@ export default function MatchPage() {
       team: updatedMatch.team,
       substitutes: updatedMatch.substitutes,
       scoreboard: updatedMatch.scoreboard,
+      tacticSequences: updatedMatch.tacticSequences,
     };
 
     const { error } = await supabase
@@ -473,6 +476,11 @@ export default function MatchPage() {
       }
   };
 
+  const handleTacticSequencesChange = (sequences: TacticSequence[]) => {
+    if (!match) return;
+    updateMatchData({ ...match, tacticSequences: sequences });
+  };
+
 
   if (!match) {
     return (
@@ -545,7 +553,11 @@ export default function MatchPage() {
               />
             ))}
           </FutsalCourt>
-           <TacticBoard role={role} />
+           <TacticBoard 
+             role={role}
+             sequences={match.tacticSequences || []}
+             onSequencesChange={handleTacticSequencesChange}
+           />
           <MatchDetails 
             details={match.details}
             onDetailsChange={handleDetailsChange}

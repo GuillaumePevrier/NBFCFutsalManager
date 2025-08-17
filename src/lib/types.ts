@@ -62,6 +62,33 @@ export interface Scoreboard {
   timerLastStarted: string | null; // ISO string
 }
 
+// Tactic Board Types
+export type TacticPawnType = 'player' | 'opponent' | 'ball';
+
+export interface TacticPawn {
+  id: string;
+  type: TacticPawnType;
+  position: { x: number, y: number };
+  label: string; // Player number, 'X' for opponent, or '' for ball
+}
+
+export interface TacticArrow {
+    id: string;
+    from: { x: number, y: number };
+    to: { x: number, y: number };
+}
+
+export interface TacticStep {
+    pawns: TacticPawn[];
+    arrows: TacticArrow[];
+}
+
+export interface TacticSequence {
+    id: string;
+    name: string;
+    steps: TacticStep[];
+}
+
 
 // This interface now matches the Supabase table structure
 export interface Match {
@@ -71,6 +98,7 @@ export interface Match {
   team: PlayerPosition[];
   substitutes: PlayerPosition[];
   scoreboard: Scoreboard;
+  tacticSequences?: TacticSequence[]; // New field for tactic animations
   opponent_logo_url?: string; // Optional field from join
 }
 
