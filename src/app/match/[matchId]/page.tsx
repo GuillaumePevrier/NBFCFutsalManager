@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/client';
 import MatchPollComponent from '@/components/MatchPoll';
 import JerseyWasherSelector from '@/components/JerseyWasherSelector';
 import { updateJerseyWasher, updatePlayerStats, incrementPlayerPoints } from '@/app/actions';
+import TacticBoard from '@/components/TacticBoard';
 
 const MAX_ON_FIELD = 5;
 const POINTS_FOR_AVAILABILITY = 10;
@@ -544,6 +545,7 @@ export default function MatchPage() {
               />
             ))}
           </FutsalCourt>
+           <TacticBoard role={role} />
           <MatchDetails 
             details={match.details}
             onDetailsChange={handleDetailsChange}
