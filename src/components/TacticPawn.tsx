@@ -8,12 +8,13 @@ import { CircleDot } from 'lucide-react';
 interface TacticPawnProps {
   pawn: TacticPawnType;
   onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
   isSelected?: boolean;
 }
 
-const TacticPawn = ({ pawn, onClick, isSelected }: TacticPawnProps) => {
+const TacticPawn = ({ pawn, onClick, onMouseDown, isSelected }: TacticPawnProps) => {
 
-  const baseStyle = "absolute w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg cursor-pointer transition-all duration-150";
+  const baseStyle = "absolute w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg transition-all duration-150";
   
   const typeStyles = {
     player: "bg-primary text-primary-foreground border-2 border-white",
@@ -21,15 +22,17 @@ const TacticPawn = ({ pawn, onClick, isSelected }: TacticPawnProps) => {
     ball: "bg-white text-black border-2 border-black"
   };
 
-  const selectedStyle = isSelected ? 'ring-4 ring-yellow-400' : 'hover:scale-110';
+  const selectedStyle = isSelected ? 'ring-4 ring-yellow-400 scale-110' : 'cursor-pointer hover:scale-110';
 
   return (
     <div
       onClick={onClick}
+      onMouseDown={onMouseDown}
       className={cn(baseStyle, typeStyles[pawn.type], selectedStyle)}
       style={{
         left: `calc(${pawn.position.x}% - 16px)`, // Center the pawn
         top: `calc(${pawn.position.y}% - 16px)`,
+        touchAction: 'none'
       }}
       title={pawn.type}
     >

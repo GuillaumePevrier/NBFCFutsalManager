@@ -11,9 +11,11 @@ interface FutsalCourtProps {
   arrows?: TacticArrow[];
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onPawnClick?: (pawnId: string) => void;
+  onPawnMouseDown?: (event: React.MouseEvent<HTMLDivElement>, pawnId: string) => void;
+  selectedPawnId?: string | null;
 }
 
-const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows, onClick, onPawnClick }, ref) => {
+const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows, onClick, onPawnClick, onPawnMouseDown, selectedPawnId }, ref) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
       {/* Substitutes Bench Area */}
@@ -68,6 +70,11 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pa
               e.stopPropagation(); // Prevent court click event
               onPawnClick?.(pawn.id);
             }} 
+            onMouseDown={(e) => {
+                e.stopPropagation();
+                onPawnMouseDown?.(e, pawn.id);
+            }}
+            isSelected={pawn.id === selectedPawnId}
           />
         ))}
 

@@ -11,7 +11,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
-import type { TacticPawn, TacticPawnType, TacticSequence } from "@/lib/types";
+import type { TacticPawn as TacticPawnType, TacticPawn, TacticSequence } from "@/lib/types";
 import { useState, useRef, useEffect } from "react";
 import FutsalCourt from "./FutsalCourt";
 import { Input } from "./ui/input";
@@ -27,48 +27,74 @@ interface TacticEditorDialogProps {
   onSave: (sequence: TacticSequence) => void;
 }
 
-type EditorTool = TacticPawnType | 'move' | 'delete';
+type EditorTool = TacticPawnType | 'move';
+interface DragState {
+  pawnId: string;
+  offsetX: number;
+  offsetY: number;
+}
+
 
 export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: initialSequence, onSave }: TacticEditorDialogProps) {
   const [sequence, setSequence] = useState<TacticSequence>(initialSequence);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [activeTool, setActiveTool] = useState<EditorTool>('move');
   const [selectedPawnId, setSelectedPawnId] = useState<string | null>(null);
+  const [draggingPawn, setDraggingPawn] = useState<DragState | null>(null);
   const courtRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Reset state if a new sequence is passed in
     setSequence(initialSequence);
     setActiveStepIndex(0);
+    setSelectedPawnId(null);
+    setDraggingPawn(null);
   }, [initialSequence]);
+  
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => handleDragMove(e.clientX, e.clientY);
+    const handleMouseUp = () => handleDragEnd();
+
+    if (draggingPawn) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [draggingPawn]);
 
   const handleSave = () => {
     onSave(sequence);
   };
 
-  const updateCurrentStep = (updater: (draft: TacticPawn[]) => TacticPawn[]) => {
-    const currentStep = sequence.steps[activeStepIndex];
-    const newPawns = updater([...currentStep.pawns]);
-    
-    const newSteps = [...sequence.steps];
-    newSteps[activeStepIndex] = { ...currentStep, pawns: newPawns };
+  const updateCurrentStepPawns = (updater: (draft: TacticPawn[]) => TacticPawn[]) => {
+    setSequence(currentSequence => {
+        const currentStep = currentSequence.steps[activeStepIndex];
+        const newPawns = updater([...currentStep.pawns]);
+        
+        const newSteps = [...currentSequence.steps];
+        newSteps[activeStepIndex] = { ...currentStep, pawns: newPawns };
 
-    setSequence({ ...sequence, steps: newSteps });
+        return { ...currentSequence, steps: newSteps };
+    });
   };
 
   const handleCourtClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!courtRef.current || activeTool === 'move' || activeTool === 'delete') return;
+    if (!courtRef.current || activeTool === 'move') return;
 
     const rect = courtRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     
     let label = '';
+    const currentPawns = sequence.steps[activeStepIndex].pawns;
     if(activeTool === 'player') {
-        const playerCount = sequence.steps[activeStepIndex].pawns.filter(p => p.type === 'player').length;
+        const playerCount = currentPawns.filter(p => p.type === 'player').length;
         label = `J${playerCount + 1}`;
     } else if (activeTool === 'opponent') {
-        const opponentCount = sequence.steps[activeStepIndex].pawns.filter(p => p.type === 'opponent').length;
+        const opponentCount = currentPawns.filter(p => p.type === 'opponent').length;
         label = `A${opponentCount + 1}`;
     }
 
@@ -79,22 +105,60 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
       label,
     };
     
-    updateCurrentStep(draft => [...draft, newPawn]);
+    updateCurrentStepPawns(draft => [...draft, newPawn]);
+    setSelectedPawnId(newPawn.id);
   };
   
   const handlePawnClick = (pawnId: string) => {
-    if (activeTool === 'delete') {
-      handleDeletePawn();
-    } else {
-      setSelectedPawnId(pawnId);
+    if (activeTool !== 'move') {
+      setActiveTool('move');
     }
+    setSelectedPawnId(pawnId);
   };
 
   const handleDeletePawn = () => {
     if (!selectedPawnId) return;
-    updateCurrentStep(draft => draft.filter(p => p.id !== selectedPawnId));
+    updateCurrentStepPawns(draft => draft.filter(p => p.id !== selectedPawnId));
     setSelectedPawnId(null);
   }
+
+  const handlePawnMouseDown = (e: React.MouseEvent<HTMLDivElement>, pawnId: string) => {
+    if (activeTool !== 'move' || !courtRef.current) return;
+    
+    e.preventDefault();
+    setSelectedPawnId(pawnId);
+    
+    const courtRect = courtRef.current.getBoundingClientRect();
+    const pawnElement = e.currentTarget;
+    const pawnRect = pawnElement.getBoundingClientRect();
+
+    setDraggingPawn({
+        pawnId: pawnId,
+        offsetX: e.clientX - pawnRect.left,
+        offsetY: e.clientY - pawnRect.top,
+    });
+  };
+
+  const handleDragMove = (clientX: number, clientY: number) => {
+    if (!draggingPawn || !courtRef.current) return;
+    
+    const courtRect = courtRef.current.getBoundingClientRect();
+    const x = clientX - courtRect.left - draggingPawn.offsetX;
+    const y = clientY - courtRect.top - draggingPawn.offsetY;
+
+    const newX = Math.max(0, Math.min(100, (x / courtRect.width) * 100));
+    const newY = Math.max(0, Math.min(100, (y / courtRect.height) * 100));
+
+    updateCurrentStepPawns(pawns => 
+      pawns.map(p => 
+        p.id === draggingPawn.pawnId ? { ...p, position: { x: newX, y: newY } } : p
+      )
+    );
+  };
+
+  const handleDragEnd = () => {
+    setDraggingPawn(null);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -124,6 +188,8 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
                     pawns={sequence.steps[activeStepIndex]?.pawns || []}
                     onClick={handleCourtClick}
                     onPawnClick={handlePawnClick}
+                    onPawnMouseDown={handlePawnMouseDown}
+                    selectedPawnId={selectedPawnId}
                 />
             </div>
 
