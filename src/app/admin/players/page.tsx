@@ -16,7 +16,6 @@ import CoachAuthDialog from '@/components/CoachAuthDialog';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import PointsScaleDialog from '@/components/PointsScaleDialog';
-import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,6 +77,7 @@ export default function PlayersAdminPage() {
                 title: "Réinitialisation réussie",
                 description: "Les statistiques de tous les joueurs ont été remises à zéro."
             });
+            fetchPlayers();
         } else {
              toast({
                 title: "Erreur",
@@ -222,7 +222,7 @@ export default function PlayersAdminPage() {
                                                 <TableCell className="font-bold text-lg">{index + 1}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
-                                                        <Avatar>
+                                                        <Avatar className="h-12 w-12">
                                                             <AvatarImage src={player.avatar_url} alt={player.name} />
                                                             <AvatarFallback>{getInitials(player.name)}</AvatarFallback>
                                                         </Avatar>

@@ -129,7 +129,7 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                         style={{ backgroundImage: "url('https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png')" }}
                     />
                     <div className="flex flex-col items-center gap-4 relative">
-                        <Avatar className="w-32 h-32 border-4 border-accent shadow-lg">
+                        <Avatar className="w-36 h-36 border-4 border-accent shadow-lg">
                             <AvatarImage src={player.avatar_url} alt={player.name} className="object-cover" />
                             <AvatarFallback className="text-5xl bg-primary text-primary-foreground">{fallbackInitials}</AvatarFallback>
                         </Avatar>

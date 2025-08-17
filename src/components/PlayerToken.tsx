@@ -26,18 +26,18 @@ const PlayerToken = ({ player, onMouseDown, onTouchStart, onMouseUp, onTouchEnd,
       onMouseUp={onMouseUp}
       onTouchEnd={onTouchEnd}
       className={cn(
-        'absolute w-12 h-12 md:w-14 md:h-14 flex items-center justify-center select-none transition-all duration-150 ease-in-out',
+        'absolute w-16 h-auto flex flex-col items-center justify-center select-none transition-all duration-150 ease-in-out',
         isDraggable ? 'cursor-grab' : 'cursor-pointer',
         isDragging ? 'cursor-grabbing scale-110 z-10' : 'hover:scale-105'
       )}
       style={{
-        left: `calc(${player.position.x}% - 24px)`, // Offset to center the token
-        top: `calc(${player.position.y}% - 24px)`,
+        left: `calc(${player.position.x}% - 32px)`, // Offset to center the token (width is 16*4=64px)
+        top: `calc(${player.position.y}% - 32px)`,
         touchAction: 'none' // prevent scrolling on mobile
       }}
       title={player.name}
     >
-      <Avatar className="w-full h-full border-2 border-white/80 shadow-lg">
+      <Avatar className="w-14 h-14 border-2 border-white/80 shadow-lg">
         <AvatarImage src={player.avatar_url} alt={player.name} className="object-cover" />
         <AvatarFallback className={cn(
           'text-lg font-bold text-white',
@@ -46,7 +46,16 @@ const PlayerToken = ({ player, onMouseDown, onTouchStart, onMouseUp, onTouchEnd,
           {fallbackInitials}
         </AvatarFallback>
       </Avatar>
-       <div className="absolute -bottom-2.5 flex items-center justify-center gap-1">
+
+      {/* Player Name */}
+      <div className="mt-1.5 text-center">
+        <p className="text-[10px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded-full shadow-md truncate max-w-[70px]">
+          {player.name}
+        </p>
+      </div>
+
+       {/* Stats Badges */}
+       <div className="absolute -bottom-5 flex items-center justify-center gap-1">
         {[...Array(player.goals || 0)].map((_, i) => (
           <span key={`goal_${i}`} className="text-xs" role="img" aria-label="Goal">⚽</span>
         ))}
@@ -59,4 +68,3 @@ const PlayerToken = ({ player, onMouseDown, onTouchStart, onMouseUp, onTouchEnd,
 };
 
 export default PlayerToken;
-
