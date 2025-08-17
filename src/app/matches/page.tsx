@@ -288,9 +288,6 @@ export default function MatchesPage() {
      if (activeFilter === 'ranking') {
         return <div className="text-center text-muted-foreground p-8">Le classement sera bientôt disponible ici.</div>;
     }
-    if (activeFilter === 'scorers') {
-        return <div className="text-center text-muted-foreground p-8">Les meilleurs buteurs seront bientôt affichés ici.</div>;
-    }
   }
 
   return (
@@ -310,10 +307,9 @@ export default function MatchesPage() {
           
           <div className="px-4">
            <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-card/80">
+                <TabsList className="grid w-full grid-cols-2 bg-card/80">
                     <TabsTrigger value="results"><Trophy className="mr-2 h-4 w-4"/>Résultats</TabsTrigger>
                     <TabsTrigger value="ranking"><BarChart3 className="mr-2 h-4 w-4"/>Classement</TabsTrigger>
-                    <TabsTrigger value="scorers"><Shield className="mr-2 h-4 w-4"/>Buteurs</TabsTrigger>
                 </TabsList>
           </Tabs>
           </div>
