@@ -101,4 +101,4 @@ USING (auth.role() = 'authenticated');
 -- =================================================================
 --  Fin du 
 -- =================================================================
--- test feuille du dimanche
+-- test feuille du Classement
