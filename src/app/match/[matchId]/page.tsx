@@ -555,7 +555,7 @@ export default function MatchPage() {
           </FutsalCourt>
            <TacticBoard 
              role={role}
-             sequences={match.tacticSequences || []}
+             sequences={match.tacticSequences}
              onSequencesChange={handleTacticSequencesChange}
            />
           <MatchDetails 

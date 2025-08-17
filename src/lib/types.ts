@@ -98,7 +98,7 @@ export interface Match {
   team: PlayerPosition[];
   substitutes: PlayerPosition[];
   scoreboard: Scoreboard;
-  tacticSequences?: TacticSequence[]; // New field for tactic animations
+  tacticSequences: TacticSequence[]; // New field for tactic animations
   opponent_logo_url?: string; // Optional field from join
 }
 
