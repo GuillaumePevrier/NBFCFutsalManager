@@ -311,7 +311,7 @@ export default function MatchesPage() {
                 </Card>
                 {role === 'coach' && (
                     <div className="text-right">
-                         <Button size="sm" disabled>
+                         <Button size="sm">
                             <Pencil className="mr-2 h-4 w-4" />
                             Saisir les résultats
                         </Button>
