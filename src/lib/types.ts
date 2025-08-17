@@ -1,6 +1,5 @@
 
 
-
 export interface Player {
   id: string; // uuid
   name: string;
@@ -77,6 +76,7 @@ export interface TacticArrow {
     id: string;
     from: { x: number, y: number };
     to: { x: number, y: number };
+    type: 'straight' | 'curved';
 }
 
 export interface TacticStep {

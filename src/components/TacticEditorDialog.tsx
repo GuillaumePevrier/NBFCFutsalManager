@@ -11,12 +11,12 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
-import type { TacticPawn as TacticPawnType, TacticPawn, TacticSequence } from "@/lib/types";
+import type { TacticPawn as TacticPawnType, TacticPawn, TacticSequence, TacticArrow } from "@/lib/types";
 import { useState, useRef, useEffect } from "react";
 import FutsalCourt from "./FutsalCourt";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { ArrowLeft, ArrowRight, Save, Play, PlusCircle, Trash2, Shield, User, CircleDot, MousePointer } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Play, PlusCircle, Trash2, Shield, User, CircleDot, MousePointer, MoveUpRight } from "lucide-react";
 import { nanoid } from "nanoid";
 import { cn } from "@/lib/utils";
 
@@ -27,11 +27,15 @@ interface TacticEditorDialogProps {
   onSave: (sequence: TacticSequence) => void;
 }
 
-type EditorTool = TacticPawnType | 'move';
+type EditorTool = TacticPawnType | 'move' | 'arrow';
 interface DragState {
   pawnId: string;
   offsetX: number;
   offsetY: number;
+}
+
+interface ArrowDrawingState {
+    from: { x: number, y: number };
 }
 
 
@@ -41,6 +45,8 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
   const [activeTool, setActiveTool] = useState<EditorTool>('move');
   const [selectedPawnId, setSelectedPawnId] = useState<string | null>(null);
   const [draggingPawn, setDraggingPawn] = useState<DragState | null>(null);
+  const [drawingArrow, setDrawingArrow] = useState<ArrowDrawingState | null>(null);
+  const [previewArrow, setPreviewArrow] = useState<TacticArrow | null>(null);
   const courtRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,61 +58,76 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
   }, [initialSequence]);
   
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => handleDragMove(e.clientX, e.clientY);
-    const handleMouseUp = () => handleDragEnd();
+    const handleMouseMove = (e: MouseEvent) => {
+        if (draggingPawn) {
+            handleDragMove(e.clientX, e.clientY);
+        } else if (drawingArrow) {
+            handleArrowMove(e.clientX, e.clientY);
+        }
+    };
+    const handleMouseUp = (e: MouseEvent) => {
+        if (draggingPawn) {
+            handleDragEnd();
+        } else if (drawingArrow) {
+            handleArrowEnd(e.clientX, e.clientY);
+        }
+    };
 
-    if (draggingPawn) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [draggingPawn]);
+  }, [draggingPawn, drawingArrow]);
 
   const handleSave = () => {
     onSave(sequence);
   };
 
-  const updateCurrentStepPawns = (updater: (draft: TacticPawn[]) => TacticPawn[]) => {
-    setSequence(currentSequence => {
-        const currentStep = currentSequence.steps[activeStepIndex];
-        const newPawns = updater([...currentStep.pawns]);
-        
-        const newSteps = [...currentSequence.steps];
-        newSteps[activeStepIndex] = { ...currentStep, pawns: newPawns };
+  const updateCurrentStep = (updater: (draft: TacticSequence['steps'][0]) => TacticSequence['steps'][0]) => {
+      setSequence(currentSequence => {
+          const currentStep = currentSequence.steps[activeStepIndex];
+          const newStep = updater({ ...currentStep });
+          
+          const newSteps = [...currentSequence.steps];
+          newSteps[activeStepIndex] = newStep;
 
-        return { ...currentSequence, steps: newSteps };
-    });
+          return { ...currentSequence, steps: newSteps };
+      });
   };
 
-  const handleCourtClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!courtRef.current || activeTool === 'move') return;
-
+  const handleCourtMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!courtRef.current) return;
     const rect = courtRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    
-    let label = '';
-    const currentPawns = sequence.steps[activeStepIndex].pawns;
-    if(activeTool === 'player') {
-        const playerCount = currentPawns.filter(p => p.type === 'player').length;
-        label = `J${playerCount + 1}`;
-    } else if (activeTool === 'opponent') {
-        const opponentCount = currentPawns.filter(p => p.type === 'opponent').length;
-        label = `A${opponentCount + 1}`;
-    }
 
-    const newPawn: TacticPawn = {
-      id: nanoid(),
-      type: activeTool,
-      position: { x, y },
-      label,
-    };
-    
-    updateCurrentStepPawns(draft => [...draft, newPawn]);
-    setSelectedPawnId(newPawn.id);
+    if (activeTool === 'arrow') {
+        setDrawingArrow({ from: { x, y } });
+        setPreviewArrow({ id: 'preview', from: { x, y }, to: { x, y }, type: 'straight' });
+    } else if (activeTool !== 'move') {
+        let label = '';
+        const currentPawns = sequence.steps[activeStepIndex].pawns;
+        if(activeTool === 'player') {
+            const playerCount = currentPawns.filter(p => p.type === 'player').length;
+            label = `J${playerCount + 1}`;
+        } else if (activeTool === 'opponent') {
+            const opponentCount = currentPawns.filter(p => p.type === 'opponent').length;
+            label = `A${opponentCount + 1}`;
+        }
+
+        const newPawn: TacticPawn = {
+          id: nanoid(),
+          type: activeTool,
+          position: { x, y },
+          label,
+        };
+        
+        updateCurrentStep(draft => ({ ...draft, pawns: [...draft.pawns, newPawn] }));
+        setSelectedPawnId(newPawn.id);
+    }
   };
   
   const handlePawnClick = (pawnId: string) => {
@@ -118,7 +139,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
 
   const handleDeletePawn = () => {
     if (!selectedPawnId) return;
-    updateCurrentStepPawns(draft => draft.filter(p => p.id !== selectedPawnId));
+    updateCurrentStep(draft => ({ ...draft, pawns: draft.pawns.filter(p => p.id !== selectedPawnId)}));
     setSelectedPawnId(null);
   }
 
@@ -128,7 +149,6 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
     e.preventDefault();
     setSelectedPawnId(pawnId);
     
-    const courtRect = courtRef.current.getBoundingClientRect();
     const pawnElement = e.currentTarget;
     const pawnRect = pawnElement.getBoundingClientRect();
 
@@ -149,16 +169,46 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
     const newX = Math.max(0, Math.min(100, (x / courtRect.width) * 100));
     const newY = Math.max(0, Math.min(100, (y / courtRect.height) * 100));
 
-    updateCurrentStepPawns(pawns => 
-      pawns.map(p => 
-        p.id === draggingPawn.pawnId ? { ...p, position: { x: newX, y: newY } } : p
-      )
-    );
+    updateCurrentStep(draft => ({
+        ...draft,
+        pawns: draft.pawns.map(p => 
+            p.id === draggingPawn.pawnId ? { ...p, position: { x: newX, y: newY } } : p
+        )
+    }));
   };
 
   const handleDragEnd = () => {
     setDraggingPawn(null);
   };
+
+  const handleArrowMove = (clientX: number, clientY: number) => {
+    if (!drawingArrow || !courtRef.current) return;
+    const rect = courtRef.current.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+    setPreviewArrow(current => current ? { ...current, to: { x, y } } : null);
+  };
+
+  const handleArrowEnd = (clientX: number, clientY: number) => {
+      if (!drawingArrow || !courtRef.current) return;
+      const rect = courtRef.current.getBoundingClientRect();
+      const x = ((clientX - rect.left) / rect.width) * 100;
+      const y = ((clientY - rect.top) / rect.height) * 100;
+
+      const newArrow: TacticArrow = {
+          id: nanoid(),
+          from: drawingArrow.from,
+          to: { x, y },
+          type: 'straight'
+      };
+
+      updateCurrentStep(draft => ({ ...draft, arrows: [...draft.arrows, newArrow]}));
+      
+      setDrawingArrow(null);
+      setPreviewArrow(null);
+  };
+
+  const currentArrows = sequence.steps[activeStepIndex]?.arrows || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -186,7 +236,8 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
                 <FutsalCourt 
                     ref={courtRef}
                     pawns={sequence.steps[activeStepIndex]?.pawns || []}
-                    onClick={handleCourtClick}
+                    arrows={previewArrow ? [...currentArrows, previewArrow] : currentArrows}
+                    onMouseDown={handleCourtMouseDown}
                     onPawnClick={handlePawnClick}
                     onPawnMouseDown={handlePawnMouseDown}
                     selectedPawnId={selectedPawnId}
@@ -202,6 +253,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
                         <Button variant={activeTool === 'player' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('player')}><User className="mr-2"/> Pion Joueur</Button>
                         <Button variant={activeTool === 'opponent' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('opponent')}><Shield className="mr-2"/> Pion Adversaire</Button>
                         <Button variant={activeTool === 'ball' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('ball')}><CircleDot className="mr-2"/> Ballon</Button>
+                        <Button variant={activeTool === 'arrow' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('arrow')}><MoveUpRight className="mr-2"/> Flèche</Button>
                     </div>
                 </div>
                  {selectedPawnId && (
@@ -247,3 +299,4 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
     </Dialog>
   );
 }
+

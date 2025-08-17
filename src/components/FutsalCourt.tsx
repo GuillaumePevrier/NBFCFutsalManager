@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { forwardRef } from 'react';
@@ -9,13 +10,13 @@ interface FutsalCourtProps {
   children?: React.ReactNode;
   pawns?: TacticPawnType[];
   arrows?: TacticArrow[];
-  onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+  onMouseDown?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onPawnClick?: (pawnId: string) => void;
   onPawnMouseDown?: (event: React.MouseEvent<HTMLDivElement>, pawnId: string) => void;
   selectedPawnId?: string | null;
 }
 
-const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows, onClick, onPawnClick, onPawnMouseDown, selectedPawnId }, ref) => {
+const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows, onMouseDown, onPawnClick, onPawnMouseDown, selectedPawnId }, ref) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
       {/* Substitutes Bench Area */}
@@ -26,7 +27,7 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pa
       {/* Main Court */}
       <div
         ref={ref}
-        onClick={onClick}
+        onMouseDown={onMouseDown}
         className="relative w-full max-w-2xl aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30 overflow-hidden cursor-crosshair"
       >
         {/* Court Markings first, so they are in the background */}
@@ -60,6 +61,28 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pa
         <div className="absolute top-1/2 -translate-y-1/2 right-[-18px] w-5 h-20 bg-card border-2 border-white/30 rounded-l-md overflow-hidden z-10">
             <div className="w-full h-full border-r-4 border-primary"></div>
         </div>
+
+        {/* SVG layer for arrows */}
+        <svg className="absolute top-0 left-0 w-full h-full" style={{ pointerEvents: 'none' }}>
+           <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="hsl(var(--primary))" />
+                </marker>
+           </defs>
+          {arrows?.map(arrow => (
+            <line
+              key={arrow.id}
+              x1={`${arrow.from.x}%`}
+              y1={`${arrow.from.y}%`}
+              x2={`${arrow.to.x}%`}
+              y2={`${arrow.to.y}%`}
+              stroke="hsl(var(--primary))"
+              strokeWidth="2.5"
+              strokeDasharray={arrow.id === 'preview' ? "4 4" : "none"}
+              markerEnd="url(#arrowhead)"
+            />
+          ))}
+        </svg>
 
         {/* Tactical Pawns */}
         {pawns && pawns.map(pawn => (
