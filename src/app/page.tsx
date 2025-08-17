@@ -54,17 +54,14 @@ export default function Home() {
   
   return (
     <div className="flex flex-col min-h-screen text-foreground overflow-hidden">
-      <div className="absolute inset-0 w-full h-full -z-10">
-        <video 
-          autoPlay 
-          loop 
-          muted 
-          playsInline 
-          className="w-full h-full object-cover"
-          src="https://futsal.noyalbrecefc.com/wp-content/uploads/2025/07/telechargement-1.mp4"
-        >
-          Votre navigateur ne supporte pas la vidéo.
-        </video>
+       <div className="absolute inset-0 w-full h-full -z-10">
+        <Image
+          src="https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/Image.png"
+          alt="Image de fond de l'équipe de futsal"
+          fill
+          className="object-cover object-top"
+          priority
+        />
         <div className="absolute inset-0 bg-black/50" />
       </div>
       
