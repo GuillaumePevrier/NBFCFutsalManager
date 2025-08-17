@@ -85,6 +85,11 @@ export interface Opponent {
     coach_phone?: string;
     address?: string;
     created_at: string;
+    wins: number;
+    losses: number;
+    draws: number;
+    goals_for: number;
+    goals_against: number;
 }
 
 // Corresponds to the new 'trainings' table

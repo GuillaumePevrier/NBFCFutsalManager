@@ -19,6 +19,7 @@ import MiniScoreboard from '@/components/MiniScoreboard';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import RankingTable from '@/components/RankingTable';
+import { getOpponents } from '../actions';
 
 const competitions = [
     { id: 'd2', name: 'D2' },
@@ -47,16 +48,8 @@ export default function MatchesPage() {
     const fetchMatchesAndOpponents = async () => {
       setLoading(true);
       
-      const { data: opponentsData, error: opponentsError } = await supabase
-        .from('opponents')
-        .select('id, logo_url');
-
-      if (opponentsError) {
-        console.error("Failed to fetch opponents:", opponentsError);
-        toast({ title: "Erreur", description: "Impossible de charger les données des adversaires.", variant: "destructive" });
-      } else {
-        setOpponents(opponentsData || []);
-      }
+      const opponentsData = await getOpponents();
+      setOpponents(opponentsData);
       
       const { data, error } = await supabase
         .from('matches')
@@ -311,13 +304,13 @@ export default function MatchesPage() {
                 </Card>
                 {role === 'coach' && (
                     <div className="text-right">
-                         <Button size="sm">
+                         <Button size="sm" disabled>
                             <Pencil className="mr-2 h-4 w-4" />
                             Saisir les résultats
                         </Button>
                     </div>
                 )}
-                <RankingTable opponents={opponents} />
+                <RankingTable opponents={opponents} matches={matches} competition={activeCompetition} />
             </div>
         );
     }

@@ -3,24 +3,11 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { Ranking, Opponent } from "@/lib/types";
+import type { Ranking, Opponent, Match } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { BarChart3, Medal } from "lucide-react";
-
-// Données de classement de démonstration
-const demoRankings: Ranking[] = [
-  { rank: 1, teamId: "1", teamName: "Futsal La-Chapelle-sur-Erdre", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/la-chapelle-removebg-preview.png", played: 10, wins: 8, draws: 1, losses: 1, goalsFor: 45, goalsAgainst: 20, goalDifference: 25, points: 25 },
-  { rank: 2, teamId: "2", teamName: "AS Vigneux Futsal", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/vigneux-removebg-preview.png", played: 10, wins: 7, draws: 2, losses: 1, goalsFor: 38, goalsAgainst: 18, goalDifference: 20, points: 23 },
-  { rank: 3, teamId: "nbfc", teamName: "NBFC Futsal", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png", played: 10, wins: 7, draws: 0, losses: 3, goalsFor: 40, goalsAgainst: 30, goalDifference: 10, points: 21 },
-  { rank: 4, teamId: "4", teamName: "Celtics Futsal", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/celtics-removebg-preview.png", played: 10, wins: 6, draws: 1, losses: 3, goalsFor: 35, goalsAgainst: 28, goalDifference: 7, points: 19 },
-  { rank: 5, teamId: "5", teamName: "US Carquefou Futsal", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/carquefou-removebg-preview.png", played: 10, wins: 5, draws: 1, losses: 4, goalsFor: 33, goalsAgainst: 32, goalDifference: 1, points: 16 },
-  { rank: 6, teamId: "6", teamName: "ALPAC Futsal", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/alpac-removebg-preview.png", played: 10, wins: 4, draws: 2, losses: 4, goalsFor: 28, goalsAgainst: 29, goalDifference: -1, points: 14 },
-  { rank: 7, teamId: "7", teamName: "Don Bosco Futsal", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/don-bosco-removebg-preview.png", played: 10, wins: 3, draws: 1, losses: 6, goalsFor: 25, goalsAgainst: 35, goalDifference: -10, points: 10 },
-  { rank: 8, teamId: "8", teamName: "St-Herblain Pépite Futsal", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/pepite-removebg-preview.png", played: 10, wins: 2, draws: 0, losses: 8, goalsFor: 22, goalsAgainst: 45, goalDifference: -23, points: 6 },
-  { rank: 9, teamId: "9", teamName: "Le Mans Futsal", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/le-mans-removebg-preview.png", played: 10, wins: 1, draws: 2, losses: 7, goalsFor: 19, goalsAgainst: 41, goalDifference: -22, points: 5 },
-  { rank: 10, teamId: "10", teamName: "Etoile Nantaise", logoUrl: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/etoile-nantaise-removebg-preview.png", played: 10, wins: 1, draws: 0, losses: 9, goalsFor: 18, goalsAgainst: 45, goalDifference: -27, points: 3 },
-];
+import { useState, useEffect } from "react";
 
 const getRankingClass = (rank: number) => {
     switch (rank) {
@@ -31,25 +18,82 @@ const getRankingClass = (rank: number) => {
     }
 }
 
-const getRankingBadge = (rank: number) => {
-     switch (rank) {
-        case 1: return 'bg-yellow-400 text-yellow-900 hover:bg-yellow-400/90 shadow-[0_0_8px_rgba(250,204,21,0.7)]'; // Gold
-        case 2: return 'bg-gray-400 text-gray-900 hover:bg-gray-400/90 shadow-[0_0_8px_rgba(156,163,175,0.7)]'; // Silver
-        case 3: return 'bg-orange-500 text-orange-950 hover:bg-orange-500/90 shadow-[0_0_8px_rgba(249,115,22,0.7)]'; // Bronze
-        default: return null;
-    }
-}
-
 interface RankingTableProps {
     opponents: Opponent[];
+    matches: Match[];
+    competition: string;
 }
 
-export default function RankingTable({ opponents }: RankingTableProps) {
+export default function RankingTable({ opponents, matches, competition }: RankingTableProps) {
+    const [rankings, setRankings] = useState<Ranking[]>([]);
 
-    const getInitials = (name: string) => name?.[0]?.toUpperCase() || 'O';
+    useEffect(() => {
+        const calculateNbfcStats = () => {
+            const relevantMatches = matches.filter(m => m.details.competition === competition);
+            let wins = 0, losses = 0, draws = 0, goalsFor = 0, goalsAgainst = 0;
+
+            relevantMatches.forEach(match => {
+                const homeScore = match.scoreboard.homeScore;
+                const awayScore = match.scoreboard.awayScore;
+
+                if(homeScore > awayScore) wins++;
+                else if (homeScore < awayScore) losses++;
+                else draws++;
+
+                goalsFor += homeScore;
+                goalsAgainst += awayScore;
+            });
+            
+            return {
+                id: 'nbfc',
+                team_name: 'NBFC Futsal',
+                logo_url: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+                wins, losses, draws, goals_for: goalsFor, goals_against: goalsAgainst,
+            };
+        };
+
+        const generateRankings = () => {
+            const competitionOpponents = opponents.filter(o => o.championship === competition);
+            const nbfcStats = calculateNbfcStats();
+            
+            const allTeams = [...competitionOpponents, nbfcStats];
+
+            const calculatedRankings = allTeams.map(team => {
+                const points = (team.wins * 3) + (team.draws * 1);
+                const played = team.wins + team.losses + team.draws;
+                const goalDifference = team.goals_for - team.goals_against;
+                
+                return {
+                    teamId: team.id,
+                    teamName: team.team_name,
+                    logoUrl: team.logo_url,
+                    played,
+                    wins: team.wins,
+                    draws: team.draws,
+                    losses: team.losses,
+                    goalsFor: team.goals_for,
+                    goalsAgainst: team.goals_against,
+                    goalDifference,
+                    points,
+                };
+            }).sort((a, b) => {
+                if (a.points !== b.points) return b.points - a.points;
+                if (a.goalDifference !== b.goalDifference) return b.goalDifference - a.goalDifference;
+                if (a.goalsFor !== b.goalsFor) return b.goalsFor - a.goalsFor;
+                return a.teamName.localeCompare(b.teamName);
+            }).map((team, index) => ({
+                ...team,
+                rank: index + 1,
+            }));
+
+            setRankings(calculatedRankings);
+        };
+
+        generateRankings();
+
+    }, [opponents, matches, competition]);
     
-    // Remplacez demoRankings par les données réelles lorsque vous les aurez
-    const rankings = demoRankings;
+    const getInitials = (name: string) => name?.[0]?.toUpperCase() || 'O';
 
     return (
         <Card>
