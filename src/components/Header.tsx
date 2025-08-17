@@ -107,12 +107,6 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
                     </Link>
                 </DropdownMenuItem>
              )}
-            <DropdownMenuItem asChild>
-             <a href="https://futsal.noyalbrecefc.com/" target="_blank" rel="noopener noreferrer" className="w-full flex items-center">
-                <Globe className="mr-2 h-4 w-4" />
-                <span>Site du Club</span>
-            </a>
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           {role === 'coach' ? (
               <DropdownMenuItem onClick={handleSignOut}>
