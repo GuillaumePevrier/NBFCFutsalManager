@@ -17,6 +17,7 @@ interface TacticBoardProps {
 
 export default function TacticBoard({ role, sequences, onSequencesChange }: TacticBoardProps) {
     const [editingSequence, setEditingSequence] = useState<TacticSequence | null>(null);
+    const [isReadOnly, setIsReadOnly] = useState(false);
 
     const handleCreateSequence = () => {
         const newSequence: TacticSequence = {
@@ -35,6 +36,11 @@ export default function TacticBoard({ role, sequences, onSequencesChange }: Tact
         onSequencesChange(sequences.map(seq => seq.id === updatedSequence.id ? updatedSequence : seq));
         setEditingSequence(null);
     }
+    
+    const openEditor = (sequence: TacticSequence, readOnly: boolean) => {
+        setEditingSequence(sequence);
+        setIsReadOnly(readOnly);
+    }
 
     return (
         <>
@@ -44,6 +50,7 @@ export default function TacticBoard({ role, sequences, onSequencesChange }: Tact
                     onOpenChange={() => setEditingSequence(null)}
                     sequence={editingSequence}
                     onSave={handleSaveSequence}
+                    isReadOnly={isReadOnly}
                 />
             )}
             <Card className="w-full max-w-2xl bg-card/80 backdrop-blur-sm border-border/50">
@@ -73,20 +80,19 @@ export default function TacticBoard({ role, sequences, onSequencesChange }: Tact
                                 <div key={seq.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted">
                                     <span className="font-medium text-sm">{seq.name}</span>
                                     <div className="flex items-center gap-1">
-                                        {role === 'coach' ? (
+                                         <Button variant="outline" size="sm" onClick={() => openEditor(seq, true)}>
+                                            <Film className="mr-2 h-4 w-4" />
+                                            Voir
+                                        </Button>
+                                        {role === 'coach' && (
                                             <>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingSequence(seq)}>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditor(seq, false)}>
                                                     <Pencil className="h-4 w-4" />
                                                 </Button>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteSequence(seq.id)}>
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </>
-                                        ) : (
-                                            <Button variant="outline" size="sm" disabled>
-                                                <Film className="mr-2 h-4 w-4" />
-                                                Voir
-                                            </Button>
                                         )}
                                     </div>
                                 </div>
