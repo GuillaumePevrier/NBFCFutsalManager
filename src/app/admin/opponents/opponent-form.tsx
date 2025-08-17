@@ -85,6 +85,10 @@ export function OpponentForm({ opponent }: { opponent?: Opponent }) {
                                     <SelectItem value="Régionale 1">Régionale 1</SelectItem>
                                     <SelectItem value="District 1">District 1</SelectItem>
                                     <SelectItem value="District 2">District 2</SelectItem>
+                                    <SelectItem value="Coupe de Bretagne">Coupe de Bretagne</SelectItem>
+                                    <SelectItem value="Coupe du District">Coupe du District</SelectItem>
+                                    <SelectItem value="Coupe de France">Coupe de France</SelectItem>
+                                    <SelectItem value="Amical">Amical</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

@@ -20,12 +20,14 @@ interface MatchDetailsProps {
 }
 
 const competitions = [
-    { id: 'd2', name: 'D2' },
-    { id: 'd1', name: 'D1' },
-    { id: 'coupe_bretagne', name: 'Coupe de Bretagne' },
-    { id: 'coupe_district', name: 'Coupe du District' },
-    { id: 'coupe_france', name: 'Coupe de France' },
-    { id: 'amical', name: 'Amical' },
+    { id: 'D2 Nationale', name: 'D2 Nationale' },
+    { id: 'Régionale 1', name: 'Régionale 1' },
+    { id: 'District 1', name: 'District 1' },
+    { id: 'District 2', name: 'District 2' },
+    { id: 'Coupe de Bretagne', name: 'Coupe de Bretagne' },
+    { id: 'Coupe du District', name: 'Coupe du District' },
+    { id: 'Coupe de France', name: 'Coupe de France' },
+    { id: 'Amical', name: 'Amical' },
 ];
 
 export default function MatchDetails({ details, onDetailsChange, isCoach }: MatchDetailsProps) {
@@ -175,7 +177,7 @@ export default function MatchDetails({ details, onDetailsChange, isCoach }: Matc
                 </SelectTrigger>
                 <SelectContent>
                     {competitions.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                     ))}
                 </SelectContent>
             </Select>
