@@ -99,12 +99,14 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
                   <span>Effectif</span>
                 </Link>
             </DropdownMenuItem>
-             <DropdownMenuItem asChild>
-               <Link href="/admin/opponents">
-                  <Shield className="mr-2 h-4 w-4" />
-                  <span>Équipes adverses</span>
-                </Link>
-            </DropdownMenuItem>
+             {role === 'coach' && (
+                <DropdownMenuItem asChild>
+                    <Link href="/admin/opponents">
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Équipes adverses</span>
+                    </Link>
+                </DropdownMenuItem>
+             )}
             <DropdownMenuItem asChild>
              <a href="https://futsal.noyalbrecefc.com/" target="_blank" rel="noopener noreferrer" className="w-full flex items-center">
                 <Globe className="mr-2 h-4 w-4" />

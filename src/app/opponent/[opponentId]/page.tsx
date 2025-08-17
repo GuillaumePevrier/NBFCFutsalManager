@@ -4,10 +4,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AtSign, Building, Phone, Shield, Trophy, User, MapPin } from 'lucide-react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Header from '@/components/Header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { createClient } from '@/lib/supabase/server';
 
 interface InfoRowProps {
     icon: React.ElementType;
@@ -30,6 +31,13 @@ const InfoRow = ({ icon: Icon, label, value }: InfoRowProps) => {
 
 
 export default async function OpponentPage({ params }: { params: { opponentId: string } }) {
+  const supabase = createClient();
+  const { data: { session }} = await supabase.auth.getSession();
+
+  if (!session) {
+      redirect('/');
+  }
+  
   const opponent = await getOpponentById(params.opponentId);
 
   if (!opponent) {
@@ -84,4 +92,3 @@ export default async function OpponentPage({ params }: { params: { opponentId: s
     </div>
   );
 }
-

@@ -1,7 +1,7 @@
 
 'use client'
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, View } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -34,6 +34,10 @@ export function OpponentActions({ opponent }: { opponent: Opponent }) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                     <DropdownMenuItem onClick={() => router.push(`/opponent/${opponent.id}`)}>
+                        <View className="mr-2 h-4 w-4" />
+                        Voir la fiche
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push(`/admin/opponents/${opponent.id}/edit`)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Modifier
