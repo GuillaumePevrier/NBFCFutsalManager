@@ -25,7 +25,7 @@ interface NavCardData {
 const initialCardData: NavCardData[] = [
   { id: 1, title: 'Effectif', href: '/admin/players', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCffectif.png', dataAiHint: 'futsal team huddle', objectPosition: 'object-top' },
   { id: 3, title: 'Matchs', href: '/matches', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCMatch.png', dataAiHint: 'futsal goal celebration', objectPosition: 'object-top' },
-  { id: 4, title: 'Entraînements', href: '/trainings', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/NBFCMatch.png', dataAiHint: 'futsal training session', objectPosition: 'object-top' },
+  { id: 4, title: 'Entraînements', href: '/trainings', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/Image.png', dataAiHint: 'futsal training session', objectPosition: 'object-top' },
 ];
 
 
@@ -56,11 +56,12 @@ export default function Home() {
     <div className="flex flex-col min-h-screen text-foreground overflow-hidden">
        <div className="absolute inset-0 w-full h-full -z-10">
         <Image
-          src="https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/Image.png"
+          src="https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           alt="Image de fond de l'équipe de futsal"
           fill
           className="object-cover object-top"
           priority
+          data-ai-hint="stadium lights"
         />
         <div className="absolute inset-0 bg-black/50" />
       </div>
