@@ -2,13 +2,15 @@
 'use client';
 
 import React, { forwardRef } from 'react';
-import { cn } from '@/lib/utils';
+import type { TacticPawn, TacticArrow } from '@/lib/types';
 
 interface FutsalCourtProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  pawns?: TacticPawn[];
+  arrows?: TacticArrow[];
 }
 
-const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, ref) => {
+const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows }, ref) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
       {/* Substitutes Bench Area */}
@@ -19,7 +21,7 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
       {/* Main Court */}
       <div
         ref={ref}
-        className="relative w-full max-w-2xl aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30"
+        className="relative w-full max-w-2xl aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30 overflow-hidden"
       >
         {/* Court Markings first, so they are in the background */}
         <div className="absolute inset-0">
@@ -53,6 +55,12 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children }, 
             <div className="w-full h-full border-r-4 border-primary"></div>
         </div>
 
+        {/* Tactical Elements */}
+        {pawns && pawns.map(pawn => (
+            <div key={pawn.id} style={{ left: `${pawn.position.x}%`, top: `${pawn.position.y}%`}}>
+                {/* Pawn rendering logic will go here */}
+            </div>
+        ))}
 
         {children}
       </div>
