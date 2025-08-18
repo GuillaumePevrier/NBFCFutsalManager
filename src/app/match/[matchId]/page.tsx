@@ -323,7 +323,7 @@ export default function MatchPage() {
         updateMatchData(match); 
     }
     
-  }, [draggingPlayer, match, updateMatchData, router]);
+  }, [draggingPlayer, match, updateMatchData]);
 
   useEffect(() => {
     if (draggingPlayer) {
@@ -344,7 +344,7 @@ export default function MatchPage() {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleDragEnd);
     };
-  }, [draggingPlayer, handleMouseMove, handleDragEnd, handleTouchMove, router]);
+  }, [draggingPlayer, handleMouseMove, handleDragEnd, handleTouchMove]);
   
   const onCoachLogin = () => {
     setRole('coach');
@@ -521,37 +521,39 @@ export default function MatchPage() {
             onPlayerSelect={handleJerseyWasherChange}
             role={role}
           />
-          <FutsalCourt ref={courtRef}>
-            {[...match.team, ...match.substitutes].map(player => (
-              <PlayerToken
-                key={player.id}
-                player={player}
-                onMouseDown={e => handleMouseDown(e, player.id)}
-                onTouchStart={e => handleTouchStart(e, player.id)}
-                onMouseUp={(e) => {
+          <div className="w-full max-w-2xl">
+            <FutsalCourt ref={courtRef}>
+                {[...match.team, ...match.substitutes].map(player => (
+                <PlayerToken
+                    key={player.id}
+                    player={player}
+                    onMouseDown={e => handleMouseDown(e, player.id)}
+                    onTouchStart={e => handleTouchStart(e, player.id)}
+                    onMouseUp={(e) => {
+                        if (isDraggingRef.current) {
+                            handleDragEnd();
+                        } else if (clickTimeout.current) {
+                            clearTimeout(clickTimeout.current);
+                            clickTimeout.current = null;
+                            handlePlayerClick(player.id)
+                        }
+                    }}
+                    onTouchEnd={() => {
                     if (isDraggingRef.current) {
-                        handleDragEnd();
-                    } else if (clickTimeout.current) {
-                        clearTimeout(clickTimeout.current);
-                        clickTimeout.current = null;
-                        handlePlayerClick(player.id)
-                    }
-                }}
-                onTouchEnd={() => {
-                   if (isDraggingRef.current) {
-                        handleDragEnd();
-                    } else if (clickTimeout.current) {
-                        clearTimeout(clickTimeout.current);
-                        clickTimeout.current = null;
-                        handlePlayerClick(player.id)
-                    }
-                }}
-                isDraggable={role === 'coach'}
-                isDragging={draggingPlayer?.id === player.id}
-                isSubstitute={match.substitutes.some(p => p.id === player.id)}
-              />
-            ))}
-          </FutsalCourt>
+                            handleDragEnd();
+                        } else if (clickTimeout.current) {
+                            clearTimeout(clickTimeout.current);
+                            clickTimeout.current = null;
+                            handlePlayerClick(player.id)
+                        }
+                    }}
+                    isDraggable={role === 'coach'}
+                    isDragging={draggingPlayer?.id === player.id}
+                    isSubstitute={match.substitutes.some(p => p.id === player.id)}
+                />
+                ))}
+            </FutsalCourt>
+          </div>
            <TacticBoard 
              role={role}
              sequences={match.tacticSequences}

@@ -25,7 +25,7 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pa
     <div className={cn("w-full h-full flex flex-col items-center justify-center", className)}>
       {/* Substitutes Bench Area - Only for player tokens, not for tactics */}
       {!pawns && (
-         <div className="w-full max-w-2xl h-16 bg-card border-2 border-border rounded-t-lg flex items-center justify-center px-4 mb-1 shadow-md">
+         <div className="w-full h-16 bg-card border-2 border-border rounded-t-lg flex items-center justify-center px-4 mb-1 shadow-md">
             <span className="text-muted-foreground font-semibold text-sm tracking-widest uppercase">Remplaçants</span>
         </div>
       )}
