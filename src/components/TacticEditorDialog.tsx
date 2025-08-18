@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -299,88 +298,6 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
 
   const currentArrows = sequence.steps[activeStepIndex]?.arrows || [];
 
-  const editorContent = (
-      <>
-        {/* Main Court Area */}
-        <div className="relative col-span-2 flex-grow flex items-center justify-center p-2 md:p-4 overflow-hidden">
-             <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute top-2 right-2 z-20 text-white/80 bg-black/30 hover:bg-black/50 hover:text-white"
-                onClick={() => setIsFullScreen(!isFullScreen)}
-                title={isFullScreen ? "Quitter le plein écran" : "Passer en plein écran"}
-              >
-               {isFullScreen ? <Shrink className="w-5 h-5"/> : <Expand className="w-5 h-5"/>}
-            </Button>
-            <FutsalCourt 
-                ref={courtRef}
-                pawns={sequence.steps[activeStepIndex]?.pawns || []}
-                arrows={previewArrow ? [...currentArrows, previewArrow] : currentArrows}
-                onMouseDown={handleCourtMouseDown}
-                onTouchStart={handleCourtTouchStart}
-                onPawnClick={handlePawnClick}
-                onPawnMouseDown={handlePawnMouseDown}
-                onPawnTouchStart={handlePawnTouchStart}
-                selectedPawnId={selectedPawnId}
-            />
-        </div>
-
-        {/* Controls Panel */}
-        <div className={cn(
-          "flex flex-col gap-4 bg-muted/50 p-3 rounded-lg overflow-y-auto",
-          isFullScreen ? "absolute top-4 right-4 bottom-4 w-64 z-10 bg-card/80 backdrop-blur-sm" : "relative"
-          )}>
-            {!isReadOnly && (
-            <>
-                <div>
-                    <h3 className="font-semibold mb-2 text-sm">Outils</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                        <Button variant={activeTool === 'move' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('move')}><MousePointer className="mr-2"/> Déplacer</Button>
-                        <Button variant={activeTool === 'player' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('player')}><User className="mr-2"/> Joueur</Button>
-                        <Button variant={activeTool === 'opponent' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('opponent')}><Shield className="mr-2"/> Adversaire</Button>
-                        <Button variant={activeTool === 'ball' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('ball')}><CircleDot className="mr-2"/> Ballon</Button>
-                        <Button variant={activeTool === 'arrow' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('arrow')}><MoveUpRight className="mr-2"/> Flèche</Button>
-                    </div>
-                </div>
-                {selectedPawnId && (
-                    <div>
-                        <h3 className="font-semibold mb-2 text-sm">Pion Sélectionné</h3>
-                        <Button variant="destructive" size="sm" className="w-full" onClick={handleDeletePawn}>
-                            <Trash2 className="mr-2 h-4 w-4"/> Supprimer le pion
-                        </Button>
-                    </div>
-                )}
-              </>
-            )}
-
-              <div>
-                <h3 className="font-semibold mb-2 text-sm">Animation</h3>
-                <div className="flex items-center justify-between p-2 bg-background rounded-md">
-                    <span className="text-sm font-medium">Étape {activeStepIndex + 1}/{sequence.steps.length}</span>
-                    <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setActiveStepIndex(i => Math.max(0, i - 1))} disabled={activeStepIndex === 0}><ArrowLeft className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={togglePlay}>
-                            {isPlaying ? <Pause className="h-4 w-4"/> : <Play className="h-4 w-4" />}
-                        </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setActiveStepIndex(i => Math.min(sequence.steps.length - 1, i + 1))} disabled={activeStepIndex === sequence.steps.length - 1}><ArrowRight className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={resetAnimation}><RotateCcw className="h-4 w-4"/></Button>
-                    </div>
-                </div>
-                {!isReadOnly && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <Button variant="secondary" size="sm" className="w-full" onClick={addStep}>
-                        <PlusCircle className="mr-2 h-4 w-4"/> Ajouter
-                    </Button>
-                      <Button variant="destructive" size="sm" className="w-full" onClick={removeStep}>
-                        <Trash2 className="mr-2 h-4 w-4"/> Supprimer
-                    </Button>
-                </div>
-                )}
-            </div>
-        </div>
-      </>
-  );
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
@@ -407,11 +324,81 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
           </DialogDescription>
         </DialogHeader>
 
-        <div className={cn(
-            "flex-grow overflow-hidden",
-            isFullScreen ? "relative flex" : "grid md:grid-cols-3 gap-2 p-4"
-        )}>
-           {editorContent}
+        <div className="grid md:grid-cols-3 flex-grow gap-2 p-4 overflow-hidden">
+            {/* Main Court Area */}
+            <div className="relative col-span-2 flex-grow flex items-center justify-center p-4 bg-muted/30 rounded-lg overflow-hidden">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-2 right-2 z-10"
+                    onClick={() => setIsFullScreen(!isFullScreen)}
+                    title={isFullScreen ? "Quitter le plein écran" : "Passer en plein écran"}
+                >
+                   {isFullScreen ? <Shrink className="w-5 h-5"/> : <Expand className="w-5 h-5"/>}
+                </Button>
+                <FutsalCourt 
+                    ref={courtRef}
+                    pawns={sequence.steps[activeStepIndex]?.pawns || []}
+                    arrows={previewArrow ? [...currentArrows, previewArrow] : currentArrows}
+                    onMouseDown={handleCourtMouseDown}
+                    onTouchStart={handleCourtTouchStart}
+                    onPawnClick={handlePawnClick}
+                    onPawnMouseDown={handlePawnMouseDown}
+                    onPawnTouchStart={handlePawnTouchStart}
+                    selectedPawnId={selectedPawnId}
+                />
+            </div>
+
+            {/* Controls Panel */}
+            <div className="flex flex-col gap-4 bg-muted/30 p-3 rounded-lg overflow-y-auto">
+                {!isReadOnly && (
+                <>
+                    <div>
+                        <h3 className="font-semibold mb-2 text-sm">Outils</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button variant={activeTool === 'move' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('move')}><MousePointer className="mr-2"/> Déplacer</Button>
+                            <Button variant={activeTool === 'player' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('player')}><User className="mr-2"/> Joueur</Button>
+                            <Button variant={activeTool === 'opponent' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('opponent')}><Shield className="mr-2"/> Adversaire</Button>
+                            <Button variant={activeTool === 'ball' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('ball')}><CircleDot className="mr-2"/> Ballon</Button>
+                            <Button variant={activeTool === 'arrow' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTool('arrow')}><MoveUpRight className="mr-2"/> Flèche</Button>
+                        </div>
+                    </div>
+                    {selectedPawnId && (
+                        <div>
+                            <h3 className="font-semibold mb-2 text-sm">Pion Sélectionné</h3>
+                            <Button variant="destructive" size="sm" className="w-full" onClick={handleDeletePawn}>
+                                <Trash2 className="mr-2 h-4 w-4"/> Supprimer le pion
+                            </Button>
+                        </div>
+                    )}
+                </>
+                )}
+
+                <div>
+                    <h3 className="font-semibold mb-2 text-sm">Animation</h3>
+                    <div className="flex items-center justify-between p-2 bg-background rounded-md">
+                        <span className="text-sm font-medium">Étape {activeStepIndex + 1}/{sequence.steps.length}</span>
+                        <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setActiveStepIndex(i => Math.max(0, i - 1))} disabled={activeStepIndex === 0}><ArrowLeft className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={togglePlay}>
+                                {isPlaying ? <Pause className="h-4 w-4"/> : <Play className="h-4 w-4" />}
+                            </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setActiveStepIndex(i => Math.min(sequence.steps.length - 1, i + 1))} disabled={activeStepIndex === sequence.steps.length - 1}><ArrowRight className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={resetAnimation}><RotateCcw className="h-4 w-4"/></Button>
+                        </div>
+                    </div>
+                    {!isReadOnly && (
+                    <div className="flex items-center gap-2 mt-2">
+                        <Button variant="secondary" size="sm" className="w-full" onClick={addStep}>
+                            <PlusCircle className="mr-2 h-4 w-4"/> Ajouter
+                        </Button>
+                        <Button variant="destructive" size="sm" className="w-full" onClick={removeStep}>
+                            <Trash2 className="mr-2 h-4 w-4"/> Supprimer
+                        </Button>
+                    </div>
+                    )}
+                </div>
+            </div>
         </div>
 
         <DialogFooter className="p-4 border-t">
