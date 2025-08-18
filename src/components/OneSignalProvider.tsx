@@ -1,30 +1,53 @@
 
 'use client';
 
-import { useEffect } from 'react';
-import OneSignal from 'react-onesignal';
+import { useEffect, useRef } from 'react';
+
+// Define the OneSignal interface to avoid TypeScript errors
+declare global {
+  interface Window {
+    OneSignal: any;
+    OneSignalDeferred: any;
+  }
+}
 
 export default function OneSignalProvider() {
+  const oneSignalInitialized = useRef(false);
+
   useEffect(() => {
-    const initOneSignal = async () => {
-      if (!process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID === 'YOUR_ONESIGNAL_APP_ID') {
-        console.warn("OneSignal App ID is not set. Notifications will be disabled. Please add it to your .env file.");
-        return;
-      }
-      
-      await OneSignal.init({ 
-        appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
-        safari_web_id: process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID,
+    // Prevent the script from running twice in React's strict mode
+    if (oneSignalInitialized.current) {
+      return;
+    }
+    oneSignalInitialized.current = true;
+
+    // The OneSignal script loader
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function(OneSignal: any) {
+      await OneSignal.init({
+        appId: "a9f47076-da2b-4092-b174-d0647c398b23",
+        safari_web_id: "web.onesignal.auto.44228ff7-6812-4ce7-8396-b26a8a4cb6f4",
         allowLocalhostAsSecureOrigin: true,
         notifyButton: {
           enable: true,
-          // Force l'affichage de la cloche sur tous les appareils, y compris les mobiles.
-          displayPredicate: "show",
+          displayPredicate: "show", // Force display on all devices
         },
       });
-    };
+    });
 
-    initOneSignal();
+    // Dynamically create and append the OneSignal SDK script to the document head
+    const script = document.createElement('script');
+    script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+    script.async = true;
+    document.head.appendChild(script);
+
+    // Cleanup function to remove the script when the component unmounts
+    return () => {
+      document.head.removeChild(script);
+      // A bit more cleanup to be safe
+      delete window.OneSignal;
+      delete window.OneSignalDeferred;
+    };
   }, []);
 
   return null; // This component does not render anything
