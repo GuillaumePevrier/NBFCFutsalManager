@@ -102,14 +102,12 @@ export default function MatchPage() {
     // Optimistically update local state first
     setMatch(updatedMatch);
     
-    // The database schema does not have tacticSequences yet.
-    // We only send the fields that exist to prevent errors.
     const updatePayload = {
       details: updatedMatch.details,
       team: updatedMatch.team,
       substitutes: updatedMatch.substitutes,
       scoreboard: updatedMatch.scoreboard,
-      // tacticSequences: updatedMatch.tacticSequences, // This line is commented out
+      tacticSequences: updatedMatch.tacticSequences,
     };
 
     const { error } = await supabase
@@ -325,7 +323,7 @@ export default function MatchPage() {
         updateMatchData(match); 
     }
     
-  }, [draggingPlayer, match, updateMatchData]);
+  }, [draggingPlayer, match, updateMatchData, router]);
 
   useEffect(() => {
     if (draggingPlayer) {
