@@ -33,7 +33,6 @@ export default function OneSignalProvider() {
     window.OneSignalDeferred.push(async function(OneSignal: any) {
       await OneSignal.init({
         appId: oneSignalAppId,
-        safari_web_id: "web.onesignal.auto.44228ff7-6812-4ce7-8396-b26a8a4cb6f4",
         allowLocalhostAsSecureOrigin: true,
         notifyButton: {
           enable: true,
@@ -50,7 +49,11 @@ export default function OneSignalProvider() {
 
     // Cleanup function to remove the script when the component unmounts
     return () => {
-      document.head.removeChild(script);
+      // Check if the script exists before trying to remove it
+      const existingScript = document.querySelector(`script[src="${script.src}"]`);
+      if (existingScript) {
+        document.head.removeChild(existingScript);
+      }
       // A bit more cleanup to be safe
       delete window.OneSignal;
       delete window.OneSignalDeferred;
