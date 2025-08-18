@@ -21,11 +21,18 @@ export default function OneSignalProvider() {
     }
     oneSignalInitialized.current = true;
 
+    const oneSignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+
+    if (!oneSignalAppId) {
+        console.error("OneSignal App ID is not configured. Please set NEXT_PUBLIC_ONESIGNAL_APP_ID in your environment variables.");
+        return;
+    }
+
     // The OneSignal script loader
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async function(OneSignal: any) {
       await OneSignal.init({
-        appId: "a9f47076-da2b-4092-b174-d0647c398b23",
+        appId: oneSignalAppId,
         safari_web_id: "web.onesignal.auto.44228ff7-6812-4ce7-8396-b26a8a4cb6f4",
         allowLocalhostAsSecureOrigin: true,
         notifyButton: {
