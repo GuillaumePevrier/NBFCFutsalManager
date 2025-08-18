@@ -5,6 +5,7 @@
 import React, { forwardRef } from 'react';
 import type { TacticPawn as TacticPawnType, TacticArrow } from '@/lib/types';
 import TacticPawn from './TacticPawn';
+import { cn } from '@/lib/utils';
 
 interface FutsalCourtProps {
   children?: React.ReactNode;
@@ -16,22 +17,25 @@ interface FutsalCourtProps {
   onPawnMouseDown?: (event: React.MouseEvent<HTMLDivElement>, pawnId: string) => void;
   onPawnTouchStart?: (event: React.TouchEvent<HTMLDivElement>, pawnId: string) => void;
   selectedPawnId?: string | null;
+  className?: string;
 }
 
-const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows, onMouseDown, onTouchStart, onPawnClick, onPawnMouseDown, onPawnTouchStart, selectedPawnId }, ref) => {
+const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows, onMouseDown, onTouchStart, onPawnClick, onPawnMouseDown, onPawnTouchStart, selectedPawnId, className }, ref) => {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
-      {/* Substitutes Bench Area */}
-      <div className="w-full max-w-2xl h-16 bg-card border-2 border-border rounded-t-lg flex items-center justify-center px-4 mb-1 shadow-md">
-        <span className="text-muted-foreground font-semibold text-sm tracking-widest uppercase">Remplaçants</span>
-      </div>
+    <div className={cn("w-full h-full flex flex-col items-center justify-center", className)}>
+      {/* Substitutes Bench Area - Only for player tokens, not for tactics */}
+      {!pawns && (
+         <div className="w-full max-w-2xl h-16 bg-card border-2 border-border rounded-t-lg flex items-center justify-center px-4 mb-1 shadow-md">
+            <span className="text-muted-foreground font-semibold text-sm tracking-widest uppercase">Remplaçants</span>
+        </div>
+      )}
 
       {/* Main Court */}
       <div
         ref={ref}
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
-        className="relative w-full max-w-2xl aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30 overflow-hidden cursor-crosshair"
+        className="relative w-full h-auto aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30 overflow-hidden cursor-crosshair max-w-full max-h-full"
       >
         {/* Court Markings first, so they are in the background */}
         <div className="absolute inset-0">
