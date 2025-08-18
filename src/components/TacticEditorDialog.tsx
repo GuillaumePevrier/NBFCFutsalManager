@@ -66,6 +66,18 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
     setIsFullScreen(false);
   }, [initialSequence]);
   
+  const updateCurrentStep = useCallback((updater: (draft: TacticSequence['steps'][0]) => TacticSequence['steps'][0]) => {
+      setSequence(currentSequence => {
+          const currentStep = currentSequence.steps[activeStepIndex];
+          const newStep = updater({ ...currentStep, pawns: [...currentStep.pawns], arrows: [...currentStep.arrows] });
+          
+          const newSteps = [...currentSequence.steps];
+          newSteps[activeStepIndex] = newStep;
+
+          return { ...currentSequence, steps: newSteps };
+      });
+  }, [activeStepIndex]);
+
     const handleDragEnd = useCallback(() => setDraggingPawn(null), []);
 
     const handleArrowEnd = useCallback((clientX: number, clientY: number) => {
@@ -135,17 +147,6 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
     onOpenChange(false);
   };
 
-  const updateCurrentStep = useCallback((updater: (draft: TacticSequence['steps'][0]) => TacticSequence['steps'][0]) => {
-      setSequence(currentSequence => {
-          const currentStep = currentSequence.steps[activeStepIndex];
-          const newStep = updater({ ...currentStep, pawns: [...currentStep.pawns], arrows: [...currentStep.arrows] });
-          
-          const newSteps = [...currentSequence.steps];
-          newSteps[activeStepIndex] = newStep;
-
-          return { ...currentSequence, steps: newSteps };
-      });
-  }, [activeStepIndex]);
   
     const handleCourtInteraction = (clientX: number, clientY: number) => {
         if (isReadOnly || !courtRef.current) return;
