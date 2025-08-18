@@ -15,7 +15,7 @@ export default function OneSignalProvider() {
   const oneSignalInitialized = useRef(false);
 
   useEffect(() => {
-    // Prevent the script from running twice in React's strict mode
+    // Prevent the scrt from running twice in React's strict mode
     if (oneSignalInitialized.current) {
       return;
     }
