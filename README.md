@@ -1,6 +1,6 @@
 # NBFC Futsal Manager
 
-## Description Générale
+## Description
 
 NBFC Futsal Manager est une application web moderne et interactive conçue pour aider les coachs du Noyal Brécé FC à gérer leurs tactiques, leurs équipes et leurs matchs de futsal. Elle offre une plateforme centralisée pour la planification stratégique, la communication avec les joueurs et le suivi des matchs en temps réel.
 
