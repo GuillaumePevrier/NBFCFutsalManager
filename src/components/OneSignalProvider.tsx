@@ -19,9 +19,17 @@ export default function OneSignalProvider() {
     if (oneSignalInitialized.current) {
       return;
     }
-    oneSignalInitialized.current = true;
-
+    
     const oneSignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+    const allowedHostname = "nbfc-futsal-manager.vercel.app";
+
+    // Only initialize if we are on the allowed domain or in a non-browser environment (SSR)
+    if (typeof window !== 'undefined' && window.location.hostname !== allowedHostname) {
+        console.warn(`OneSignal initialization skipped: Current hostname (${window.location.hostname}) does not match allowed hostname (${allowedHostname}).`);
+        return;
+    }
+
+    oneSignalInitialized.current = true;
 
     if (!oneSignalAppId) {
         console.error("OneSignal App ID is not configured. Please set NEXT_PUBLIC_ONESIGNAL_APP_ID in your environment variables.");
