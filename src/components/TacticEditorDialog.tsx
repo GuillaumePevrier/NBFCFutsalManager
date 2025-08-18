@@ -382,13 +382,13 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
         </DialogHeader>
 
         <div className={cn(
-            "flex-grow overflow-hidden relative",
-            isFullScreen ? "flex items-center justify-center p-4 bg-background" : "grid md:grid-cols-3 gap-2 p-4"
+            "flex-grow overflow-hidden",
+            isFullScreen ? "relative flex items-center justify-center p-4 bg-background" : "grid md:grid-cols-3 gap-2 p-4"
         )}>
             {/* Main Court Area */}
             <div className={cn(
                 "relative flex-grow flex items-center justify-center bg-muted/30 rounded-lg",
-                isFullScreen ? "w-full h-full" : "md:col-span-2"
+                 isFullScreen ? "" : "md:col-span-2"
             )}>
                 <Button 
                     variant="ghost" 
@@ -409,7 +409,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
                     onPawnMouseDown={handlePawnMouseDown}
                     onPawnTouchStart={handlePawnTouchStart}
                     selectedPawnId={selectedPawnId}
-                    className="w-full h-full p-4"
+                    className={cn(isFullScreen ? "w-[75%] h-auto" : "w-full h-full p-4")}
                 />
             </div>
 
