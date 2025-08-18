@@ -7,8 +7,8 @@ import OneSignal from 'react-onesignal';
 export default function OneSignalProvider() {
   useEffect(() => {
     const initOneSignal = async () => {
-      if (!process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID) {
-        console.warn("OneSignal App ID is not set. Notifications will be disabled.");
+      if (!process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID === 'YOUR_ONESIGNAL_APP_ID') {
+        console.warn("OneSignal App ID is not set. Notifications will be disabled. Please add it to your .env file.");
         return;
       }
       
