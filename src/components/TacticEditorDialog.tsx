@@ -299,8 +299,11 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
 
   const currentArrows = sequence.steps[activeStepIndex]?.arrows || [];
 
-  const editorLayout = (
-    <div className={cn("flex flex-col gap-4 bg-muted/30 p-3 rounded-lg overflow-y-auto", isFullScreen && "absolute right-4 top-1/2 -translate-y-1/2 w-72 bg-background/80 backdrop-blur-sm z-20")}>
+  const editorControls = (
+    <div className={cn(
+        "flex flex-col gap-4 overflow-y-auto",
+        isFullScreen ? "absolute right-4 top-1/2 -translate-y-1/2 w-64 bg-background/80 backdrop-blur-sm z-20 p-4 rounded-lg shadow-2xl" : "md:col-span-1"
+    )}>
         {!isReadOnly && (
         <>
             <div>
@@ -326,7 +329,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
 
         <div>
             <h3 className="font-semibold mb-2 text-sm">Animation</h3>
-            <div className="flex items-center justify-between p-2 bg-background rounded-md">
+            <div className="flex items-center justify-between p-2 bg-background/50 rounded-md">
                 <span className="text-sm font-medium">Étape {activeStepIndex + 1}/{sequence.steps.length}</span>
                 <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setActiveStepIndex(i => Math.max(0, i - 1))} disabled={activeStepIndex === 0}><ArrowLeft className="h-4 w-4" /></Button>
@@ -379,13 +382,13 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
         </DialogHeader>
 
         <div className={cn(
-            "flex-grow overflow-hidden",
-            isFullScreen ? "relative" : "grid md:grid-cols-3 gap-2 p-4"
+            "flex-grow overflow-hidden relative",
+            isFullScreen ? "flex items-center justify-center p-4 bg-background" : "grid md:grid-cols-3 gap-2 p-4"
         )}>
             {/* Main Court Area */}
             <div className={cn(
-                "relative flex-grow flex items-center justify-center bg-muted/30 rounded-lg overflow-hidden",
-                isFullScreen ? "h-full w-full" : "md:col-span-2"
+                "relative flex-grow flex items-center justify-center bg-muted/30 rounded-lg",
+                isFullScreen ? "w-full h-full" : "md:col-span-2"
             )}>
                 <Button 
                     variant="ghost" 
@@ -406,16 +409,15 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
                     onPawnMouseDown={handlePawnMouseDown}
                     onPawnTouchStart={handlePawnTouchStart}
                     selectedPawnId={selectedPawnId}
-                    className={cn(isFullScreen && "w-3/4 h-auto")}
+                    className="w-full h-full p-4"
                 />
             </div>
 
             {/* Controls Panel */}
-            {isFullScreen ? editorLayout : (
-                <div className="hidden md:block">
-                    {editorLayout}
-                </div>
-            )}
+            <div className={cn(!isFullScreen && "hidden md:block")}>
+               {editorControls}
+            </div>
+            {isFullScreen && editorControls}
         </div>
 
         <DialogFooter className="p-4 border-t">

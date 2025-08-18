@@ -35,7 +35,7 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pa
         ref={ref}
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
-        className="relative w-full h-auto aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30 overflow-hidden cursor-crosshair max-w-full max-h-full"
+        className="relative w-full h-auto aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30 overflow-hidden cursor-crosshair max-w-full"
       >
         {/* Court Markings first, so they are in the background */}
         <div className="absolute inset-0">
