@@ -240,7 +240,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
             p.id === draggingPawn.pawnId ? { ...p, position: { x: newX, y: newY } } : p
         )
     }));
-  }, [draggingPawn]);
+  }, [draggingPawn, updateCurrentStep]);
 
   const handleArrowMove = useCallback((clientX: number, clientY: number) => {
     if (!drawingArrow || !courtRef.current) return;
@@ -385,7 +385,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
             {/* Main Court Area */}
             <div className={cn(
                 "relative flex-grow flex items-center justify-center bg-muted/30 rounded-lg overflow-hidden",
-                isFullScreen ? "h-full w-full" : "col-span-2"
+                isFullScreen ? "h-full w-full" : "md:col-span-2"
             )}>
                 <Button 
                     variant="ghost" 
@@ -433,6 +433,3 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
     </Dialog>
   );
 }
-
-
-    
