@@ -85,7 +85,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
         
         setDrawingArrow(null);
         setPreviewArrow(null);
-    }, [drawingArrow]);
+    }, [drawingArrow, updateCurrentStep]);
 
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
         if(draggingPawn) handleDragEnd();
         if(drawingArrow) {
             const touch = e.changedTouches[0];
-            handleArrowEnd(touch.clientX, touch.clientY);
+            if(touch) handleArrowEnd(touch.clientX, touch.clientY);
         }
     }
 
@@ -109,8 +109,10 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
     
     const handleGlobalTouchMove = (e: TouchEvent) => {
         const touch = e.touches[0];
-        if(draggingPawn) handleDragMove(touch.clientX, touch.clientY);
-        if(drawingArrow) handleArrowMove(touch.clientX, touch.clientY);
+        if(touch) {
+            if(draggingPawn) handleDragMove(touch.clientX, touch.clientY);
+            if(drawingArrow) handleArrowMove(touch.clientX, touch.clientY);
+        }
     }
 
     window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -133,7 +135,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
     onOpenChange(false);
   };
 
-  const updateCurrentStep = (updater: (draft: TacticSequence['steps'][0]) => TacticSequence['steps'][0]) => {
+  const updateCurrentStep = useCallback((updater: (draft: TacticSequence['steps'][0]) => TacticSequence['steps'][0]) => {
       setSequence(currentSequence => {
           const currentStep = currentSequence.steps[activeStepIndex];
           const newStep = updater({ ...currentStep, pawns: [...currentStep.pawns], arrows: [...currentStep.arrows] });
@@ -143,7 +145,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
 
           return { ...currentSequence, steps: newSteps };
       });
-  };
+  }, [activeStepIndex]);
   
     const handleCourtInteraction = (clientX: number, clientY: number) => {
         if (isReadOnly || !courtRef.current) return;
@@ -360,10 +362,10 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
       <DialogContent className={cn(
         "flex flex-col p-0 transition-all duration-300",
         isFullScreen 
-          ? "fixed inset-0 w-full h-full max-w-full rounded-none border-none" 
+          ? "fixed inset-0 z-50 w-full h-full max-w-full rounded-none border-none" 
           : "max-w-5xl h-[90vh]"
       )}>
-        <DialogHeader className="p-4 border-b">
+        <DialogHeader className={cn("p-4 border-b", isFullScreen && "hidden")}>
           <DialogTitle className="flex items-center gap-3">
              <div className="flex items-center gap-2">
                 <Label htmlFor="sequence-name" className="sr-only">Nom de la séquence</Label>
@@ -382,18 +384,18 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
         </DialogHeader>
 
         <div className={cn(
-            "flex-grow overflow-hidden",
-            isFullScreen ? "relative flex items-center justify-center p-4 bg-background" : "grid md:grid-cols-3 gap-2 p-4"
+            "flex-grow overflow-hidden relative",
+            isFullScreen ? "flex items-center justify-center bg-black/80" : "grid md:grid-cols-3 gap-2 p-4"
         )}>
             {/* Main Court Area */}
             <div className={cn(
                 "relative flex-grow flex items-center justify-center bg-muted/30 rounded-lg",
-                 isFullScreen ? "" : "md:col-span-2"
+                 isFullScreen ? "w-full h-full" : "md:col-span-2"
             )}>
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="absolute top-2 right-2 z-10"
+                    className="absolute top-2 right-2 z-10 text-white bg-black/20 hover:bg-black/40 hover:text-white"
                     onClick={() => setIsFullScreen(!isFullScreen)}
                     title={isFullScreen ? "Quitter le plein écran" : "Passer en plein écran"}
                 >
@@ -409,7 +411,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
                     onPawnMouseDown={handlePawnMouseDown}
                     onPawnTouchStart={handlePawnTouchStart}
                     selectedPawnId={selectedPawnId}
-                    className={cn(isFullScreen ? "w-[75%] h-auto" : "w-full h-full p-4")}
+                    className={cn(isFullScreen ? "w-[90vw] md:w-[75vw] h-auto" : "w-full h-full p-4")}
                 />
             </div>
 
@@ -420,7 +422,7 @@ export default function TacticEditorDialog({ isOpen, onOpenChange, sequence: ini
             {isFullScreen && editorControls}
         </div>
 
-        <DialogFooter className="p-4 border-t">
+        <DialogFooter className={cn("p-4 border-t", isFullScreen && "hidden")}>
           <DialogClose asChild>
             <Button type="button" variant="outline">Fermer</Button>
           </DialogClose>
