@@ -9,10 +9,11 @@ interface TacticPawnProps {
   pawn: TacticPawnType;
   onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
   onMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onTouchStart: (e: React.TouchEvent<HTMLDivElement>) => void;
   isSelected?: boolean;
 }
 
-const TacticPawn = ({ pawn, onClick, onMouseDown, isSelected }: TacticPawnProps) => {
+const TacticPawn = ({ pawn, onClick, onMouseDown, onTouchStart, isSelected }: TacticPawnProps) => {
 
   const baseStyle = "absolute w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg transition-all duration-150";
   
@@ -28,6 +29,7 @@ const TacticPawn = ({ pawn, onClick, onMouseDown, isSelected }: TacticPawnProps)
     <div
       onClick={onClick}
       onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
       className={cn(baseStyle, typeStyles[pawn.type], selectedStyle)}
       style={{
         left: `calc(${pawn.position.x}% - 16px)`, // Center the pawn

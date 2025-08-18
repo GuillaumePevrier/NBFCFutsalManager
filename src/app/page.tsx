@@ -59,7 +59,8 @@ export default function Home() {
             src="https://futsal.noyalbrecefc.com/wp-content/uploads/2025/07/telechargement-1.mp4" 
             autoPlay 
             loop 
-            muted 
+            muted
+            playsInline
             className="w-full h-full object-cover object-center"
          />
         <div className="absolute inset-0 bg-black/50" />

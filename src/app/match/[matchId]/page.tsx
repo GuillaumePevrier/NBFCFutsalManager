@@ -102,13 +102,14 @@ export default function MatchPage() {
     // Optimistically update local state first
     setMatch(updatedMatch);
     
-    // Ensure poll data is nested within details for the update
+    // The database schema does not have tacticSequences yet.
+    // We only send the fields that exist to prevent errors.
     const updatePayload = {
       details: updatedMatch.details,
       team: updatedMatch.team,
       substitutes: updatedMatch.substitutes,
       scoreboard: updatedMatch.scoreboard,
-      tacticSequences: updatedMatch.tacticSequences,
+      // tacticSequences: updatedMatch.tacticSequences, // This line is commented out
     };
 
     const { error } = await supabase
@@ -118,7 +119,7 @@ export default function MatchPage() {
 
     if (error) {
       console.error("Failed to save match data to Supabase", error);
-      toast({ title: "Erreur de sauvegarde", description: "Impossible d'enregistrer les données du match.", variant: "destructive" });
+      toast({ title: "Erreur de sauvegarde", description: `Impossible d'enregistrer les données du match. ${error.message}`, variant: "destructive" });
     } else if (showToast) {
       toast({
         title: "Match sauvegardé !",
@@ -263,7 +264,7 @@ export default function MatchPage() {
       return {
           ...currentMatch,
           team: isSub ? currentMatch.team : updatePosition(currentMatch.team),
-          substitutes: isSub ? updatePosition(currentMatch.substitutes) : currentMatch.substitutes
+          substitutes: isSub ? updatePosition(currentMatch.substitutes) : updatePosition(currentMatch.substitutes)
       };
     });
   }, [draggingPlayer]);

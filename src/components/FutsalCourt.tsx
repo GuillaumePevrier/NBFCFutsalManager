@@ -11,12 +11,14 @@ interface FutsalCourtProps {
   pawns?: TacticPawnType[];
   arrows?: TacticArrow[];
   onMouseDown?: (event: React.MouseEvent<HTMLDivElement>) => void;
+  onTouchStart?: (event: React.TouchEvent<HTMLDivElement>) => void;
   onPawnClick?: (pawnId: string) => void;
   onPawnMouseDown?: (event: React.MouseEvent<HTMLDivElement>, pawnId: string) => void;
+  onPawnTouchStart?: (event: React.TouchEvent<HTMLDivElement>, pawnId: string) => void;
   selectedPawnId?: string | null;
 }
 
-const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows, onMouseDown, onPawnClick, onPawnMouseDown, selectedPawnId }, ref) => {
+const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pawns, arrows, onMouseDown, onTouchStart, onPawnClick, onPawnMouseDown, onPawnTouchStart, selectedPawnId }, ref) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
       {/* Substitutes Bench Area */}
@@ -28,6 +30,7 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pa
       <div
         ref={ref}
         onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
         className="relative w-full max-w-2xl aspect-[2/1] bg-[#a0522d] rounded-lg shadow-2xl border-4 border-white/30 overflow-hidden cursor-crosshair"
       >
         {/* Court Markings first, so they are in the background */}
@@ -96,6 +99,10 @@ const FutsalCourt = forwardRef<HTMLDivElement, FutsalCourtProps>(({ children, pa
             onMouseDown={(e) => {
                 e.stopPropagation();
                 onPawnMouseDown?.(e, pawn.id);
+            }}
+            onTouchStart={(e) => {
+                e.stopPropagation();
+                onPawnTouchStart?.(e, pawn.id);
             }}
             isSelected={pawn.id === selectedPawnId}
           />
