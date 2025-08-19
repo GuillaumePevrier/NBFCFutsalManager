@@ -6,8 +6,6 @@ NBFC Futsal Manager est une application web moderne et interactive conçue pour 
 
 Construite avec une approche "mobile-first", l'application garantit une expérience utilisateur fluide que ce soit sur un ordinateur de bureau ou sur le terrain depuis un téléphone portable.
 
-## Fonction
-
 -   **Tableau Tactique Interactif** : Un terrain de futsal SVG où les coachs peuvent glisser-déposer des pions (joueurs) pour définir des stratégies et des compositions.
 -   **Gestion de Composition** : Sélectionnez les joueurs pour le match, organisez les titulaires et les remplaçants sur un banc de touche dédié.
 -   **Suivi de Match en Direct** : Un tableau de marque complet avec score, chronomètre (temps arrêté ou continu), gestion des fautes et des périodes.
