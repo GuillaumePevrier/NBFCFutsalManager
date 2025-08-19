@@ -15,37 +15,26 @@ export default function OneSignalProvider() {
   const oneSignalInitialized = useRef(false);
 
   useEffect(() => {
-    // Prevent the scrt from running twice in React's strict mode
+    // Prevent the script from running twice in React's strict mode
     if (oneSignalInitialized.current) {
       return;
     }
-    
-    const oneSignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
-    const allowedHostname = "nbfc-futsal-manager.vercel.app";
 
-    // Only initialize if we are on the allowed domain or in a non-browser environment (SSR)
-    if (typeof window !== 'undefined' && window.location.hostname !== allowedHostname) {
-        console.warn(`OneSignal initialization skipped: Current hostname (${window.location.hostname}) does not match allowed hostname (${allowedHostname}).`);
+    const oneSignalAppId = "25dbb261-fe4d-4e22-aed3-4051d3f22629";
+    
+    // Only initialize in browser environments
+    if (typeof window === 'undefined') {
         return;
     }
 
     oneSignalInitialized.current = true;
-
-    if (!oneSignalAppId) {
-        console.error("OneSignal App ID is not configured. Please set NEXT_PUBLIC_ONESIGNAL_APP_ID in your environment variables.");
-        return;
-    }
 
     // The OneSignal script loader
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async function(OneSignal: any) {
       await OneSignal.init({
         appId: oneSignalAppId,
-        allowLocalhostAsSecureOrigin: true,
-        notifyButton: {
-          enable: true,
-          displayPredicate: "show", // Force display on all devices
-        },
+        allowLocalhostAsSecureOrigin: true, // Important for development
       });
     });
 
@@ -57,12 +46,10 @@ export default function OneSignalProvider() {
 
     // Cleanup function to remove the script when the component unmounts
     return () => {
-      // Check if the script exists before trying to remove it
       const existingScript = document.querySelector(`script[src="${script.src}"]`);
       if (existingScript) {
         document.head.removeChild(existingScript);
       }
-      // A bit more cleanup to be safe
       delete window.OneSignal;
       delete window.OneSignalDeferred;
     };
