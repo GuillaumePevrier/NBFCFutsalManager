@@ -4,10 +4,24 @@
 import { createClient } from '@/lib/supabase/server';
 import type { Player, Opponent, Match, Training } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { redirect } from 'next/navigation';
 
 // Match related actions
+
+export async function getMatches(): Promise<Match[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('matches')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch matches:", error);
+    return [];
+  }
+  return data as Match[];
+}
+
 
 export async function deleteMatch(matchId: string): Promise<{ success: boolean, error?: any }> {
     const supabase = createClient();
@@ -29,18 +43,6 @@ export async function deleteMatch(matchId: string): Promise<{ success: boolean, 
 
 
 // Player related actions
-
-const PlayerSchema = z.object({
-  id: z.string().optional(), // id can be present for updates
-  name: z.string().min(3, "Le nom doit contenir au moins 3 caractères."),
-  team: z.enum(['D1', 'D2', 'Autre']),
-  position: z.enum(['Gardien', 'Défenseur', 'Ailier', 'Pivot', 'unspecified']).optional(),
-  preferred_foot: z.enum(['Droit', 'Gauche', 'Ambidextre', 'unspecified']).optional(),
-  avatar_url: z.string().url("L'URL de l'avatar n'est pas valide.").optional().or(z.literal('')),
-  player_number: z.coerce.number().optional(),
-  status: z.enum(['Actif', 'Blessé', 'Suspendu', 'Inactif']).optional(),
-});
-
 
 export async function getPlayers(): Promise<Player[]> {
   const supabase = createClient();
@@ -76,60 +78,45 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
 
 export async function createPlayer(formData: FormData) {
   const supabase = createClient();
-  const values = Object.fromEntries(formData.entries());
   
-  // Replace "unspecified" with empty string for DB
-  if (values.position === 'unspecified') values.position = '';
-  if (values.preferred_foot === 'unspecified') values.preferred_foot = '';
+  const playerData = {
+      name: formData.get('name'),
+      team: formData.get('team'),
+      position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
+      preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot'),
+      avatar_url: formData.get('avatar_url'),
+      points: 0 // Initialiser les points à 0
+  };
 
-  const validatedFields = PlayerSchema.safeParse(values);
-
-  if (!validatedFields.success) {
-    // This part is mainly for robust error handling, as client-side validation should catch this.
-    console.error('Validation failed:', validatedFields.error.flatten().fieldErrors);
-    // In a real app, you might return a more structured error.
-    return;
-  }
-  
-  const { id, ...playerData } = validatedFields.data;
-
-  // Correction : Initialiser les points à 0 lors de la création.
   const { error } = await supabase
     .from('players')
-    .insert([{...playerData, points: 0}]);
+    .insert([playerData]);
 
   if (error) {
     console.error("Failed to create player:", error);
-    // Gérer l'erreur, peut-être en retournant un message à l'utilisateur
     return;
   }
 
-  // Invalide le cache pour la page des joueurs et redirige
   revalidatePath('/admin/players');
   redirect('/admin/players');
 }
 
 export async function updatePlayer(formData: FormData) {
   const supabase = createClient();
-  const values = Object.fromEntries(formData.entries());
-
-  // Replace "unspecified" with empty string for DB
-  if (values.position === 'unspecified') values.position = '';
-  if (values.preferred_foot === 'unspecified') values.preferred_foot = '';
-
-  const validatedFields = PlayerSchema.safeParse(values);
-  
-  if (!validatedFields.success) {
-     console.error('Validation failed:', validatedFields.error.flatten().fieldErrors);
-    return;
-  }
-
-  const { id: playerId, ...playerData } = validatedFields.data;
+  const playerId = formData.get('id');
 
   if (!playerId) {
     console.error("Player ID is missing for update.");
     return;
   }
+
+  const playerData = {
+      name: formData.get('name'),
+      team: formData.get('team'),
+      position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
+      preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot'),
+      avatar_url: formData.get('avatar_url'),
+  };
 
   const { error } = await supabase
     .from('players')
@@ -224,7 +211,7 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
 
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
-    revalidatePath('/match/*'); 
+    revalidatePath('/match/*');
     revalidatePath('/trainings');
     
     return { success: true };
@@ -357,19 +344,6 @@ export async function getPlayerActivity(playerId: string): Promise<PlayerActivit
 
 // Opponent related actions
 
-const OpponentSchema = z.object({
-  id: z.string().optional(),
-  team_name: z.string().min(3, "Le nom de l'équipe doit contenir au moins 3 caractères."),
-  club_name: z.string().optional(),
-  logo_url: z.string().url("L'URL du logo n'est pas valide.").optional().or(z.literal('')),
-  championship: z.string().optional(),
-  coach_name: z.string().optional(),
-  coach_email: z.string().email("L'email du coach n'est pas valide.").optional().or(z.literal('')),
-  coach_phone: z.string().optional(),
-  address: z.string().optional(),
-});
-
-
 export async function getOpponents(): Promise<Opponent[]> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -401,28 +375,27 @@ export async function getOpponentById(opponentId: string): Promise<Opponent | nu
 
 export async function createOpponent(formData: FormData) {
   const supabase = createClient();
-  const values = Object.fromEntries(formData.entries());
-  const validatedFields = OpponentSchema.safeParse(values);
 
-  if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-    };
-  }
-  
-  const { id, ...opponentData } = validatedFields.data;
+  const opponentData = {
+      team_name: formData.get('team_name'),
+      club_name: formData.get('club_name'),
+      logo_url: formData.get('logo_url'),
+      championship: formData.get('championship'),
+      coach_name: formData.get('coach_name'),
+      coach_email: formData.get('coach_email'),
+      coach_phone: formData.get('coach_phone'),
+      address: formData.get('address'),
+  };
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('opponents')
-    .insert([opponentData])
-    .select();
+    .insert([opponentData]);
 
   if (error) {
     console.error("Failed to create opponent:", error);
-    return {
-      error: error.message
-    };
+    return { error: error.message };
   }
+
   revalidatePath('/admin/opponents');
   redirect('/admin/opponents');
 }
@@ -430,32 +403,31 @@ export async function createOpponent(formData: FormData) {
 
 export async function updateOpponent(formData: FormData) {
   const supabase = createClient();
-  const values = Object.fromEntries(formData.entries());
-  const validatedFields = OpponentSchema.safeParse(values);
-  
-  if (!validatedFields.success) {
-     return {
-      errors: validatedFields.error.flatten().fieldErrors,
-    };
-  }
-
-  const { id: opponentId, ...opponentData } = validatedFields.data;
+  const opponentId = formData.get('id');
 
   if (!opponentId) {
     return { error: "Opponent ID is missing for update." };
   }
 
-  const { data, error } = await supabase
+  const opponentData = {
+      team_name: formData.get('team_name'),
+      club_name: formData.get('club_name'),
+      logo_url: formData.get('logo_url'),
+      championship: formData.get('championship'),
+      coach_name: formData.get('coach_name'),
+      coach_email: formData.get('coach_email'),
+      coach_phone: formData.get('coach_phone'),
+      address: formData.get('address'),
+  };
+
+  const { error } = await supabase
     .from('opponents')
     .update(opponentData)
-    .eq('id', opponentId)
-    .select();
+    .eq('id', opponentId);
 
   if (error) {
      console.error(`Failed to update opponent ${opponentId}:`, error);
-    return {
-      error: error.message
-    };
+    return { error: error.message };
   }
 
   revalidatePath('/admin/opponents');
@@ -482,27 +454,21 @@ export async function deleteOpponent(opponentId: string) {
 
 // Training related actions
 
-const TrainingSchema = z.object({
-  title: z.string().min(3, "Le titre doit contenir au moins 3 caractères."),
-  date: z.string(),
-  time: z.string(),
-  location: z.string().optional(),
-  description: z.string().optional(),
-});
-
 export async function createTraining(formData: FormData) {
   const supabase = createClient();
-  const values = Object.fromEntries(formData.entries());
-  const validatedFields = TrainingSchema.safeParse(values);
 
-  if (!validatedFields.success) {
-    return { errors: validatedFields.error.flatten().fieldErrors };
-  }
+  const trainingData = {
+      title: formData.get('title'),
+      date: formData.get('date'),
+      time: formData.get('time'),
+      location: formData.get('location'),
+      description: formData.get('description'),
+      poll: { status: 'inactive', availabilities: [], deadline: null }
+  };
 
   const { error } = await supabase
     .from('trainings')
-    .insert([{ ...validatedFields.data, poll: { status: 'inactive', availabilities: [], deadline: null } }])
-    .select();
+    .insert([trainingData]);
 
   if (error) {
     console.error("Failed to create training:", error);

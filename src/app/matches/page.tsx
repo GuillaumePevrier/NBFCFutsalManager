@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,7 +19,7 @@ import MiniScoreboard from '@/components/MiniScoreboard';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import RankingTable from '@/components/RankingTable';
-import { getOpponents, deleteMatch } from '../actions';
+import { getOpponents, getMatches, deleteMatch } from '../actions';
 
 const competitions = [
     { id: 'D2 Nationale', name: 'D2 Nationale' },
@@ -48,41 +49,31 @@ export default function MatchesPage() {
   useEffect(() => {
     const fetchMatchesAndOpponents = async () => {
       setLoading(true);
-      
       const opponentsData = await getOpponents();
       setOpponents(opponentsData);
       
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error && Object.keys(error).length > 0 && error.message) {
-        console.error("Failed to fetch matches:", error);
-        toast({ title: "Erreur", description: "Impossible de charger la liste des matchs.", variant: "destructive" });
-      } else {
-        setMatches(((data as Match[]) || []).map(m => ({
-          ...m,
-          details: {
-            venue: 'home', // default
-            competition: 'amical', // default
-            matchday: 1, // default
-            ...(m.details || {}),
-             poll: { // default poll structure nested in details
-              status: 'inactive',
-              deadline: null,
-              availabilities: [],
-              ...((m.details || {}).poll || {})
-            }
-          },
-          tacticsequences: m.tacticsequences || [],
-        })));
-      }
+      const matchesData = await getMatches();
+      setMatches(matchesData.map(m => ({
+        ...m,
+        details: {
+          venue: 'home', // default
+          competition: 'amical', // default
+          matchday: 1, // default
+          ...(m.details || {}),
+           poll: { // default poll structure nested in details
+            status: 'inactive',
+            deadline: null,
+            availabilities: [],
+            ...((m.details || {}).poll || {})
+          }
+        },
+        tacticsequences: m.tacticsequences || [],
+      })));
       setLoading(false);
     };
 
     fetchMatchesAndOpponents();
-  }, [supabase, toast]);
+  }, []);
 
    useEffect(() => {
     const checkRole = async () => {
@@ -106,7 +97,7 @@ export default function MatchesPage() {
   }
 
   const handleCreateMatch = async () => {
-    const newMatch = {
+    const newMatchPayload = {
       details: {
         opponent: 'Adversaire',
         date: new Date().toISOString().split('T')[0],
@@ -138,7 +129,7 @@ export default function MatchesPage() {
       tacticsequences: [],
     };
 
-    const { data, error } = await supabase.from('matches').insert(newMatch).select().single();
+    const { data, error } = await supabase.from('matches').insert(newMatchPayload).select().single();
 
     if (error) {
       toast({ title: "Erreur", description: "La création du match a échoué.", variant: "destructive" });
