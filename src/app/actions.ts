@@ -5,6 +5,34 @@ import { createClient } from '@/lib/supabase/server';
 import type { Player, Opponent, Match, Training } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
+
+
+// Auth Actions
+export async function signInWithPassword(formData: FormData) {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  const supabase = createClient();
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return { success: false, error: { message: error.message } };
+  }
+
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+export async function signOut() {
+  const supabase = createClient();
+  await supabase.auth.signOut();
+  revalidatePath('/', 'layout');
+}
+
 
 // Match related actions
 
@@ -94,7 +122,7 @@ export async function createPlayer(formData: FormData) {
 
   if (error) {
     console.error("Failed to create player:", error);
-    return;
+    return { error: error.message };
   }
 
   revalidatePath('/admin/players');
@@ -107,7 +135,7 @@ export async function updatePlayer(formData: FormData) {
 
   if (!playerId) {
     console.error("Player ID is missing for update.");
-    return;
+    return { error: "Player ID is missing for update." };
   }
 
   const playerData = {
@@ -125,7 +153,7 @@ export async function updatePlayer(formData: FormData) {
 
   if (error) {
      console.error(`Failed to update player ${playerId}:`, error);
-    return;
+    return { error: error.message };
   }
 
   revalidatePath('/admin/players');
@@ -453,16 +481,29 @@ export async function deleteOpponent(opponentId: string) {
 
 
 // Training related actions
+const TrainingSchema = z.object({
+  title: z.string().min(3, "Le titre doit contenir au moins 3 caractères."),
+  date: z.string().min(1, "La date est requise."),
+  time: z.string().min(1, "L'heure est requise."),
+  location: z.string().optional(),
+  description: z.string().optional(),
+});
+
 
 export async function createTraining(formData: FormData) {
   const supabase = createClient();
+  
+  const values = Object.fromEntries(formData.entries());
+  const validatedFields = TrainingSchema.safeParse(values);
+
+  if (!validatedFields.success) {
+      return {
+          error: validatedFields.error.flatten().fieldErrors,
+      };
+  }
 
   const trainingData = {
-      title: formData.get('title'),
-      date: formData.get('date'),
-      time: formData.get('time'),
-      location: formData.get('location'),
-      description: formData.get('description'),
+      ...validatedFields.data,
       poll: { status: 'inactive', availabilities: [], deadline: null }
   };
 
@@ -472,7 +513,7 @@ export async function createTraining(formData: FormData) {
 
   if (error) {
     console.error("Failed to create training:", error);
-    return { error: error.message };
+    return { error: { form: error.message } };
   }
 
   revalidatePath('/trainings');

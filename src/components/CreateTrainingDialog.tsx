@@ -18,51 +18,37 @@ import { useToast } from "@/hooks/use-toast";
 import { createTraining } from "@/app/actions";
 import { Footprints, Loader2 } from "lucide-react";
 import { useState } from 'react';
-import { z } from 'zod';
 
 interface CreateTrainingDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const TrainingSchema = z.object({
-  title: z.string().min(3, "Le titre doit contenir au moins 3 caractères."),
-  date: z.string().min(1, "La date est requise."),
-  time: z.string().min(1, "L'heure est requise."),
-  location: z.string().optional(),
-  description: z.string().optional(),
-});
-
-type FormErrors = z.ZodFormattedError<z.infer<typeof TrainingSchema>> | null;
 
 export default function CreateTrainingDialog({ isOpen, onOpenChange }: CreateTrainingDialogProps) {
   const { toast } = useToast();
-  const [errors, setErrors] = useState<FormErrors>(null);
+  const [formErrors, setFormErrors] = useState<any>({});
 
   const formAction = async (formData: FormData) => {
-    const values = Object.fromEntries(formData.entries());
-    const validatedFields = TrainingSchema.safeParse(values);
-
-    if (!validatedFields.success) {
-      setErrors(validatedFields.error.format());
-      return;
-    }
-
-    setErrors(null);
-
-    try {
-      await createTraining(formData);
+    const result = await createTraining(formData);
+    
+    if (result?.error) {
+      setFormErrors(result.error);
+       if(result.error.form) {
+          toast({
+            title: "Erreur",
+            description: result.error.form,
+            variant: "destructive",
+          });
+       }
+    } else {
+      const title = formData.get('title') || "L'entraînement";
       toast({
         title: "Entraînement Créé",
-        description: `La session "${validatedFields.data.title}" a été planifiée.`
+        description: `La session "${title}" a été planifiée.`
       });
       onOpenChange(false);
-    } catch (e) {
-      toast({
-        title: "Erreur",
-        description: "La création de l'entraînement a échoué.",
-        variant: "destructive",
-      });
+      setFormErrors({});
     }
   };
 
@@ -94,18 +80,18 @@ export default function CreateTrainingDialog({ isOpen, onOpenChange }: CreateTra
             <div className="space-y-2">
               <Label htmlFor="title">Titre</Label>
               <Input id="title" name="title" required placeholder="Ex: Spécifique gardiens, Tactique..." />
-              {errors?.title && <p className="text-sm text-destructive">{errors.title._errors[0]}</p>}
+              {formErrors?.title && <p className="text-sm text-destructive">{formErrors.title[0]}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="date">Date</Label>
                     <Input id="date" name="date" type="date" required />
-                    {errors?.date && <p className="text-sm text-destructive">{errors.date._errors[0]}</p>}
+                    {formErrors?.date && <p className="text-sm text-destructive">{formErrors.date[0]}</p>}
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="time">Heure</Label>
                     <Input id="time" name="time" type="time" required />
-                    {errors?.time && <p className="text-sm text-destructive">{errors.time._errors[0]}</p>}
+                    {formErrors?.time && <p className="text-sm text-destructive">{formErrors.time[0]}</p>}
                 </div>
             </div>
             <div className="space-y-2">
@@ -126,5 +112,3 @@ export default function CreateTrainingDialog({ isOpen, onOpenChange }: CreateTra
     </Dialog>
   );
 }
-
-    

@@ -1,7 +1,6 @@
 
 'use client'
 
-import { useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,44 +9,15 @@ import { Label } from "@/components/ui/label";
 import type { Opponent } from "@/lib/types";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { createOpponent, updateOpponent } from "@/app/actions";
-import { useRouter } from "next/navigation";
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { z } from 'zod';
-
-
-const OpponentSchema = z.object({
-  team_name: z.string().min(3, "Le nom de l'équipe doit contenir au moins 3 caractères."),
-  club_name: z.string().optional(),
-  logo_url: z.string().url("L'URL du logo n'est pas valide.").optional().or(z.literal('')),
-  championship: z.string().optional(),
-  coach_name: z.string().optional(),
-  coach_email: z.string().email("L'email du coach n'est pas valide.").optional().or(z.literal('')),
-  coach_phone: z.string().optional(),
-  address: z.string().optional(),
-});
-
-type FormErrors = z.ZodFormattedError<z.infer<typeof OpponentSchema>> | null;
-
 
 export function OpponentForm({ opponent }: { opponent?: Opponent }) {
     const isEditing = !!opponent;
-    const router = useRouter();
     const { toast } = useToast();
-    const [errors, setErrors] = useState<FormErrors>(null);
 
     const formAction = async (formData: FormData) => {
-        const values = Object.fromEntries(formData.entries());
-        const validatedFields = OpponentSchema.safeParse(values);
-
-        if (!validatedFields.success) {
-            setErrors(validatedFields.error.format());
-            return;
-        }
-
-        setErrors(null);
-        
         try {
             if (isEditing) {
                 formData.set('id', opponent.id);
@@ -55,9 +25,10 @@ export function OpponentForm({ opponent }: { opponent?: Opponent }) {
             } else {
                 await createOpponent(formData);
             }
+            const teamName = formData.get('team_name') || "L'équipe";
             toast({
                 title: isEditing ? "Équipe modifiée" : "Équipe créée",
-                description: `${validatedFields.data.team_name} a été ${isEditing ? 'mise à jour' : 'ajoutée'}.`
+                description: `${teamName} a été ${isEditing ? 'mise à jour' : 'ajoutée'}.`
             });
         } catch (error) {
              toast({
@@ -92,7 +63,6 @@ export function OpponentForm({ opponent }: { opponent?: Opponent }) {
                             <div className="space-y-2">
                                 <Label htmlFor="team_name">Nom de l'équipe</Label>
                                 <Input id="team_name" name="team_name" defaultValue={opponent?.team_name} required />
-                                {errors?.team_name && <p className="text-sm text-destructive">{errors.team_name._errors[0]}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="club_name">Nom du club</Label>
@@ -102,7 +72,6 @@ export function OpponentForm({ opponent }: { opponent?: Opponent }) {
                         <div className="space-y-2">
                             <Label htmlFor="logo_url">URL du logo</Label>
                             <Input id="logo_url" name="logo_url" placeholder="https://..." defaultValue={opponent?.logo_url || ''} />
-                            {errors?.logo_url && <p className="text-sm text-destructive">{errors.logo_url._errors[0]}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="championship">Championnat / Compétition</Label>
@@ -130,7 +99,6 @@ export function OpponentForm({ opponent }: { opponent?: Opponent }) {
                              <div className="space-y-2">
                                 <Label htmlFor="coach_email">Email du coach</Label>
                                 <Input id="coach_email" name="coach_email" type="email" defaultValue={opponent?.coach_email || ''} />
-                                {errors?.coach_email && <p className="text-sm text-destructive">{errors.coach_email._errors[0]}</p>}
                             </div>
                         </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -158,5 +126,3 @@ export function OpponentForm({ opponent }: { opponent?: Opponent }) {
         </div>
     );
 }
-
-    

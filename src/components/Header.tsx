@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
+import { signOut } from "@/app/actions";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -42,13 +43,9 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
   }, [supabase.auth, router]);
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-        toast({ title: "Erreur", description: "Impossible de se déconnecter.", variant: "destructive" });
-    } else {
-        toast({ title: "Déconnecté", description: "Vous êtes repassé en mode joueur." });
-        router.push('/');
-    }
+    await signOut();
+    toast({ title: "Déconnecté", description: "Vous êtes repassé en mode joueur." });
+    router.push('/');
   };
 
 

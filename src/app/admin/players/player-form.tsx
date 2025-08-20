@@ -1,7 +1,6 @@
 
 'use client'
 
-import { useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,38 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Player } from "@/lib/types";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { createPlayer, updatePlayer } from "@/app/actions";
-import { useRouter } from "next/navigation";
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { z } from 'zod';
 
-const PlayerSchema = z.object({
-  name: z.string().min(3, "Le nom doit contenir au moins 3 caractères."),
-  team: z.enum(['D1', 'D2', 'Autre']),
-  position: z.enum(['Gardien', 'Défenseur', 'Ailier', 'Pivot', 'unspecified']).optional(),
-  preferred_foot: z.enum(['Droit', 'Gauche', 'Ambidextre', 'unspecified']).optional(),
-  avatar_url: z.string().url("L'URL de l'avatar n'est pas valide.").optional().or(z.literal('')),
-});
-
-type FormErrors = z.ZodFormattedError<z.infer<typeof PlayerSchema>> | null;
-
 export function PlayerForm({ player }: { player?: Player }) {
     const isEditing = !!player;
     const { toast } = useToast();
-    const router = useRouter();
-    const [errors, setErrors] = useState<FormErrors>(null);
 
     const formAction = async (formData: FormData) => {
-        const values = Object.fromEntries(formData.entries());
-        const validatedFields = PlayerSchema.safeParse(values);
-
-        if (!validatedFields.success) {
-            setErrors(validatedFields.error.format());
-            return;
-        }
-
-        setErrors(null);
-        
         try {
             if (isEditing) {
                 formData.set('id', player.id);
@@ -50,9 +26,10 @@ export function PlayerForm({ player }: { player?: Player }) {
             } else {
                 await createPlayer(formData);
             }
+            const playerName = formData.get('name') || 'Le joueur';
             toast({
                 title: isEditing ? "Joueur modifié" : "Joueur créé",
-                description: `${validatedFields.data.name} a été ${isEditing ? 'mis à jour' : 'ajouté'}.`
+                description: `${playerName} a été ${isEditing ? 'mis à jour' : 'ajouté'}.`
             });
         } catch (error) {
             toast({
@@ -85,7 +62,6 @@ export function PlayerForm({ player }: { player?: Player }) {
                         <div className="space-y-2">
                             <Label htmlFor="name">Nom complet</Label>
                             <Input id="name" name="name" defaultValue={player?.name} required />
-                            {errors?.name && <p className="text-sm text-destructive">{errors.name._errors[0]}</p>}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
@@ -100,7 +76,6 @@ export function PlayerForm({ player }: { player?: Player }) {
                                         <SelectItem value="Autre">Autre</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                {errors?.team && <p className="text-sm text-destructive">{errors.team._errors[0]}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="position">Poste</Label>
@@ -136,7 +111,6 @@ export function PlayerForm({ player }: { player?: Player }) {
                              <div className="space-y-2">
                                 <Label htmlFor="avatar_url">URL de l'avatar</Label>
                                 <Input id="avatar_url" name="avatar_url" placeholder="https://..." defaultValue={player?.avatar_url || ''} />
-                                {errors?.avatar_url && <p className="text-sm text-destructive">{errors.avatar_url._errors[0]}</p>}
                             </div>
                         </div>
                         <div className="flex justify-between items-center pt-4">
@@ -154,5 +128,3 @@ export function PlayerForm({ player }: { player?: Player }) {
         </div>
     );
 }
-
-    

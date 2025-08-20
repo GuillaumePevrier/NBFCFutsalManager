@@ -13,8 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Lock } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { Loader2, Lock } from "lucide-react";
+import { signInWithPassword } from "@/app/actions";
 
 interface CoachAuthDialogProps {
   isOpen: boolean;
@@ -23,22 +23,21 @@ interface CoachAuthDialogProps {
 }
 
 export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated }: CoachAuthDialogProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const supabase = createClient();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
+    const formData = new FormData(event.currentTarget);
+    const result = await signInWithPassword(formData);
     
-    if (error) {
+    setIsLoading(false);
+
+    if (result.error) {
       setError("Email ou mot de passe incorrect.");
       toast({
         title: "Échec de l'authentification",
@@ -56,9 +55,8 @@ export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated 
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      setEmail("");
-      setPassword("");
       setError("");
+      setIsLoading(false);
     }
     onOpenChange(open);
   }
@@ -87,8 +85,6 @@ export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated 
                 type="email"
                 required
                 className="col-span-3"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -101,14 +97,15 @@ export default function CoachAuthDialog({ isOpen, onOpenChange, onAuthenticated 
                 type="password"
                 required
                 className="col-span-3"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             {error && <p className="col-span-4 text-center text-sm text-destructive">{error}</p>}
           </div>
           <DialogFooter>
-            <Button type="submit">Se connecter</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Se connecter
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
