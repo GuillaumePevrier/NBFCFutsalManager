@@ -20,10 +20,16 @@ export default function OneSignalProvider() {
       return;
     }
 
-    const oneSignalAppId = "25dbb261-fe4d-4e22-aed3-4051d3f22629";
+    const oneSignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
     
-    // Only initialize in browser environments
-    if (typeof window === 'undefined') {
+    // Only initialize in browser environments and if the App ID is present
+    if (typeof window === 'undefined' || !oneSignalAppId) {
+        return;
+    }
+
+    // --- FIX: Only initialize on the production domain ---
+    if (window.location.hostname !== 'nbfc-futsal-manager.vercel.app') {
+        console.log(`OneSignal initialization skipped on development domain: ${window.location.hostname}`);
         return;
     }
 
