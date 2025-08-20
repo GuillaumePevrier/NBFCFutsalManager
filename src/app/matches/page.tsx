@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -195,25 +196,21 @@ export default function MatchesPage() {
     const awayTeam = isHome ? { name: opponentName, logo: opponentLogo, fallback: opponentName ? opponentName.substring(0,1) : 'A' } : { name: nbfcName, logo: "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png", fallback: "N" };
 
     return (
-        <Card key={match.id} className="group relative bg-card/80 hover:bg-card/100 transition-all duration-300 overflow-hidden border border-blue-500/20 hover:border-blue-500/80 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-            <CardContent className="p-3 flex items-center justify-between gap-2">
-                 <div className="flex-1 min-w-0">
-                    <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
-                </div>
-                <div className="w-44 sm:w-48 md:w-64 flex-shrink-0">
-                    <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} isRight />
-                </div>
-            </CardContent>
-            <Button asChild variant="ghost" size="sm" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center bg-primary/20 backdrop-blur-sm">
-                 <Link href={`/match/${match.id}`}>
-                     Gérer le match
-                     <ArrowRight className="ml-2 h-4 w-4" />
-                 </Link>
-            </Button>
-        </Card>
+        <Link href={`/match/${match.id}`} key={match.id} className="block group">
+            <Card className="bg-card/80 transition-all duration-300 overflow-hidden border border-blue-500/20 group-hover:border-blue-500/80 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                <CardContent className="p-3 flex items-center justify-between gap-2">
+                     <div className="flex-1 min-w-0">
+                        <TeamDisplay name={homeTeam.name} logoUrl={homeTeam.logo} fallback={homeTeam.fallback} />
+                    </div>
+                    <div className="w-44 sm:w-48 md:w-64 flex-shrink-0">
+                        <MiniScoreboard scoreboard={match.scoreboard} opponentName={match.details.opponent} homeName={nbfcName} venue={match.details.venue} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <TeamDisplay name={awayTeam.name} logoUrl={awayTeam.logo} fallback={awayTeam.fallback} isRight />
+                    </div>
+                </CardContent>
+            </Card>
+        </Link>
     )
   }
 
