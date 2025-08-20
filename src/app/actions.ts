@@ -888,3 +888,36 @@ export async function getSubscribers(): Promise<Subscriber[]> {
 
     return data as Subscriber[];
 }
+
+export async function getUnlinkedPlayers(): Promise<Player[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('players')
+    .select('*')
+    .is('user_id', null)
+    .order('name', { ascending: true });
+    
+  if (error) {
+    console.error("Failed to fetch unlinked players:", error);
+    return [];
+  }
+  return data as Player[];
+}
+
+export async function linkProfile(playerId: string, userId: string): Promise<{ success: boolean, error?: any }> {
+    const supabase = createClient();
+    const { error } = await supabase
+        .from('players')
+        .update({ user_id: userId })
+        .eq('id', playerId);
+
+    if (error) {
+        console.error(`Failed to link profile for player ${playerId}:`, error);
+        return { success: false, error };
+    }
+    
+    revalidatePath('/');
+    return { success: true };
+}
+
+    

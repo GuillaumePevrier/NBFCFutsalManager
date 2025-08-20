@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, ChevronsLeftRight } from 'lucide-react';
@@ -9,6 +9,9 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import IncompleteProfile from '@/components/IncompleteProfile';
+import type { Player } from '@/lib/types';
 
 const MotionCard = motion(Card);
 
@@ -28,10 +31,48 @@ const initialCardData: NavCardData[] = [
   { id: 4, title: 'Entraînements', href: '/trainings', imageUrl: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2025/08/Image.png', dataAiHint: 'futsal training session', objectPosition: 'object-top' },
 ];
 
-
 export default function Home() {
   const router = useRouter();
-  const [activeIndex, setActiveIndex] = useState(1); 
+  const [activeIndex, setActiveIndex] = useState(1);
+  const [showProfileLink, setShowProfileLink] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const checkPlayerProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Check if there is a player profile linked to this user
+        const { data: player, error } = await supabase
+          .from('players')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+
+        // If no player profile is found, show the linking component
+        if (!player && !error) {
+          setShowProfileLink(true);
+        } else {
+          setShowProfileLink(false);
+        }
+      }
+    };
+
+    checkPlayerProfile();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === "SIGNED_IN") {
+            checkPlayerProfile();
+        }
+        if (event === "SIGNED_OUT") {
+            setShowProfileLink(false);
+        }
+    });
+
+    return () => {
+        authListener?.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
 
   const handleCardClick = (card: NavCardData) => {
     if (card.target === '_blank') {
@@ -52,6 +93,10 @@ export default function Home() {
     }
   };
   
+  if (showProfileLink) {
+    return <IncompleteProfile onProfileLinked={() => setShowProfileLink(false)} />;
+  }
+
   return (
     <div className="flex flex-col min-h-screen text-foreground overflow-hidden">
        <div className="absolute inset-0 w-full h-full -z-10">
@@ -168,3 +213,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
