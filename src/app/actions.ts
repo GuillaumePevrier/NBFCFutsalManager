@@ -8,10 +8,10 @@ import { redirect } from 'next/navigation';
 import webpush from 'web-push';
 
 
-if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT) {
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT) {
     webpush.setVapidDetails(
         process.env.VAPID_SUBJECT,
-        process.env.VAPID_PUBLIC_KEY,
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
         process.env.VAPID_PRIVATE_KEY
     );
 }
@@ -278,7 +278,7 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
 
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
-    revalidatePath('/match/*');
+    revalidatePath(`/match/*`);
     revalidatePath('/trainings');
     
     return { success: true };
@@ -794,10 +794,17 @@ interface NotificationPayload {
     body: string;
     icon?: string;
     tag?: string;
-    url?: string;
+    data?: {
+        url?: string;
+    }
 }
 
 export async function sendPushNotification(userId: string, payload: NotificationPayload): Promise<{ success: boolean, error?: any }> {
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+        console.error("VAPID keys are not configured. Cannot send push notifications.");
+        return { success: false, error: "VAPID keys not configured." };
+    }
+
     // This action must use the service role key to bypass RLS and read subscriptions.
     const supabase = createClient();
     

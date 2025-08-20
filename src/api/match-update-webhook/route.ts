@@ -1,5 +1,4 @@
 
-
 // src/app/api/match-update-webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Match, Message, Player } from '@/lib/types';
@@ -88,7 +87,9 @@ async function handleNewMessage(newMessage: Message) {
         body: newMessage.content,
         icon: '/icon-192x192.png',
         tag: newMessage.channel_id, // Tag groups notifications for the same chat
-        url: `/chat/${newMessage.channel_id}`
+        data: {
+            url: `${process.env.NEXT_PUBLIC_BASE_URL}/chat/${newMessage.channel_id}`
+        }
     };
 
     for (const participant of participants) {
