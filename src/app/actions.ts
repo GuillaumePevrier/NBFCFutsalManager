@@ -8,12 +8,17 @@ import { redirect } from 'next/navigation';
 import webpush from 'web-push';
 
 
+// VAPID keys should be configured only if they are set in environment variables
 if (process.env.VAPID_SUBJECT && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-    webpush.setVapidDetails(
-        process.env.VAPID_SUBJECT,
-        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-        process.env.VAPID_PRIVATE_KEY
-    );
+    try {
+        webpush.setVapidDetails(
+            process.env.VAPID_SUBJECT,
+            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+            process.env.VAPID_PRIVATE_KEY
+        );
+    } catch(e) {
+        console.error("Failed to set VAPID details. Make sure the keys are correct.", e);
+    }
 }
 
 
@@ -990,3 +995,5 @@ export async function linkProfile(playerId: string, userId: string): Promise<{ s
     revalidatePath('/');
     return { success: true };
 }
+
+    
