@@ -151,7 +151,7 @@ export default function MatchesPage() {
         period: 1,
         timerLastStarted: null,
       },
-      tacticSequences: [],
+      tacticsequences: [],
     };
 
     const { data, error } = await supabase.from('matches').insert(newMatch).select().single();
@@ -368,5 +368,3 @@ export default function MatchesPage() {
     </div>
   );
 }
-
-    

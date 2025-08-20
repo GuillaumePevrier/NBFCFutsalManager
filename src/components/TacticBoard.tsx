@@ -74,7 +74,7 @@ export default function TacticBoard({ role, sequences, onSequencesChange }: Tact
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {sequences.length > 0 ? (
+                    {sequences && sequences.length > 0 ? (
                         <div className="space-y-2">
                             {sequences.map(seq => (
                                 <div key={seq.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted">

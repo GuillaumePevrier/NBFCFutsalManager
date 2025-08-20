@@ -9,11 +9,11 @@ export interface Player {
   team: 'D1' | 'D2' | 'Autre';
   position?: 'Gardien' | 'Défenseur' | 'Ailier' | 'Pivot' | 'unspecified' | '';
   preferred_foot?: 'Droit' | 'Gauche' | 'Ambidextre' | 'unspecified' | '';
-  goals?: number;
-  fouls?: number;
+  goals: number;
+  fouls: number;
   player_number?: number;
   status?: 'Actif' | 'Blessé' | 'Suspendu' | 'Inactif';
-  points?: number; // Added for player gamification
+  points: number;
 }
 
 export interface PlayerPosition extends Player {
@@ -99,7 +99,7 @@ export interface Match {
   team: PlayerPosition[];
   substitutes: PlayerPosition[];
   scoreboard: Scoreboard;
-  tacticSequences: TacticSequence[]; // New field for tactic animations
+  tacticsequences: TacticSequence[];
   opponent_logo_url?: string; // Optional field from join
 }
 

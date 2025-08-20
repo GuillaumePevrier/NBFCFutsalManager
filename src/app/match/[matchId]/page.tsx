@@ -65,7 +65,7 @@ const ensureMatchDefaults = (match: Match): Match => {
         timerLastStarted: null,
        ...scoreboard,
     },
-    tacticSequences: match.tacticSequences || [],
+    tacticsequences: match.tacticsequences || [],
   };
 };
 
@@ -107,7 +107,7 @@ export default function MatchPage() {
       team: updatedMatch.team,
       substitutes: updatedMatch.substitutes,
       scoreboard: updatedMatch.scoreboard,
-      tacticSequences: updatedMatch.tacticSequences,
+      tacticsequences: updatedMatch.tacticsequences,
     };
 
     const { error } = await supabase
@@ -477,7 +477,7 @@ export default function MatchPage() {
 
   const handleTacticSequencesChange = (sequences: TacticSequence[]) => {
     if (!match) return;
-    updateMatchData({ ...match, tacticSequences: sequences });
+    updateMatchData({ ...match, tacticsequences: sequences });
   };
 
 
@@ -556,7 +556,7 @@ export default function MatchPage() {
           </div>
            <TacticBoard 
              role={role}
-             sequences={match.tacticSequences}
+             sequences={match.tacticsequences}
              onSequencesChange={handleTacticSequencesChange}
            />
           <MatchDetails 
