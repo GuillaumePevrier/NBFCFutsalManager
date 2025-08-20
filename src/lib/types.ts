@@ -157,7 +157,7 @@ export interface Channel {
     name?: string;
     match_id?: string; // uuid
     created_by: string; // uuid
-    participants?: Player[]; // Not in DB, but useful for UI
+    participants?: Pick<Player, 'id' | 'name' | 'avatar_url'>[]; // Not in DB, but useful for UI
 }
 
 export interface ChannelParticipant {
@@ -172,5 +172,5 @@ export interface Message {
     content: string;
     user_id: string;
     channel_id: string;
-    sender?: Player; // Not in DB, but useful for UI
+    sender?: Pick<Player, 'id' | 'name' | 'avatar_url'>; // Not in DB, but useful for UI
 }

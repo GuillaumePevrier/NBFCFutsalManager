@@ -584,12 +584,85 @@ export async function deleteTraining(trainingId: string): Promise<{ success: boo
 // Chat Actions
 export async function getChannels(): Promise<Channel[]> {
     const supabase = createClient();
-    const { data, error } = await supabase.from('channels').select('*');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return [];
+
+    const { data, error } = await supabase
+        .from('channels')
+        .select(`
+            id, 
+            name, 
+            type, 
+            match_id,
+            participants:players ( id, name, avatar_url )
+        `)
+        .or(`type.eq.group,participants.user_id.eq.${session.user.id}`); // This filter logic is complex, might need RPC
 
     if (error) {
         console.error('Failed to fetch channels:', error);
         return [];
     }
 
-    return data as Channel[];
+    return data as any[] as Channel[];
+}
+
+export async function createOrGetPrivateChannel(recipientUserId: string): Promise<{ channelId: string | null, error?: string }> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'Utilisateur non authentifié.', channelId: null };
+    }
+    
+    if (user.id === recipientUserId) {
+        return { error: 'Vous ne pouvez pas démarrer une conversation avec vous-même.', channelId: null };
+    }
+
+    // Check if a private channel already exists between the two users
+    const { data: existingChannel, error: rpcError } = await supabase.rpc('find_private_channel', {
+      user_1_id: user.id,
+      user_2_id: recipientUserId
+    });
+    
+    if (rpcError) {
+        console.error("RPC Error finding private channel", rpcError);
+        return { error: "Erreur lors de la recherche du canal.", channelId: null };
+    }
+    
+    if (existingChannel) {
+        return { channelId: existingChannel };
+    }
+
+    // If not, create a new private channel
+    const { data: newChannel, error: createChannelError } = await supabase
+        .from('channels')
+        .insert({
+            type: 'private',
+            created_by: user.id,
+        })
+        .select()
+        .single();
+    
+    if (createChannelError) {
+        console.error('Failed to create private channel:', createChannelError);
+        return { error: "Impossible de créer la conversation.", channelId: null };
+    }
+
+    // Add both users as participants
+    const { error: participantsError } = await supabase
+        .from('channel_participants')
+        .insert([
+            { channel_id: newChannel.id, user_id: user.id },
+            { channel_id: newChannel.id, user_id: recipientUserId },
+        ]);
+        
+    if (participantsError) {
+        console.error('Failed to add participants to private channel:', participantsError);
+        // Clean up created channel if participants fail
+        await supabase.from('channels').delete().eq('id', newChannel.id);
+        return { error: "Impossible d'ajouter les participants.", channelId: null };
+    }
+
+    revalidatePath('/chat');
+    return { channelId: newChannel.id };
 }
