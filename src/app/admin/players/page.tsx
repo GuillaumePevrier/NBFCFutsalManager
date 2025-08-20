@@ -96,12 +96,14 @@ export default function PlayersAdminPage() {
     useEffect(() => {
         const checkRole = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            setRole(session ? 'coach' : 'player');
+            const currentRole = (session && session.user.email === 'guillaumepevrier@gmail.com') ? 'coach' : 'player';
+            setRole(currentRole);
         };
         checkRole();
 
         const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-            setRole(session ? 'coach' : 'player');
+            const newRole = (session && session.user.email === 'guillaumepevrier@gmail.com') ? 'coach' : 'player';
+            setRole(newRole);
         });
         
         // Realtime subscription for players table
@@ -131,7 +133,12 @@ export default function PlayersAdminPage() {
     }, [supabase]);
 
     const onAuthenticated = () => {
-        setRole('coach');
+        const checkRole = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            const currentRole = (session && session.user.email === 'guillaumepevrier@gmail.com') ? 'coach' : 'player';
+            setRole(currentRole);
+        };
+        checkRole();
         setIsAuthOpen(false);
     }
     

@@ -35,9 +35,9 @@ export default function OpponentsAdminPage() {
     useEffect(() => {
         const checkRoleAndProtect = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            const currentRole = session ? 'coach' : 'player';
+            const currentRole = (session && session.user.email === 'guillaumepevrier@gmail.com') ? 'coach' : 'player';
             setRole(currentRole);
-            if (!session) {
+            if (currentRole !== 'coach') {
                 router.push('/');
             }
             setLoading(false);
@@ -45,9 +45,9 @@ export default function OpponentsAdminPage() {
         checkRoleAndProtect();
 
         const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-            const newRole = session ? 'coach' : 'player';
+            const newRole = (session && session.user.email === 'guillaumepevrier@gmail.com') ? 'coach' : 'player';
             setRole(newRole);
-            if (!session) {
+            if (newRole !== 'coach') {
                 router.push('/');
             }
         });
@@ -58,7 +58,12 @@ export default function OpponentsAdminPage() {
     }, [supabase.auth, router]);
 
     const onAuthenticated = () => {
-        setRole('coach');
+        const checkRole = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            const currentRole = (session && session.user.email === 'guillaumepevrier@gmail.com') ? 'coach' : 'player';
+            setRole(currentRole);
+        };
+        checkRole();
         setIsAuthOpen(false);
     }
     

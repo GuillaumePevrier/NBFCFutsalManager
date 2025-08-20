@@ -161,16 +161,14 @@ export default function MatchPage() {
   useEffect(() => {
     const checkRole = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            setRole('coach');
-        } else {
-            setRole('player');
-        }
+        const currentRole = (session && session.user.email === 'guillaumepevrier@gmail.com') ? 'coach' : 'player';
+        setRole(currentRole);
     };
     checkRole();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-        setRole(session ? 'coach' : 'player');
+        const newRole = (session && session.user.email === 'guillaumepevrier@gmail.com') ? 'coach' : 'player';
+        setRole(newRole);
     });
 
     return () => {

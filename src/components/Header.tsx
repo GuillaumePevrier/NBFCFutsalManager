@@ -35,7 +35,7 @@ export default function Header({ children }: HeaderProps) {
         const { data: { session } } = await supabase.auth.getSession();
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
-        if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'g.pevrier@gmail.com' )) {
+        if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'guillaumepevrier@gmail.com' )) {
              setRole('coach');
         } else {
             setRole('player');
@@ -46,7 +46,7 @@ export default function Header({ children }: HeaderProps) {
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
-         if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'g.pevrier@gmail.com')) {
+         if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'guillaumepevrier@gmail.com')) {
              setRole('coach');
         } else {
             setRole('player');
@@ -73,7 +73,7 @@ export default function Header({ children }: HeaderProps) {
         const { data: { session } } = await supabase.auth.getSession();
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
-        if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'g.pevrier@gmail.com' )) {
+        if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'guillaumepevrier@gmail.com' )) {
              setRole('coach');
         } else {
             setRole('player');
