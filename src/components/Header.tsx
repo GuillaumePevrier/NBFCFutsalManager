@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints, MessageSquare } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints, MessageSquare, Bell, BellOff } from "lucide-react";
 import Image from "next/image";
 import type { Role } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +14,7 @@ import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
 import { signOut } from "@/app/actions";
 import AuthDialog from "./AuthDialog";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -26,13 +27,14 @@ export default function Header({ children }: HeaderProps) {
   const [role, setRole] = useState<Role>('player');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  
+  const { isSubscribed, subscribeToPush, unsubscribeFromPush, isLoading: isPushLoading } = usePushNotifications();
 
   useEffect(() => {
     const checkSession = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
-        // This is a simplified role check. You might want to have a more robust one.
         if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'g.pevrier@gmail.com' )) {
              setRole('coach');
         } else {
@@ -57,13 +59,16 @@ export default function Header({ children }: HeaderProps) {
   }, [supabase.auth, router]);
 
   const handleSignOut = async () => {
+    // Unsubscribe from push notifications before signing out
+    if(isSubscribed) {
+      await unsubscribeFromPush();
+    }
     await signOut();
     toast({ title: "Déconnexion", description: "Vous avez été déconnecté." });
     router.push('/');
   };
-
+  
   const onAuthenticated = () => {
-    // Re-check session to update role correctly
     const checkSession = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         const userIsLoggedIn = !!session;
@@ -73,9 +78,21 @@ export default function Header({ children }: HeaderProps) {
         } else {
             setRole('player');
         }
+        // Attempt to subscribe to notifications after login
+        if(userIsLoggedIn && Notification.permission === 'granted') {
+           subscribeToPush();
+        }
     };
     checkSession();
     setIsAuthOpen(false);
+  }
+
+  const handleNotificationToggle = () => {
+    if (isSubscribed) {
+      unsubscribeFromPush();
+    } else {
+      subscribeToPush();
+    }
   }
 
 
@@ -95,67 +112,34 @@ export default function Header({ children }: HeaderProps) {
         </Link>
       </div>
       <div className="flex items-center gap-2">
-      {children}
-      <ThemeToggle />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <Menu className="h-6 w-6" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-               <Link href="/">
-                  <Home className="mr-2 h-4 w-4" />
-                  <span>Accueil</span>
-                </Link>
-            </DropdownMenuItem>
-             <DropdownMenuItem asChild>
-               <Link href="/matches">
-                  <Trophy className="mr-2 h-4 w-4" />
-                  <span>Matchs</span>
-                </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-               <Link href="/trainings">
-                  <Footprints className="mr-2 h-4 w-4" />
-                  <span>Entraînements</span>
-                </Link>
-            </DropdownMenuItem>
-             <DropdownMenuItem asChild>
-               <Link href="/chat">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  <span>Messages</span>
-                </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-               <Link href="/admin/players">
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Effectif</span>
-                </Link>
-            </DropdownMenuItem>
-             {role === 'coach' && (
-                <DropdownMenuItem asChild>
-                    <Link href="/admin/opponents">
-                        <Shield className="mr-2 h-4 w-4" />
-                        <span>Équipes adverses</span>
-                    </Link>
-                </DropdownMenuItem>
-             )}
-          <DropdownMenuSeparator />
-          {isLoggedIn ? (
-              <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Se déconnecter</span>
-              </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem onClick={() => setIsAuthOpen(true)}>
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                <span>Connexion</span>
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        {children}
+        {isLoggedIn && !isPushLoading && (
+            <Button variant="ghost" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"}>
+                {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
+            </Button>
+        )}
+        <ThemeToggle />
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild><Link href="/"><Home className="mr-2 h-4 w-4" /><span>Accueil</span></Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/matches"><Trophy className="mr-2 h-4 w-4" /><span>Matchs</span></Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/trainings"><Footprints className="mr-2 h-4 w-4" /><span>Entraînements</span></Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/chat"><MessageSquare className="mr-2 h-4 w-4" /><span>Messages</span></Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/admin/players"><Users className="mr-2 h-4 w-4" /><span>Effectif</span></Link></DropdownMenuItem>
+                {role === 'coach' && (<DropdownMenuItem asChild><Link href="/admin/opponents"><Shield className="mr-2 h-4 w-4" /><span>Équipes adverses</span></Link></DropdownMenuItem>)}
+                <DropdownMenuSeparator />
+                {isLoggedIn ? (
+                    <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Se déconnecter</span></DropdownMenuItem>
+                ) : (
+                    <DropdownMenuItem onClick={() => setIsAuthOpen(true)}><ShieldCheck className="mr-2 h-4 w-4" /><span>Connexion</span></DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
     </>
