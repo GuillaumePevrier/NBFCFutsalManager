@@ -2,6 +2,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+// Client standard pour les opérations côté serveur avec les droits de l'utilisateur
 export function createClient() {
   const cookieStore = cookies()
 
@@ -34,4 +35,24 @@ export function createClient() {
       },
     }
   )
+}
+
+
+// Client privilégié pour les opérations d'administration (création/suppression d'utilisateurs)
+// qui nécessitent la clé de service role.
+export function createAdminClient() {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables.");
+    }
+
+    return createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
+        }
+    );
 }

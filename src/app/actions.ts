@@ -1,7 +1,7 @@
 
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { Player, Opponent, Match, Training, Channel, Message, PushSubscription } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -115,6 +115,7 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
 
 export async function createPlayer(formData: FormData) {
   const supabase = createClient();
+  const supabaseAdmin = createAdminClient();
   
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -124,7 +125,7 @@ export async function createPlayer(formData: FormData) {
 
   // 1. Create Auth user if email and password are provided
   if (email && password) {
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
       email_confirm: true, // Auto-confirm email
@@ -140,7 +141,7 @@ export async function createPlayer(formData: FormData) {
   // 2. Create player profile
   const playerData = {
       name: name,
-      email: email,
+      email: email || null,
       user_id: authUserId, // Link to auth user
       team: formData.get('team'),
       position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
@@ -157,7 +158,7 @@ export async function createPlayer(formData: FormData) {
     console.error("Failed to create player profile:", error);
     // If player creation fails, delete the auth user to avoid orphans
     if (authUserId) {
-      await supabase.auth.admin.deleteUser(authUserId);
+      await supabaseAdmin.auth.admin.deleteUser(authUserId);
     }
     return { error: { message: "Impossible de créer le profil joueur : " + error.message } };
   }
@@ -169,6 +170,8 @@ export async function createPlayer(formData: FormData) {
 
 export async function updatePlayer(formData: FormData) {
   const supabase = createClient();
+  const supabaseAdmin = createAdminClient();
+  
   const playerId = formData.get('id') as string;
   const newEmail = formData.get('email') as string;
   const newPassword = formData.get('password') as string; // Optional new password
@@ -191,7 +194,7 @@ export async function updatePlayer(formData: FormData) {
 
   // Scenario 1: Player has an auth account, and email is being changed.
   if (authUserId && newEmail && newEmail !== existingPlayer.email) {
-      const { error: updateUserError } = await supabase.auth.admin.updateUserById(authUserId, { email: newEmail });
+      const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, { email: newEmail });
       if (updateUserError) {
           return { error: { message: "Failed to update auth user email: " + updateUserError.message }};
       }
@@ -199,7 +202,7 @@ export async function updatePlayer(formData: FormData) {
 
   // Scenario 2: Player exists but has no auth account, and a new email and password are provided.
   if (!authUserId && newEmail && newPassword) {
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: newEmail,
           password: newPassword,
           email_confirm: true,
@@ -213,20 +216,20 @@ export async function updatePlayer(formData: FormData) {
   
   // Scenario 3: User has an auth account and a new password is provided
   if(authUserId && newPassword){
-      const { error: passwordError } = await supabase.auth.admin.updateUserById(authUserId, { password: newPassword });
+      const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, { password: newPassword });
       if(passwordError){
            return { error: { message: "Failed to update password: " + passwordError.message }};
       }
   }
 
-  const playerData = {
-      name: formData.get('name'),
-      email: newEmail,
+  const playerData: Partial<Player> = {
+      name: formData.get('name') as string,
+      email: newEmail || null,
       user_id: authUserId, // Update user_id in case it was just created
-      team: formData.get('team'),
-      position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
-      preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot'),
-      avatar_url: formData.get('avatar_url'),
+      team: formData.get('team') as 'D1' | 'D2' | 'Autre',
+      position: formData.get('position') === 'unspecified' ? '' : formData.get('position') as Player['position'],
+      preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot') as Player['preferred_foot'],
+      avatar_url: formData.get('avatar_url') as string,
   };
 
   const { error } = await supabase
@@ -247,6 +250,7 @@ export async function updatePlayer(formData: FormData) {
 
 export async function deletePlayer(playerId: string) {
     const supabase = createClient();
+    const supabaseAdmin = createAdminClient();
     
     // First, find the player to get their user_id
     const { data: player, error: fetchError } = await supabase
@@ -262,7 +266,7 @@ export async function deletePlayer(playerId: string) {
 
     // If an associated auth user exists, delete it.
     if (player.user_id) {
-        const { error: authError } = await supabase.auth.admin.deleteUser(player.user_id);
+        const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(player.user_id);
         if (authError) {
             console.error(`Failed to delete auth user ${player.user_id}:`, authError);
             // Non-fatal, we can still try to delete the player profile
@@ -873,7 +877,7 @@ export async function sendPushNotification(userId: string, payload: Notification
     }
 
     // This action must use the service role key to bypass RLS and read subscriptions.
-    const supabase = createClient();
+    const supabase = createAdminClient();
     
     const { data: subscriptions, error: fetchError } = await supabase
         .from('push_subscriptions')
@@ -914,7 +918,7 @@ export async function sendPushNotification(userId: string, payload: Notification
 
 
 export async function sendNotificationToAllPlayers(payload: NotificationPayload) {
-    const supabase = createClient();
+    const supabase = createAdminClient();
 
     // 1. Get all player user_ids that are not null
     const { data: players, error: playersError } = await supabase
