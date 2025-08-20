@@ -1,5 +1,4 @@
 
-
 export interface Player {
   id: string; // uuid
   user_id?: string; // uuid, foreign key to auth.users
@@ -172,5 +171,5 @@ export interface Message {
     content: string;
     user_id: string;
     channel_id: string;
-    sender?: Pick<Player, 'id' | 'name' | 'avatar_url'>; // Not in DB, but useful for UI
+    sender?: Pick<Player, 'id' | 'name' | 'avatar_url' | 'user_id'>; // Added user_id
 }

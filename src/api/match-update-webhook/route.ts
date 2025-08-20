@@ -2,29 +2,46 @@
 // src/app/api/match-update-webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { sendOneSignalNotification, type SendOneSignalNotificationInput } from '@/ai/flows/send-onesignal-notification';
-import type { Match } from '@/lib/types';
+import type { Match, Message } from '@/lib/types';
+import { createClient } from '@/lib/supabase/server';
 
-interface WebhookPayload {
+type EventType = 'INSERT' | 'UPDATE' | 'DELETE';
+
+interface MatchWebhookPayload {
   type: 'UPDATE';
-  table: string;
+  table: 'matches';
   record: Match;
   old_record: Match;
   schema: 'public';
 }
 
-// Fonction pour déterminer le type d'événement et construire le message de notification
-function getNotificationForUpdate(oldData: Match, newData: Match): SendOneSignalNotificationInput | null {
+interface MessageWebhookPayload {
+    type: 'INSERT';
+    table: 'messages';
+    record: Message;
+    old_record: {};
+    schema: 'public';
+}
+
+type WebhookPayload = MatchWebhookPayload | MessageWebhookPayload;
+
+
+// ========== Notification Handlers ==========
+
+function getNotificationForMatchUpdate(oldData: Match, newData: Match): SendOneSignalNotificationInput | null {
   const opponent = newData.details.opponent || 'Adversaire';
   const oldScore = oldData.scoreboard;
   const newScore = newData.scoreboard;
+  const targetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}`;
+  const topic = `match-${newData.id}`;
 
-  // 1. Détection d'un but
   if (newScore.homeScore > oldScore.homeScore) {
     return {
       title: `BUT POUR NBFC FUTSAL !`,
       message: `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore} contre ${opponent}.`,
       type: 'goal',
-      matchId: newData.id
+      targetUrl,
+      topic,
     };
   }
   if (newScore.awayScore > oldScore.awayScore) {
@@ -32,58 +49,66 @@ function getNotificationForUpdate(oldData: Match, newData: Match): SendOneSignal
       title: `But pour ${opponent} !`,
       message: `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`,
       type: 'goal',
-      matchId: newData.id
+      targetUrl,
+      topic,
     };
   }
-
-  // 2. Détection d'une faute
-  if (newScore.homeFouls > oldScore.homeFouls) {
-    return {
-      title: `Faute pour NBFC Futsal`,
-      message: `L'équipe a maintenant commis ${newScore.homeFouls} fautes.`,
-      type: 'foul',
-      matchId: newData.id
-    };
-  }
-  if (newScore.awayFouls > oldScore.awayFouls) {
-    return {
-      title: `Faute pour ${opponent}`,
-      message: `L'équipe adverse a maintenant commis ${newScore.awayFouls} fautes.`,
-      type: 'foul',
-      matchId: newData.id
-    };
-  }
-  
-  // 3. Détection du début/fin de période (si on ajoute un statut au match plus tard)
-  // Exemple: if (newData.status === 'IN_PROGRESS' && oldData.status === 'NOT_STARTED') { ... }
 
   return null; // Pas de changement notable pour une notification
 }
 
 
+async function getNotificationForNewMessage(message: Message): Promise<SendOneSignalNotificationInput | null> {
+    const supabase = createClient();
+
+    // 1. Get sender's name from players table
+    const { data: sender, error: senderError } = await supabase
+        .from('players')
+        .select('name')
+        .eq('user_id', message.user_id)
+        .single();
+    
+    if (senderError || !sender) {
+        console.error('Could not find sender for new message notification:', senderError);
+        return null;
+    }
+    
+    // 2. Construct the notification payload
+    const targetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/chat/${message.channel_id}`;
+    const topic = `channel-${message.channel_id}`;
+
+    return {
+        title: `Nouveau message de ${sender.name}`,
+        message: message.content,
+        type: 'chat_message',
+        targetUrl,
+        topic,
+    };
+}
+
+
+// ========== Main Webhook Handler ==========
+
 export async function POST(req: NextRequest) {
   try {
-    // 1. Sécuriser le Webhook (recommandé)
-    // Idéalement, utilisez un secret partagé pour vérifier que la requête vient bien de Supabase
-    // const webhookSecret = process.env.SUPABASE_WEBHOOK_SECRET;
-    // if (req.headers.get('x-supabase-webhook-secret') !== webhookSecret) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-    
     const payload = (await req.json()) as WebhookPayload;
 
-    // 2. S'assurer que c'est bien un événement de mise à jour sur la table 'matches'
-    if (payload.type !== 'UPDATE' || payload.table !== 'matches') {
-      return NextResponse.json({ message: 'Ignored: Not a match update.' });
+    let notificationPayload: SendOneSignalNotificationInput | null = null;
+
+    // Route payload to the correct handler based on table and type
+    if (payload.table === 'matches' && payload.type === 'UPDATE') {
+        const { old_record: oldMatch, record: newMatch } = payload;
+        notificationPayload = getNotificationForMatchUpdate(oldMatch, newMatch);
+    } 
+    else if (payload.table === 'messages' && payload.type === 'INSERT') {
+        notificationPayload = await getNotificationForNewMessage(payload.record);
+    }
+    else {
+        return NextResponse.json({ message: 'Ignored: Event does not trigger a notification.' });
     }
 
-    const { old_record: oldMatch, record: newMatch } = payload;
-    
-    // 3. Déterminer si une notification doit être envoyée
-    const notificationPayload = getNotificationForUpdate(oldMatch, newMatch);
-
+    // Send notification if a payload was generated
     if (notificationPayload) {
-      // 4. Appeler le Flow Genkit pour envoyer la notification
       console.log('Sending notification:', notificationPayload);
       const result = await sendOneSignalNotification(notificationPayload);
 
