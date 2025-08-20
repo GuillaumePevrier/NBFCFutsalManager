@@ -722,5 +722,3 @@ export async function sendMessage(channelId: string, content: string): Promise<{
     // No need to revalidate path here, client will get update via realtime
     return { success: true };
 }
-
-    

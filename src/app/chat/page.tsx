@@ -47,12 +47,12 @@ export default function ChatPage() {
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'channels' },
-                () => fetchUserAndChannels()
+                 () => fetchUserAndChannels()
             )
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'channel_participants' },
-                () => fetchUserAndChannels()
+                 () => fetchUserAndChannels()
             )
             .subscribe();
 
