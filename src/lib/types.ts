@@ -2,6 +2,7 @@
 
 export interface Player {
   id: string; // uuid
+  user_id?: string; // uuid, foreign key to auth.users
   name: string;
   email?: string;
   age?: number;

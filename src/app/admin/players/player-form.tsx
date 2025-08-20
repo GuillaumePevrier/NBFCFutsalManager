@@ -59,9 +59,15 @@ export function PlayerForm({ player }: { player?: Player }) {
                 </CardHeader>
                 <CardContent>
                     <form action={formAction} className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Nom complet</Label>
-                            <Input id="name" name="name" defaultValue={player?.name} required />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div className="space-y-2">
+                                <Label htmlFor="name">Nom complet</Label>
+                                <Input id="name" name="name" defaultValue={player?.name} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email de connexion</Label>
+                                <Input id="email" name="email" type="email" defaultValue={player?.email || ''} placeholder="email@exemple.com" />
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">

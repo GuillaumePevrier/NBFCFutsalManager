@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server';
 import type { Player, Opponent, Match, Training } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { z } from 'zod';
 
 
 // Auth Actions
@@ -109,6 +108,7 @@ export async function createPlayer(formData: FormData) {
   
   const playerData = {
       name: formData.get('name'),
+      email: formData.get('email'),
       team: formData.get('team'),
       position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
       preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot'),
@@ -140,6 +140,7 @@ export async function updatePlayer(formData: FormData) {
 
   const playerData = {
       name: formData.get('name'),
+      email: formData.get('email'),
       team: formData.get('team'),
       position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
       preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot'),
@@ -481,29 +482,15 @@ export async function deleteOpponent(opponentId: string) {
 
 
 // Training related actions
-const TrainingSchema = z.object({
-  title: z.string().min(3, "Le titre doit contenir au moins 3 caractères."),
-  date: z.string().min(1, "La date est requise."),
-  time: z.string().min(1, "L'heure est requise."),
-  location: z.string().optional(),
-  description: z.string().optional(),
-});
-
-
 export async function createTraining(formData: FormData) {
   const supabase = createClient();
   
-  const values = Object.fromEntries(formData.entries());
-  const validatedFields = TrainingSchema.safeParse(values);
-
-  if (!validatedFields.success) {
-      return {
-          error: validatedFields.error.flatten().fieldErrors,
-      };
-  }
-
   const trainingData = {
-      ...validatedFields.data,
+      title: formData.get('title'),
+      date: formData.get('date'),
+      time: formData.get('time'),
+      location: formData.get('location'),
+      description: formData.get('description'),
       poll: { status: 'inactive', availabilities: [], deadline: null }
   };
 
