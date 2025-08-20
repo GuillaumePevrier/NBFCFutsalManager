@@ -268,7 +268,7 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
 
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
-    revalidatePath('/match/*`);
+    revalidatePath('/match/*');
     revalidatePath('/trainings');
     
     return { success: true };
@@ -419,7 +419,7 @@ export async function getOpponentById(opponentId: string): Promise<Opponent | nu
     const supabase = createClient();
     const { data, error } = await supabase
       .from('opponents')
-      .select('*
+      .select('*')
       .eq('id', opponentId)
       .single();
       
@@ -722,3 +722,5 @@ export async function sendMessage(channelId: string, content: string): Promise<{
     // No need to revalidate path here, client will get update via realtime
     return { success: true };
 }
+
+    
