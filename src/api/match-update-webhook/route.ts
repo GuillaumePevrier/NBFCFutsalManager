@@ -3,7 +3,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Match, Message, Player } from '@/lib/types';
 import { createClient } from '@/lib/supabase/server';
-import { sendPushNotification } from '@/app/actions';
+import { sendPushNotification, sendNotificationToAllPlayers } from '@/app/actions';
 
 type EventType = 'INSERT' | 'UPDATE' | 'DELETE';
 
@@ -34,21 +34,37 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
   const newScore = newData.scoreboard;
   
   let title: string | null = null;
-  let message: string | null = null;
+  let body: string | null = null;
 
+  // --- Goal Notification ---
   if (newScore.homeScore > oldScore.homeScore) {
     title = `BUT POUR NBFC FUTSAL !`;
-    message = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore} contre ${opponent}.`;
+    body = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore} contre ${opponent}.`;
   } else if (newScore.awayScore > oldScore.awayScore) {
     title = `But pour ${opponent} !`;
-    message = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`;
+    body = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`;
+  }
+  if (title && body) {
+    await sendNotificationToAllPlayers({
+      title,
+      body,
+      icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+      tag: `match-goal-${newData.id}`,
+      data: { url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}` }
+    });
   }
 
-  if (title && message) {
-    // This logic needs to be adapted: who should receive a goal notification?
-    // All users? All players? For now, we won't send a push notification here
-    // until we have a clear recipient list.
-    console.log(`Goal detected, but push notification sending is paused. Title: ${title}`);
+  // --- Poll Started Notification ---
+  const oldPollStatus = oldData.details?.poll?.status;
+  const newPollStatus = newData.details?.poll?.status;
+  if (oldPollStatus === 'inactive' && newPollStatus === 'active') {
+    await sendNotificationToAllPlayers({
+      title: `Convocation pour le match`,
+      body: `Répondez au sondage pour le match contre ${opponent} le ${new Date(newData.details.date).toLocaleDateString('fr-FR')}.`,
+      icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+      tag: `match-poll-${newData.id}`,
+      data: { url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}` }
+    });
   }
 }
 
@@ -85,7 +101,7 @@ async function handleNewMessage(newMessage: Message) {
     const notificationPayload = {
         title: `Nouveau message de ${senderName}`,
         body: newMessage.content,
-        icon: '/icon-192x192.png',
+        icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
         tag: newMessage.channel_id, // Tag groups notifications for the same chat
         data: {
             url: `${process.env.NEXT_PUBLIC_BASE_URL}/chat/${newMessage.channel_id}`

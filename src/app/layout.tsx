@@ -4,6 +4,7 @@
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { useEffect } from 'react';
 
 
 export default function RootLayout({
@@ -11,6 +12,31 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  useEffect(() => {
+    // Clear the app badge when the app is opened or becomes visible
+    const clearBadge = () => {
+      if (navigator.clearAppBadge) {
+        navigator.clearAppBadge();
+      }
+    };
+    
+    // Clear badge on initial load
+    clearBadge();
+    
+    // Clear badge when the tab becomes visible again
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        clearBadge();
+      }
+    });
+
+    // Clean up the event listener
+    return () => {
+      document.removeEventListener('visibilitychange', clearBadge);
+    };
+
+  }, []);
 
   return (
     <html lang="fr" suppressHydrationWarning>

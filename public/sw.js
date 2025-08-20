@@ -1,50 +1,64 @@
-
 // public/sw.js
 
 self.addEventListener('push', (event) => {
+  if (!event.data) {
+    console.error('Push event but no data');
+    return;
+  }
+  
   const data = event.data.json();
-  const title = data.title || "Nouvelle Notification";
+  const title = data.title || 'NBFC Futsal';
   const options = {
     body: data.body,
-    icon: data.icon || '/icon-192x192.png',
-    badge: '/badge-72x72.png',
-    tag: data.tag,
+    icon: data.icon || '/icon-192x192.png', // Default icon
+    badge: '/badge-72x72.png', // Icon for the notification bar (monochrome)
+    tag: data.tag, // Group notifications
     data: {
-      url: data.data?.url // Passer l'URL de redirection
+      url: data.data?.url // URL to open on click
     }
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+
+  // Show notification
+  const notificationPromise = self.registration.showNotification(title, options);
+  
+  // Set the badge on the app icon
+  if (navigator.setAppBadge) {
+    // We don't know the exact count, so we just show a dot by incrementing.
+    // The badge is cleared when the app is opened.
+    navigator.setAppBadge(); 
+  }
+
+  event.waitUntil(notificationPromise);
 });
 
 
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
+  event.notification.close(); // Close the notification
 
   const urlToOpen = event.notification.data?.url || '/';
 
-  event.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    }).then((clientList) => {
-      // Si un client (onglet) de l'application est déjà ouvert, le focus
-      if (clientList.length > 0) {
-        for (const client of clientList) {
-            // Vérifier si le client est sur la bonne page, sinon naviguer
-            if (client.url === urlToOpen && 'focus' in client) {
-                return client.focus();
-            }
-        }
-        // Si aucun client n'est sur la bonne page, en prendre un et le naviguer
-        if (clientList[0].navigate && 'focus' in clientList[0]) {
-            clientList[0].navigate(urlToOpen);
-            return clientList[0].focus();
-        }
+  // This looks at all open tabs and focuses the one that matches the URL,
+  // otherwise it opens a new tab.
+  const promiseChain = clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true
+  }).then((windowClients) => {
+    let matchingClient = null;
+
+    for (let i = 0; i < windowClients.length; i++) {
+      const windowClient = windowClients[i];
+      if (windowClient.url === urlToOpen) {
+        matchingClient = windowClient;
+        break;
       }
-      // Sinon, ouvrir un nouvel onglet
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
-  );
+    }
+
+    if (matchingClient) {
+      return matchingClient.focus();
+    } else {
+      return clients.openWindow(urlToOpen);
+    }
+  });
+
+  event.waitUntil(promiseChain);
 });

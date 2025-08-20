@@ -24,6 +24,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import AvailabilityDialog from './AvailabilityDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from '@/lib/utils';
+import { sendNotificationToAllPlayers } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 interface MatchPollProps {
   poll: MatchPoll;
@@ -85,6 +87,7 @@ const Countdown = ({ deadline, isActive }: { deadline: string | null; isActive: 
 export default function MatchPollComponent({ poll, allPlayers, onPollChange, onPlayerResponse, role }: MatchPollProps) {
   const [deadlineHours, setDeadlineHours] = useState(24);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const { toast } = useToast();
 
   const handleStartPoll = () => {
     if (deadlineHours <= 0) return;
@@ -100,6 +103,12 @@ export default function MatchPollComponent({ poll, allPlayers, onPollChange, onP
       status: 'active',
       deadline: deadline.toISOString(),
       availabilities: initialAvailabilities,
+    });
+    
+    // Note: The notification is now sent via the webhook by detecting the status change.
+    toast({
+        title: "Sondage Démarré !",
+        description: "Une notification de convocation sera envoyée à tous les joueurs."
     });
   };
   

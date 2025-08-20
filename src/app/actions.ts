@@ -844,3 +844,26 @@ export async function sendPushNotification(userId: string, payload: Notification
 
     return { success: true };
 }
+
+
+export async function sendNotificationToAllPlayers(payload: NotificationPayload) {
+    const supabase = createClient();
+
+    // 1. Get all player user_ids that are not null
+    const { data: players, error: playersError } = await supabase
+        .from('players')
+        .select('user_id')
+        .not('user_id', 'is', null);
+
+    if (playersError) {
+        console.error('Could not get players for broadcast notification:', playersError);
+        return;
+    }
+
+    // 2. Send notification to each player
+    for (const player of players) {
+        if (player.user_id) {
+            await sendPushNotification(player.user_id, payload);
+        }
+    }
+}
