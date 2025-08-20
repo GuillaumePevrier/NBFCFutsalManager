@@ -224,7 +224,7 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
 
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
-    revalidatePath('/match/*`); 
+    revalidatePath('/match/*'); 
     revalidatePath('/trainings');
     
     return { success: true };
@@ -557,5 +557,3 @@ export async function deleteTraining(trainingId: string): Promise<{ success: boo
   revalidatePath('/trainings');
   return { success: true };
 }
-
-    
