@@ -15,6 +15,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { signOut } from "@/app/actions";
 import AuthDialog from "./AuthDialog";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { ToastAction } from "./ui/toast";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -28,7 +29,7 @@ export default function Header({ children }: HeaderProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   
-  const { isSubscribed, subscribeToPush, unsubscribeFromPush, isLoading: isPushLoading } = usePushNotifications();
+  const { isSubscribed, subscribeToPush, unsubscribeFromPush, isLoading: isPushLoading, permissionStatus } = usePushNotifications();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -78,9 +79,15 @@ export default function Header({ children }: HeaderProps) {
         } else {
             setRole('player');
         }
-        // Attempt to subscribe to notifications after login
-        if(userIsLoggedIn && Notification.permission === 'granted') {
-           subscribeToPush();
+
+        // After authentication, check if we should prompt for notifications
+        if (userIsLoggedIn && permissionStatus === 'default') {
+            toast({
+                title: "Restez Connecté !",
+                description: "Activez les notifications pour ne rien manquer des convocations et des scores.",
+                duration: 10000, // Keep it on screen longer
+                action: <ToastAction altText="Activer" onClick={() => subscribeToPush()}>Activer</ToastAction>,
+            });
         }
     };
     checkSession();

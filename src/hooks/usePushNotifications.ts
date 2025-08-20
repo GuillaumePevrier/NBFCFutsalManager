@@ -1,3 +1,4 @@
+
 // src/hooks/usePushNotifications.ts
 'use client';
 
@@ -22,11 +23,13 @@ export function usePushNotifications() {
   const { toast } = useToast();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function checkSubscription() {
+    async function checkSubscriptionAndPermission() {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
+        setPermissionStatus(Notification.permission);
         const swRegistration = await navigator.serviceWorker.ready;
         const sub = await swRegistration.pushManager.getSubscription();
         if (sub) {
@@ -36,7 +39,7 @@ export function usePushNotifications() {
       }
       setIsLoading(false);
     }
-    checkSubscription();
+    checkSubscriptionAndPermission();
   }, []);
 
   const subscribeToPush = async (): Promise<boolean> => {
@@ -58,6 +61,7 @@ export function usePushNotifications() {
       }
       
       const result = await savePushSubscription(sub.toJSON());
+      setPermissionStatus(Notification.permission);
 
       if (result.success) {
         toast({
@@ -77,6 +81,7 @@ export function usePushNotifications() {
       }
     } catch (error) {
       console.error("Failed to subscribe to push notifications", error);
+       setPermissionStatus(Notification.permission);
        toast({
         title: "Erreur",
         description: "L'activation des notifications a échoué. Avez-vous autorisé les notifications pour ce site ?",
@@ -116,6 +121,7 @@ export function usePushNotifications() {
   return {
     isSubscribed,
     isLoading,
+    permissionStatus,
     subscribeToPush,
     unsubscribeFromPush,
   };
