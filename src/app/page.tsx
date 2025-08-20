@@ -178,25 +178,27 @@ export default function Home() {
                                     <div className="absolute inset-0 h-full w-full">
                                         <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className={cn("object-cover opacity-80", card.objectPosition)} data-ai-hint={card.dataAiHint} />
                                     </div>
-                                     <div className="relative p-4 mt-auto flex-grow flex flex-col justify-end items-center">
-                                        {isActive && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.1 }}
-                                                onPointerDown={(e) => e.stopPropagation()}
-                                            >
-                                               <Button 
-                                                 size="sm" 
-                                                 variant="default" 
-                                                 className="bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                                                 onClick={() => handleCardClick(card)}
+                                    <div className="relative mt-auto flex-grow flex flex-col justify-end">
+                                        <div className="p-4 bg-gradient-to-t from-black/60 to-transparent">
+                                            {isActive && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.1 }}
+                                                    onPointerDown={(e) => e.stopPropagation()}
                                                 >
-                                                    {card.title}
-                                                    <ArrowRight className="w-4 h-4 ml-2" />
-                                                </Button>
-                                            </motion.div>
-                                        )}
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="default" 
+                                                    className="bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                                                    onClick={() => handleCardClick(card)}
+                                                    >
+                                                        {card.title}
+                                                        <ArrowRight className="w-4 h-4 ml-2" />
+                                                    </Button>
+                                                </motion.div>
+                                            )}
+                                        </div>
                                     </div>
                                 </CardContent>
                             </MotionCard>
