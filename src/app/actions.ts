@@ -169,16 +169,60 @@ export async function createPlayer(formData: FormData) {
 
 export async function updatePlayer(formData: FormData) {
   const supabase = createClient();
-  const playerId = formData.get('id');
+  const playerId = formData.get('id') as string;
+  const newEmail = formData.get('email') as string;
+  const newPassword = formData.get('password') as string; // Optional new password
 
   if (!playerId) {
-    console.error("Player ID is missing for update.");
     return { error: "Player ID is missing for update." };
   }
+  
+  const { data: existingPlayer, error: fetchError } = await supabase
+    .from('players')
+    .select('user_id, email')
+    .eq('id', playerId)
+    .single();
 
-  // L'email n'est pas modifiable depuis ce formulaire pour éviter la désynchronisation.
+  if (fetchError) {
+    return { error: "Could not find existing player." };
+  }
+
+  let authUserId = existingPlayer.user_id;
+
+  // Scenario 1: Player has an auth account, and email is being changed.
+  if (authUserId && newEmail && newEmail !== existingPlayer.email) {
+      const { error: updateUserError } = await supabase.auth.admin.updateUserById(authUserId, { email: newEmail });
+      if (updateUserError) {
+          return { error: "Failed to update auth user email: " + updateUserError.message };
+      }
+  }
+
+  // Scenario 2: Player exists but has no auth account, and a new email is provided.
+  if (!authUserId && newEmail && newPassword) {
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: newEmail,
+          password: newPassword,
+          email_confirm: true,
+      });
+
+      if (authError) {
+          return { error: "Failed to create new auth user: " + authError.message };
+      }
+      authUserId = authData.user.id;
+  }
+  
+  // Scenario 3: User has an auth account and a new password is provided
+  if(authUserId && newPassword){
+      const { error: passwordError } = await supabase.auth.admin.updateUserById(authUserId, { password: newPassword });
+      if(passwordError){
+           return { error: "Failed to update password: " + passwordError.message };
+      }
+  }
+
   const playerData = {
       name: formData.get('name'),
+      email: newEmail,
+      user_id: authUserId, // Update user_id in case it was just created
       team: formData.get('team'),
       position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
       preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot'),
@@ -203,6 +247,29 @@ export async function updatePlayer(formData: FormData) {
 
 export async function deletePlayer(playerId: string) {
     const supabase = createClient();
+    
+    // First, find the player to get their user_id
+    const { data: player, error: fetchError } = await supabase
+        .from('players')
+        .select('user_id')
+        .eq('id', playerId)
+        .single();
+
+    if (fetchError) {
+        console.error(`Failed to find player ${playerId} for deletion:`, fetchError);
+        return { error: "Joueur non trouvé." };
+    }
+
+    // If an associated auth user exists, delete it.
+    if (player.user_id) {
+        const { error: authError } = await supabase.auth.admin.deleteUser(player.user_id);
+        if (authError) {
+            console.error(`Failed to delete auth user ${player.user_id}:`, authError);
+            // Non-fatal, we can still try to delete the player profile
+        }
+    }
+    
+    // Then, delete the player profile. This will cascade and delete related entries.
     const { error } = await supabase
         .from('players')
         .delete()
@@ -919,5 +986,3 @@ export async function linkProfile(playerId: string, userId: string): Promise<{ s
     revalidatePath('/');
     return { success: true };
 }
-
-    

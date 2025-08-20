@@ -1,7 +1,7 @@
 
 'use client'
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, View } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -34,6 +34,10 @@ export function PlayerActions({ player }: { player: Player }) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => router.push(`/player/${player.id}`)}>
+                        <View className="mr-2 h-4 w-4" />
+                        Voir la fiche
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push(`/admin/players/${player.id}/edit`)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Modifier
@@ -51,7 +55,7 @@ export function PlayerActions({ player }: { player: Player }) {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Cette action est irréversible. Le joueur <span className="font-bold">{player.name}</span> et toutes ses statistiques seront définitivement supprimés.
+                        Cette action est irréversible. Le joueur <span className="font-bold">{player.name}</span>, son compte de connexion et toutes ses statistiques seront définitivement supprimés.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

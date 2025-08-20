@@ -126,22 +126,23 @@ export function PlayerForm({ player }: { player?: Player }) {
                          <Separator className="my-6" />
                          <div className="space-y-4">
                             <h3 className="text-lg font-semibold flex items-center gap-2"><KeyRound/> Compte Utilisateur</h3>
-                            <p className="text-sm text-muted-foreground">
+                             <p className="text-sm text-muted-foreground">
                                 {isEditing 
-                                    ? "L'email de connexion du joueur. Il ne peut pas être modifié après la création." 
+                                    ? "Ajoutez ou modifiez l'email de connexion. Si le joueur n'a pas encore de compte, ajoutez un email et un mot de passe pour lui en créer un."
                                     : "Créez un compte pour que ce joueur puisse se connecter. Laissez les champs vides si non nécessaire."
                                 }
                             </p>
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email de connexion</Label>
-                                <Input id="email" name="email" type="email" defaultValue={player?.email || ''} placeholder="email@exemple.com" disabled={isEditing && !!player?.email} />
+                                <Input id="email" name="email" type="email" defaultValue={player?.email || ''} placeholder="email@exemple.com" />
                             </div>
-                            {!isEditing && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="password">Mot de passe initial</Label>
-                                    <Input id="password" name="password" type="password" />
-                                </div>
-                            )}
+                           
+                            <div className="space-y-2">
+                                <Label htmlFor="password">
+                                    {isEditing ? "Nouveau mot de passe (optionnel)" : "Mot de passe initial"}
+                                </Label>
+                                <Input id="password" name="password" type="password" />
+                            </div>
                          </div>
 
                     </CardContent>
