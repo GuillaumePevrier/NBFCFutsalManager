@@ -4,18 +4,98 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Bell, Loader2, Users } from "lucide-react";
+import { ArrowLeft, Bell, Loader2, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { Role, Player } from "@/lib/types";
+import type { Role } from "@/lib/types";
 import Header from "@/components/Header";
 import AuthDialog from '@/components/AuthDialog';
 import { useRouter } from 'next/navigation';
-import { getSubscribers, type Subscriber } from '@/app/actions';
+import { getSubscribers, sendNotificationToAllPlayers, type Subscriber } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { useFormStatus } from 'react-dom';
+
+
+function ManualNotificationForm() {
+    const { toast } = useToast();
+
+    async function formAction(formData: FormData) {
+        const payload = {
+            title: formData.get('title') as string,
+            body: formData.get('body') as string,
+            icon: formData.get('icon') as string || 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+            data: {
+                url: formData.get('url') as string || `${process.env.NEXT_PUBLIC_BASE_URL}`
+            }
+        };
+
+        if (!payload.title || !payload.body) {
+            toast({ title: "Champs requis", description: "Le titre et le message sont obligatoires.", variant: "destructive" });
+            return;
+        }
+
+        await sendNotificationToAllPlayers(payload);
+
+        toast({
+            title: "Notification en cours d'envoi",
+            description: "La notification est en train d'être envoyée à tous les abonnés."
+        });
+        
+        // Reset the form
+        const form = document.getElementById('manual-notification-form') as HTMLFormElement;
+        form.reset();
+    }
+    
+    function SubmitButton() {
+        const { pending } = useFormStatus();
+        return (
+            <Button type="submit" disabled={pending} className="w-full">
+                {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                Envoyer à tous les abonnés
+            </Button>
+        )
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Envoyer une Notification Manuelle</CardTitle>
+                <CardDescription>
+                    Envoyez un message personnalisé à tous les joueurs abonnés.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form id="manual-notification-form" action={formAction} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Titre</Label>
+                        <Input id="title" name="title" placeholder="Ex: Rappel entraînement" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="body">Message</Label>
+                        <Textarea id="body" name="body" placeholder="Ex: N'oubliez pas vos gourdes ce soir !" required />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="icon">URL de l'icône (optionnel)</Label>
+                        <Input id="icon" name="icon" placeholder="Lien vers une image .png" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="url">URL cible (optionnel)</Label>
+                        <Input id="url" name="url" placeholder="Lien vers une page de l'app" />
+                    </div>
+                    <SubmitButton />
+                </form>
+            </CardContent>
+        </Card>
+    )
+}
+
 
 function SubscribersList({ subscribers }: { subscribers: Subscriber[] }) {
     const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
@@ -149,18 +229,8 @@ export default function NotificationsAdminPage() {
                         Tableau de bord des Notifications
                     </h1>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Envoyer une Notification Manuelle</CardTitle>
-                                <CardDescription>
-                                    Envoyez un message personnalisé à tous les joueurs abonnés.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground text-sm">Le formulaire de création sera ici.</p>
-                            </CardContent>
-                        </Card>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                        <ManualNotificationForm />
                         <SubscribersList subscribers={subscribers} />
                     </div>
                 </div>
