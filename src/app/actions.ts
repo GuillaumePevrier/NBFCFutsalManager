@@ -2,9 +2,19 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import type { Player, Opponent, Match, Training, Channel, Message } from '@/lib/types';
+import type { Player, Opponent, Match, Training, Channel, Message, PushSubscription } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import webpush from 'web-push';
+
+
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT) {
+    webpush.setVapidDetails(
+        process.env.VAPID_SUBJECT,
+        process.env.VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    );
+}
 
 
 // Auth Actions
@@ -719,5 +729,111 @@ export async function sendMessage(channelId: string, content: string): Promise<{
     }
 
     // No need to revalidate path here, client will get update via realtime
+    return { success: true };
+}
+
+
+// Push Notification Actions
+
+export async function savePushSubscription(subscription: PushSubscription): Promise<{ success: boolean, error?: string }> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Utilisateur non authentifié." };
+    }
+
+    const { error } = await supabase
+        .from('push_subscriptions')
+        .insert({
+            user_id: user.id,
+            endpoint: subscription.endpoint,
+            keys: subscription.keys,
+        });
+
+    if (error) {
+        // Handle potential duplicate endpoint error gracefully
+        if (error.code === '23505') { // Unique constraint violation
+            console.log(`Subscription with endpoint ${subscription.endpoint} already exists.`);
+            return { success: true };
+        }
+        console.error("Failed to save push subscription:", error);
+        return { success: false, error: error.message };
+    }
+
+    return { success: true };
+}
+
+
+export async function deletePushSubscription(endpoint: string): Promise<{ success: boolean, error?: string }> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+        // Can be called on logout, so no user is expected.
+        // The RLS policy will prevent unauthorized deletion.
+        return { success: true };
+    }
+
+    const { error } = await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('endpoint', endpoint);
+
+    if (error) {
+        console.error("Failed to delete push subscription:", error);
+        return { success: false, error: error.message };
+    }
+
+    return { success: true };
+}
+
+
+interface NotificationPayload {
+    title: string;
+    body: string;
+    icon?: string;
+    tag?: string;
+    url?: string;
+}
+
+export async function sendPushNotification(userId: string, payload: NotificationPayload): Promise<{ success: boolean, error?: any }> {
+    // This action must use the service role key to bypass RLS and read subscriptions.
+    const supabase = createClient();
+    
+    const { data: subscriptions, error: fetchError } = await supabase
+        .from('push_subscriptions')
+        .select('endpoint, keys')
+        .eq('user_id', userId);
+
+    if (fetchError) {
+        console.error("Failed to fetch push subscriptions for user:", userId, fetchError);
+        return { success: false, error: fetchError };
+    }
+
+    if (!subscriptions || subscriptions.length === 0) {
+        console.log(`No push subscriptions found for user ${userId}.`);
+        return { success: true }; // Not an error
+    }
+
+    const notificationPromises = subscriptions.map(s => {
+        const sub: webpush.PushSubscription = {
+            endpoint: s.endpoint,
+            keys: s.keys as { p256dh: string; auth: string; },
+        };
+        
+        return webpush.sendNotification(sub, JSON.stringify(payload)).catch(err => {
+            console.error(`Failed to send notification to ${s.endpoint}. Status: ${err.statusCode}. Body: ${err.body}`);
+            // If subscription is expired or invalid, we should remove it from the DB.
+            if (err.statusCode === 404 || err.statusCode === 410) {
+                console.log(`Subscription expired or invalid. Deleting...`);
+                // Fire-and-forget deletion
+                deletePushSubscription(s.endpoint);
+            }
+        });
+    });
+
+    await Promise.all(notificationPromises);
+
     return { success: true };
 }

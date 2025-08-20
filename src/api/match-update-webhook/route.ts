@@ -1,8 +1,10 @@
 
+
 // src/app/api/match-update-webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Match, Message, Player } from '@/lib/types';
 import { createClient } from '@/lib/supabase/server';
+import { sendPushNotification } from '@/app/actions';
 
 type EventType = 'INSERT' | 'UPDATE' | 'DELETE';
 
@@ -25,6 +27,77 @@ interface MessageWebhookPayload {
 type WebhookPayload = MatchWebhookPayload | MessageWebhookPayload;
 
 
+// ========== Notification Logic ==========
+
+async function handleMatchUpdate(oldData: Match, newData: Match) {
+  const opponent = newData.details.opponent || 'Adversaire';
+  const oldScore = oldData.scoreboard;
+  const newScore = newData.scoreboard;
+  
+  let title: string | null = null;
+  let message: string | null = null;
+
+  if (newScore.homeScore > oldScore.homeScore) {
+    title = `BUT POUR NBFC FUTSAL !`;
+    message = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore} contre ${opponent}.`;
+  } else if (newScore.awayScore > oldScore.awayScore) {
+    title = `But pour ${opponent} !`;
+    message = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`;
+  }
+
+  if (title && message) {
+    // This logic needs to be adapted: who should receive a goal notification?
+    // All users? All players? For now, we won't send a push notification here
+    // until we have a clear recipient list.
+    console.log(`Goal detected, but push notification sending is paused. Title: ${title}`);
+  }
+}
+
+
+async function handleNewMessage(newMessage: Message) {
+    const supabase = createClient();
+
+    // 1. Find the sender's name
+    const { data: senderData, error: senderError } = await supabase
+        .from('players')
+        .select('name')
+        .eq('user_id', newMessage.user_id)
+        .single();
+    
+    if (senderError) {
+        console.error('Could not find sender for new message notification:', senderError);
+        return;
+    }
+    const senderName = senderData.name;
+
+    // 2. Find all participants of the channel EXCEPT the sender
+    const { data: participants, error: participantsError } = await supabase
+        .from('channel_participants')
+        .select('user_id')
+        .eq('channel_id', newMessage.channel_id)
+        .neq('user_id', newMessage.user_id);
+    
+    if (participantsError) {
+        console.error('Could not find participants for new message notification:', participantsError);
+        return;
+    }
+
+    // 3. Send a notification to each participant
+    const notificationPayload = {
+        title: `Nouveau message de ${senderName}`,
+        body: newMessage.content,
+        icon: '/icon-192x192.png',
+        tag: newMessage.channel_id, // Tag groups notifications for the same chat
+        url: `/chat/${newMessage.channel_id}`
+    };
+
+    for (const participant of participants) {
+        console.log(`Sending notification to user ${participant.user_id}`);
+        await sendPushNotification(participant.user_id, notificationPayload);
+    }
+}
+
+
 // ========== Main Webhook Handler ==========
 
 export async function POST(req: NextRequest) {
@@ -34,18 +107,16 @@ export async function POST(req: NextRequest) {
     console.log('Webhook received for table:', payload.table, 'type:', payload.type);
 
     if (payload.table === 'matches' && payload.type === 'UPDATE') {
-        const { old_record: oldMatch, record: newMatch } = payload;
-        // TODO: Handle match update notification logic here with the new system
+        await handleMatchUpdate(payload.old_record, payload.record);
     } 
     else if (payload.table === 'messages' && payload.type === 'INSERT') {
-        const newMessage = payload.record;
-        // TODO: Handle new message notification logic here with the new system
+        await handleNewMessage(payload.record);
     }
     else {
         return NextResponse.json({ message: 'Ignored: Event does not trigger a notification.' });
     }
 
-    return NextResponse.json({ message: 'Webhook received, but notification sending is pending new implementation.' });
+    return NextResponse.json({ message: 'Webhook processed.' });
 
   } catch (error) {
     console.error('Error processing webhook:', error);
