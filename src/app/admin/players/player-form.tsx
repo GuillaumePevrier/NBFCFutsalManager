@@ -63,6 +63,7 @@ export function PlayerForm({ player }: { player?: Player }) {
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground main-bg items-center justify-center p-4">
             <form action={formAction}>
+                {isEditing && <input type="hidden" name="id" value={player.id} />}
                 <Card className="w-full max-w-2xl">
                     <CardHeader>
                         <CardTitle>{isEditing ? `Modifier ${player.name}` : "Ajouter un nouveau joueur"}</CardTitle>
@@ -128,7 +129,7 @@ export function PlayerForm({ player }: { player?: Player }) {
                             <h3 className="text-lg font-semibold flex items-center gap-2"><KeyRound/> Compte Utilisateur</h3>
                              <p className="text-sm text-muted-foreground">
                                 {isEditing 
-                                    ? "Ajoutez ou modifiez l'email de connexion. Si le joueur n'a pas encore de compte, ajoutez un email et un mot de passe pour lui en créer un."
+                                    ? "Modifiez l'email ou le mot de passe. Si le joueur n'a pas encore de compte, ajoutez un email et un mot de passe pour lui en créer un."
                                     : "Créez un compte pour que ce joueur puisse se connecter. Laissez les champs vides si non nécessaire."
                                 }
                             </p>
@@ -141,7 +142,7 @@ export function PlayerForm({ player }: { player?: Player }) {
                                 <Label htmlFor="password">
                                     {isEditing ? "Nouveau mot de passe (optionnel)" : "Mot de passe initial"}
                                 </Label>
-                                <Input id="password" name="password" type="password" />
+                                <Input id="password" name="password" type="password" placeholder="Laisser vide pour ne pas changer" />
                             </div>
                          </div>
 

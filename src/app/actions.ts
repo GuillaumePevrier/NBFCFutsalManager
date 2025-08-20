@@ -174,7 +174,7 @@ export async function updatePlayer(formData: FormData) {
   const newPassword = formData.get('password') as string; // Optional new password
 
   if (!playerId) {
-    return { error: "Player ID is missing for update." };
+    return { error: { message: "Player ID is missing for update." }};
   }
   
   const { data: existingPlayer, error: fetchError } = await supabase
@@ -184,7 +184,7 @@ export async function updatePlayer(formData: FormData) {
     .single();
 
   if (fetchError) {
-    return { error: "Could not find existing player." };
+    return { error: { message: "Could not find existing player." }};
   }
 
   let authUserId = existingPlayer.user_id;
@@ -193,11 +193,11 @@ export async function updatePlayer(formData: FormData) {
   if (authUserId && newEmail && newEmail !== existingPlayer.email) {
       const { error: updateUserError } = await supabase.auth.admin.updateUserById(authUserId, { email: newEmail });
       if (updateUserError) {
-          return { error: "Failed to update auth user email: " + updateUserError.message };
+          return { error: { message: "Failed to update auth user email: " + updateUserError.message }};
       }
   }
 
-  // Scenario 2: Player exists but has no auth account, and a new email is provided.
+  // Scenario 2: Player exists but has no auth account, and a new email and password are provided.
   if (!authUserId && newEmail && newPassword) {
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: newEmail,
@@ -206,7 +206,7 @@ export async function updatePlayer(formData: FormData) {
       });
 
       if (authError) {
-          return { error: "Failed to create new auth user: " + authError.message };
+          return { error: { message: "Failed to create new auth user: " + authError.message }};
       }
       authUserId = authData.user.id;
   }
@@ -215,7 +215,7 @@ export async function updatePlayer(formData: FormData) {
   if(authUserId && newPassword){
       const { error: passwordError } = await supabase.auth.admin.updateUserById(authUserId, { password: newPassword });
       if(passwordError){
-           return { error: "Failed to update password: " + passwordError.message };
+           return { error: { message: "Failed to update password: " + passwordError.message }};
       }
   }
 
@@ -236,7 +236,7 @@ export async function updatePlayer(formData: FormData) {
 
   if (error) {
      console.error(`Failed to update player ${playerId}:`, error);
-    return { error: error.message };
+    return { error: { message: error.message } };
   }
 
   revalidatePath('/admin/players');
