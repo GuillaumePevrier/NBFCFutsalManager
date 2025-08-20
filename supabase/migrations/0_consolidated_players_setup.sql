@@ -91,7 +91,7 @@ FOR UPDATE
 USING (auth.role() = 'authenticated');
 
 
--- Politique de SUPPRESSION (DELETE) : Seuls les coachs authentifiés peuvent supprimer.
+-- Politique  (DELETE) : Seuls les coachs authentifiés peuvent supprimer.
 -- -----------------------------------------------------------------
 CREATE POLICY "Allow only authenticated coaches to delete players"
 ON public.players
