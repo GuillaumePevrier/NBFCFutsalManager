@@ -174,25 +174,25 @@ export default function Home() {
                                 )}
                                 style={isActive ? activeNeonStyle : inactiveNeonStyle}
                             >
-                                <CardContent className="flex flex-col h-full text-center p-0">
-                                    <div className="flex-grow h-3/5 flex items-center justify-center bg-black/20 relative">
+                                <CardContent className="flex flex-col h-full text-center p-0 relative">
+                                    <div className="absolute inset-0 h-full w-full">
                                         <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className={cn("object-cover opacity-80", card.objectPosition)} data-ai-hint={card.dataAiHint} />
                                     </div>
-                                    <div className="p-4 bg-gradient-to-t from-black/50 to-black/10 flex-grow h-2/5 flex flex-col justify-center items-center">
-                                        <h3 className="text-lg md:text-xl font-bold text-card-foreground tracking-wide">{card.title}</h3>
+                                     <div className="relative p-4 mt-auto flex-grow flex flex-col justify-end items-center">
                                         {isActive && (
                                             <motion.div
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.1 }}
                                                 onPointerDown={(e) => e.stopPropagation()}
                                             >
                                                <Button 
                                                  size="sm" 
                                                  variant="default" 
-                                                 className="mt-2 bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                                                 className="bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                                                  onClick={() => handleCardClick(card)}
                                                 >
-                                                    Accéder
+                                                    {card.title}
                                                     <ArrowRight className="w-4 h-4 ml-2" />
                                                 </Button>
                                             </motion.div>
