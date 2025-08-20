@@ -11,8 +11,10 @@ import { z } from 'zod';
 const SendOneSignalNotificationInputSchema = z.object({
   title: z.string().describe('The title of the notification.'),
   message: z.string().describe('The main content of the notification.'),
-  type: z.enum(['goal', 'foul', 'match_start', 'match_end', 'generic']).describe('The type of event triggering the notification.'),
-  matchId: z.string().uuid().describe('The ID of the match concerned by the notification.'),
+  type: z.enum(['goal', 'foul', 'match_start', 'match_end', 'generic', 'chat_message']).describe('The type of event triggering the notification.'),
+  targetUrl: z.string().url().describe('The URL to open when the notification is clicked.'),
+  // Optional topic for grouping notifications (e.g., per match or per channel)
+  topic: z.string().optional().describe('An optional topic to group notifications.'),
 });
 
 export type SendOneSignalNotificationInput = z.infer<typeof SendOneSignalNotificationInputSchema>;
@@ -36,20 +38,23 @@ const sendOneSignalNotificationFlow = ai.defineFlow(
       return { success: false };
     }
 
-    console.log(`Attempting to send notification for match ${input.matchId}: "${input.title}"`);
+    console.log(`Attempting to send notification for topic ${input.topic}: "${input.title}"`);
 
-    const notification = {
+    const notification: any = {
       app_id: appId,
-      included_segments: ["Subscribed Users"], // Sends to all subscribed users
+      included_segments: ["Subscribed Users"],
       headings: { en: input.title },
       contents: { en: input.message },
-      // URL à ouvrir au clic, pointe vers la page du match
-      web_url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${input.matchId}`,
-      // Regrouper les notifications par match pour éviter le spam
-      web_push_topic: `match-${input.matchId}`,
-      // Icône de but ou autre
-      chrome_web_icon: input.type === 'goal' ? `${process.env.NEXT_PUBLIC_BASE_URL}/goal-icon.png` : undefined,
+      web_url: input.targetUrl, 
+      web_push_topic: input.topic,
     };
+    
+    // Add specific icons for different notification types
+    if (input.type === 'goal') {
+        notification.chrome_web_icon = `${process.env.NEXT_PUBLIC_BASE_URL}/goal-icon.png`;
+    } else if (input.type === 'chat_message') {
+        notification.chrome_web_icon = `${process.env.NEXT_PUBLIC_BASE_URL}/message-icon.png`;
+    }
     
     try {
       const response = await fetch('https://onesignal.com/api/v1/notifications', {

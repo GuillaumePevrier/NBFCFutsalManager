@@ -587,7 +587,6 @@ export async function getChannels(): Promise<Channel[]> {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return [];
 
-    // This RPC function will be created later. It's a placeholder for now.
     const { data, error } = await supabase.rpc('get_user_channels');
 
     if (error) {
@@ -595,7 +594,7 @@ export async function getChannels(): Promise<Channel[]> {
         return [];
     }
 
-    return data as any[] as Channel[];
+    return (data as any[] || []) as Channel[];
 }
 
 
@@ -673,7 +672,7 @@ export async function getMessages(channelId: string): Promise<Message[]> {
         .from('messages')
         .select(`
             *,
-            sender:players(id, name, avatar_url)
+            sender:players(id, name, avatar_url, user_id)
         `)
         .eq('channel_id', channelId)
         .order('created_at', { ascending: true });
@@ -683,15 +682,15 @@ export async function getMessages(channelId: string): Promise<Message[]> {
         return [];
     }
 
-    // The sender relationship is based on user_id, so we need to match it correctly.
-    // Supabase JS v2 doesn't make this easy with nested selects on different columns.
-    // Let's manually correct the sender.
+    // The result from Supabase might be complex. We need to associate the correct player with each message.
+    // The relationship is message.user_id -> player.user_id
     const { data: players, error: playersError } = await supabase.from('players').select('id, name, avatar_url, user_id');
     if (playersError) {
-        return data as Message[]; // return messages without sender info if players fetch fails
+        console.error("Failed to fetch players for message sender mapping:", playersError);
+        return (data as Message[]).map(m => ({ ...m, sender: undefined })); // Return messages without sender info
     }
 
-    return (data as Message[]).map(message => ({
+    return (data as any[]).map((message: Message) => ({
         ...message,
         sender: players.find(p => p.user_id === message.user_id)
     }));
