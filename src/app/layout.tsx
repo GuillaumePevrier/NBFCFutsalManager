@@ -3,7 +3,6 @@
 
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import OneSignalProvider from '@/components/OneSignalProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 
 
@@ -41,7 +40,6 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-          <OneSignalProvider />
           {children}
           <Toaster />
         </ThemeProvider>
