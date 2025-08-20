@@ -58,7 +58,7 @@ export default function MatchesPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error && Object.keys(error).length > 0 && error.message) {
+      if (error) {
         console.error("Failed to fetch matches:", error);
         toast({ title: "Erreur", description: "Impossible de charger la liste des matchs.", variant: "destructive" });
       } else {
@@ -68,14 +68,15 @@ export default function MatchesPage() {
             venue: 'home', // default
             competition: 'amical', // default
             matchday: 1, // default
-            ...m.details,
+            ...(m.details || {}),
              poll: { // default poll structure nested in details
               status: 'inactive',
               deadline: null,
               availabilities: [],
-              ...(m.details.poll || {})
+              ...((m.details || {}).poll || {})
             }
           },
+          tacticsequences: m.tacticsequences || [],
         })));
       }
       setLoading(false);
