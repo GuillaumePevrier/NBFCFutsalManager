@@ -51,6 +51,7 @@ export default function AuthDialog({ isOpen, onOpenChange, onAuthenticated }: Au
         description: "Bienvenue !",
       });
       onAuthenticated();
+      onOpenChange(false);
     }
   };
 

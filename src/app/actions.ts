@@ -106,14 +106,37 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
 export async function createPlayer(formData: FormData) {
   const supabase = createClient();
   
+  const name = formData.get('name') as string;
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  
+  let authUserId: string | undefined = undefined;
+
+  // 1. Create Auth user if email and password are provided
+  if (email && password) {
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: email,
+      password: password,
+      email_confirm: true, // Auto-confirm email
+    });
+
+    if (authError) {
+      console.error("Failed to create auth user:", authError);
+      return { error: { message: "Impossible de créer le compte utilisateur : " + authError.message } };
+    }
+    authUserId = authData.user.id;
+  }
+  
+  // 2. Create player profile
   const playerData = {
-      name: formData.get('name'),
-      email: formData.get('email'),
+      name: name,
+      email: email,
+      user_id: authUserId, // Link to auth user
       team: formData.get('team'),
       position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
       preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot'),
       avatar_url: formData.get('avatar_url'),
-      points: 0 // Initialiser les points à 0
+      points: 0
   };
 
   const { error } = await supabase
@@ -121,13 +144,18 @@ export async function createPlayer(formData: FormData) {
     .insert([playerData]);
 
   if (error) {
-    console.error("Failed to create player:", error);
-    return { error: error.message };
+    console.error("Failed to create player profile:", error);
+    // If player creation fails, delete the auth user to avoid orphans
+    if (authUserId) {
+      await supabase.auth.admin.deleteUser(authUserId);
+    }
+    return { error: { message: "Impossible de créer le profil joueur : " + error.message } };
   }
 
   revalidatePath('/admin/players');
   redirect('/admin/players');
 }
+
 
 export async function updatePlayer(formData: FormData) {
   const supabase = createClient();

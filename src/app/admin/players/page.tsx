@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +13,7 @@ import { PlayerActions } from "./player-actions";
 import { createClient } from "@/lib/supabase/client";
 import type { Player, Role } from "@/lib/types";
 import Header from "@/components/Header";
-import CoachAuthDialog from '@/components/CoachAuthDialog';
+import AuthDialog from '@/components/AuthDialog';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import PointsScaleDialog from '@/components/PointsScaleDialog';
@@ -51,7 +52,7 @@ const getRankingBadge = (rank: number) => {
 export default function PlayersAdminPage() {
     const [players, setPlayers] = useState<Player[]>([]);
     const [role, setRole] = useState<Role>('player');
-    const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+    const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const supabase = createClient();
     const { toast } = useToast();
@@ -129,9 +130,9 @@ export default function PlayersAdminPage() {
         };
     }, [supabase]);
 
-    const onCoachLogin = () => {
+    const onAuthenticated = () => {
         setRole('coach');
-        setIsCoachAuthOpen(false);
+        setIsAuthOpen(false);
     }
     
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -139,7 +140,7 @@ export default function PlayersAdminPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
-            <Header onCoachClick={() => setIsCoachAuthOpen(true)}>
+            <Header onAuthClick={() => setIsAuthOpen(true)}>
                 <Button asChild variant="outline" size="sm">
                    <Link href="/" className="flex items-center">
                      <ArrowLeft className="mr-2 h-4 w-4" />
@@ -147,7 +148,7 @@ export default function PlayersAdminPage() {
                    </Link>
                  </Button>
             </Header>
-            <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
+            <AuthDialog isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} onAuthenticated={onAuthenticated} />
             <main className="flex-grow p-4 md:p-8 main-bg">
                 <div className="w-full max-w-5xl mx-auto">
                     <div className="flex justify-between items-center mb-6">

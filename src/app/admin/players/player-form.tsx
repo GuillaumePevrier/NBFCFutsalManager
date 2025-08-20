@@ -3,16 +3,16 @@
 
 import { useFormStatus } from 'react-dom';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Player } from "@/lib/types";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Save, KeyRound } from "lucide-react";
 import { createPlayer, updatePlayer } from "@/app/actions";
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { z } from 'zod';
+import { Separator } from '@/components/ui/separator';
 
 export function PlayerForm({ player }: { player?: Player }) {
     const isEditing = !!player;
@@ -20,21 +20,31 @@ export function PlayerForm({ player }: { player?: Player }) {
 
     const formAction = async (formData: FormData) => {
         try {
+            let result;
             if (isEditing) {
                 formData.set('id', player.id);
-                await updatePlayer(formData);
+                result = await updatePlayer(formData);
             } else {
-                await createPlayer(formData);
+                result = await createPlayer(formData);
             }
-            const playerName = formData.get('name') || 'Le joueur';
+
+            if (result?.error) {
+                toast({
+                    title: "Erreur",
+                    description: result.error.message,
+                    variant: "destructive",
+                });
+            } else {
+                const playerName = formData.get('name') || 'Le joueur';
+                toast({
+                    title: isEditing ? "Joueur modifié" : "Joueur créé",
+                    description: `${playerName} a été ${isEditing ? 'mis à jour' : 'ajouté'}.`
+                });
+            }
+        } catch (error: any) {
             toast({
-                title: isEditing ? "Joueur modifié" : "Joueur créé",
-                description: `${playerName} a été ${isEditing ? 'mis à jour' : 'ajouté'}.`
-            });
-        } catch (error) {
-            toast({
-                title: "Erreur",
-                description: "Une erreur est survenue.",
+                title: "Erreur inattendue",
+                description: error.message || "Une erreur est survenue.",
                 variant: "destructive",
             });
         }
@@ -45,28 +55,28 @@ export function PlayerForm({ player }: { player?: Player }) {
         return (
             <Button type="submit" disabled={pending}>
                 {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? "Sauvegarder les modifications" : "Ajouter le joueur"}
+                {isEditing ? "Sauvegarder les modifications" : "Créer le Joueur"}
             </Button>
         );
     }
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground main-bg items-center justify-center p-4">
-            <Card className="w-full max-w-2xl">
-                <CardHeader>
-                    <CardTitle>{isEditing ? `Modifier ${player.name}` : "Ajouter un nouveau joueur"}</CardTitle>
-                    <CardDescription>Remplissez les informations ci-dessous.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form action={formAction} className="space-y-6">
+            <form action={formAction}>
+                <Card className="w-full max-w-2xl">
+                    <CardHeader>
+                        <CardTitle>{isEditing ? `Modifier ${player.name}` : "Ajouter un nouveau joueur"}</CardTitle>
+                        <CardDescription>Remplissez les informations du profil ci-dessous.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div className="space-y-2">
                                 <Label htmlFor="name">Nom complet</Label>
                                 <Input id="name" name="name" defaultValue={player?.name} required />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email de connexion</Label>
-                                <Input id="email" name="email" type="email" defaultValue={player?.email || ''} placeholder="email@exemple.com" />
+                                <Label htmlFor="avatar_url">URL de l'avatar</Label>
+                                <Input id="avatar_url" name="avatar_url" placeholder="https://..." defaultValue={player?.avatar_url || ''} />
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -99,38 +109,53 @@ export function PlayerForm({ player }: { player?: Player }) {
                                 </Select>
                             </div>
                         </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <div className="space-y-2">
-                                <Label htmlFor="preferred_foot">Pied Fort</Label>
-                                <Select name="preferred_foot" defaultValue={player?.preferred_foot || 'unspecified'}>
-                                    <SelectTrigger id="preferred_foot">
-                                        <SelectValue placeholder="Sélectionner le pied fort" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Droit">Droit</SelectItem>
-                                        <SelectItem value="Gauche">Gauche</SelectItem>
-                                        <SelectItem value="Ambidextre">Ambidextre</SelectItem>
-                                        <SelectItem value="unspecified">Non spécifié</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="avatar_url">URL de l'avatar</Label>
-                                <Input id="avatar_url" name="avatar_url" placeholder="https://..." defaultValue={player?.avatar_url || ''} />
-                            </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="preferred_foot">Pied Fort</Label>
+                            <Select name="preferred_foot" defaultValue={player?.preferred_foot || 'unspecified'}>
+                                <SelectTrigger id="preferred_foot">
+                                    <SelectValue placeholder="Sélectionner le pied fort" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Droit">Droit</SelectItem>
+                                    <SelectItem value="Gauche">Gauche</SelectItem>
+                                    <SelectItem value="Ambidextre">Ambidextre</SelectItem>
+                                    <SelectItem value="unspecified">Non spécifié</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <div className="flex justify-between items-center pt-4">
-                             <Button asChild variant="outline">
-                                <Link href="/admin/players">
-                                    <ArrowLeft className="mr-2 h-4 w-4" />
-                                    Annuler
-                                </Link>
-                             </Button>
-                            <SubmitButton />
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
+                         <Separator className="my-6" />
+                         <div className="space-y-4">
+                            <h3 className="text-lg font-semibold flex items-center gap-2"><KeyRound/> Compte Utilisateur</h3>
+                            <p className="text-sm text-muted-foreground">
+                                {isEditing 
+                                    ? "Modifiez l'email pour le compte de ce joueur." 
+                                    : "Créez un compte pour que ce joueur puisse se connecter. Laissez les champs vides si non nécessaire."
+                                }
+                            </p>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email de connexion</Label>
+                                <Input id="email" name="email" type="email" defaultValue={player?.email || ''} placeholder="email@exemple.com" />
+                            </div>
+                            {!isEditing && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Mot de passe initial</Label>
+                                    <Input id="password" name="password" type="password" />
+                                </div>
+                            )}
+                         </div>
+
+                    </CardContent>
+                    <CardFooter className="flex justify-between items-center pt-6">
+                         <Button asChild variant="outline">
+                            <Link href="/admin/players">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Annuler
+                            </Link>
+                         </Button>
+                        <SubmitButton />
+                    </CardFooter>
+                </Card>
+            </form>
         </div>
     );
 }

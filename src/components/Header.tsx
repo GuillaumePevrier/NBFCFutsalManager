@@ -16,25 +16,38 @@ import { signOut } from "@/app/actions";
 
 interface HeaderProps {
     children?: React.ReactNode;
-    onCoachClick?: () => void;
+    onAuthClick?: () => void;
 }
 
-export default function Header({ children, onCoachClick }: HeaderProps) {
+export default function Header({ children, onAuthClick }: HeaderProps) {
   const supabase = createClient();
   const { toast } = useToast();
   const router = useRouter();
   const [role, setRole] = useState<Role>('player');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const checkRole = async () => {
+    const checkSession = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        setRole(session ? 'coach' : 'player');
+        const userIsLoggedIn = !!session;
+        setIsLoggedIn(userIsLoggedIn);
+        // This is a simplified role check. You might want to have a more robust one.
+        if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'g.pevrier@gmail.com' )) {
+             setRole('coach');
+        } else {
+            setRole('player');
+        }
     };
-    checkRole();
+    checkSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-        const newRole = session ? 'coach' : 'player';
-        setRole(newRole);
+        const userIsLoggedIn = !!session;
+        setIsLoggedIn(userIsLoggedIn);
+         if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'g.pevrier@gmail.com')) {
+             setRole('coach');
+        } else {
+            setRole('player');
+        }
     });
 
     return () => {
@@ -44,7 +57,7 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
 
   const handleSignOut = async () => {
     await signOut();
-    toast({ title: "Déconnecté", description: "Vous êtes repassé en mode joueur." });
+    toast({ title: "Déconnexion", description: "Vous avez été déconnecté." });
     router.push('/');
   };
 
@@ -105,15 +118,15 @@ export default function Header({ children, onCoachClick }: HeaderProps) {
                 </DropdownMenuItem>
              )}
           <DropdownMenuSeparator />
-          {role === 'coach' ? (
+          {isLoggedIn ? (
               <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Se déconnecter</span>
               </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem onClick={onCoachClick}>
+            <DropdownMenuItem onClick={onAuthClick}>
                 <ShieldCheck className="mr-2 h-4 w-4" />
-                <span>Mode Coach</span>
+                <span>Connexion</span>
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>

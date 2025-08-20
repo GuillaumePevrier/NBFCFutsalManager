@@ -8,7 +8,7 @@ import { PlusCircle, Footprints, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
 import Link from 'next/link';
 import type { Training, Role, Player } from '@/lib/types';
-import CoachAuthDialog from '@/components/CoachAuthDialog';
+import AuthDialog from '@/components/AuthDialog';
 import { useToast } from '@/hooks/use-toast';
 import { getTrainings, getPlayers, updateTrainingPoll, incrementPlayerPoints, deleteTraining } from '@/app/actions';
 import CreateTrainingDialog from '@/components/CreateTrainingDialog';
@@ -20,7 +20,7 @@ export default function TrainingsPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<Role>('player');
-  const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -56,7 +56,7 @@ export default function TrainingsPage() {
     return () => {
         supabase.removeChannel(trainingChannel);
     }
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     const checkRole = async () => {
@@ -74,9 +74,9 @@ export default function TrainingsPage() {
     };
   }, [supabase.auth]);
 
-  const onCoachLogin = () => {
+  const onAuthenticated = () => {
     setRole('coach');
-    setIsCoachAuthOpen(false);
+    setIsAuthOpen(false);
   }
 
   const handlePollChange = async (trainingId: string, poll: Training['poll']) => {
@@ -166,7 +166,7 @@ export default function TrainingsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <Header onCoachClick={() => setIsCoachAuthOpen(true)}>
+      <Header onAuthClick={() => setIsAuthOpen(true)}>
           <Button asChild variant="outline" size="sm">
              <Link href="/" className="flex items-center">
                <ArrowLeft className="mr-2 h-4 w-4" />
@@ -174,7 +174,7 @@ export default function TrainingsPage() {
              </Link>
            </Button>
       </Header>
-      <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
+      <AuthDialog isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} onAuthenticated={onAuthenticated} />
       <CreateTrainingDialog 
         isOpen={isCreateDialogOpen} 
         onOpenChange={setIsCreateDialogOpen} 

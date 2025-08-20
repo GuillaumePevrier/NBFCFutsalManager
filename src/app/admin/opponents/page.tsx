@@ -13,14 +13,14 @@ import { OpponentActions } from "./opponent-actions";
 import { createClient } from "@/lib/supabase/client";
 import type { Opponent, Role } from "@/lib/types";
 import Header from "@/components/Header";
-import CoachAuthDialog from '@/components/CoachAuthDialog';
+import AuthDialog from '@/components/AuthDialog';
 import { useRouter } from 'next/navigation';
 
 export default function OpponentsAdminPage() {
     const [opponents, setOpponents] = useState<Opponent[]>([]);
     const [role, setRole] = useState<Role>('player');
     const [loading, setLoading] = useState(true);
-    const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+    const [isAuthOpen, setIsAuthOpen] = useState(false);
     const supabase = createClient();
     const router = useRouter();
 
@@ -57,9 +57,9 @@ export default function OpponentsAdminPage() {
         };
     }, [supabase.auth, router]);
 
-    const onCoachLogin = () => {
+    const onAuthenticated = () => {
         setRole('coach');
-        setIsCoachAuthOpen(false);
+        setIsAuthOpen(false);
     }
     
     const getInitials = (name: string) => name?.[0]?.toUpperCase() || 'O';
@@ -77,7 +77,7 @@ export default function OpponentsAdminPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
-            <Header onCoachClick={() => setIsCoachAuthOpen(true)}>
+            <Header onAuthClick={() => setIsAuthOpen(true)}>
                 <Button asChild variant="outline" size="sm">
                    <Link href="/" className="flex items-center">
                      <ArrowLeft className="mr-2 h-4 w-4" />
@@ -85,7 +85,7 @@ export default function OpponentsAdminPage() {
                    </Link>
                  </Button>
             </Header>
-            <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
+            <AuthDialog isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} onAuthenticated={onAuthenticated} />
             <main className="flex-grow p-4 md:p-8 main-bg">
                 <div className="w-full max-w-5xl mx-auto">
                     <div className="flex justify-between items-center mb-6">

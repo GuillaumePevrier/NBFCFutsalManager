@@ -6,7 +6,7 @@ import type { Player, PlayerPosition, Role, MatchDetails as MatchDetailsType, Sc
 import ControlPanel from '@/components/ControlPanel';
 import FutsalCourt from '@/components/FutsalCourt';
 import PlayerToken from '@/components/PlayerToken';
-import CoachAuthDialog from '@/components/CoachAuthDialog';
+import AuthDialog from '@/components/AuthDialog';
 import Header from '@/components/Header';
 import MatchDetails from '@/components/MatchDetails';
 import Scoreboard from '@/components/Scoreboard';
@@ -77,7 +77,7 @@ export default function MatchPage() {
   const [role, setRole] = useState<Role>('player');
   const [draggingPlayer, setDraggingPlayer] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const courtRef = useRef<HTMLDivElement>(null);
-  const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
@@ -346,9 +346,9 @@ export default function MatchPage() {
     };
   }, [draggingPlayer, handleMouseMove, handleDragEnd, handleTouchMove]);
   
-  const onCoachLogin = () => {
+  const onAuthenticated = () => {
     setRole('coach');
-    setIsCoachAuthOpen(false);
+    setIsAuthOpen(false);
   }
 
   const handleDetailsChange = (details: MatchDetailsType) => {
@@ -491,13 +491,13 @@ export default function MatchPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-       <Header onCoachClick={() => setIsCoachAuthOpen(true)}>
+       <Header onAuthClick={() => setIsAuthOpen(true)}>
             <Button variant="outline" size="sm" onClick={() => router.push('/matches')}>
                 <Trophy className="mr-2 h-4 w-4"/>
                 <span className="hidden sm:inline">Retour aux matchs</span>
             </Button>
        </Header>
-       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
+       <AuthDialog isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} onAuthenticated={onAuthenticated} />
       <main className="flex flex-col md:flex-row flex-grow font-body main-bg overflow-y-auto">
         <div className="flex-grow flex flex-col items-center justify-start p-2 md:p-4 lg:p-6 relative gap-4">
           <Scoreboard 

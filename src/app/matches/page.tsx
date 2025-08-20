@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Link from 'next/link';
 import type { Match, Role, Opponent } from '@/lib/types';
-import CoachAuthDialog from '@/components/CoachAuthDialog';
+import AuthDialog from '@/components/AuthDialog';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,7 +39,7 @@ export default function MatchesPage() {
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<Role>('player');
-  const [isCoachAuthOpen, setIsCoachAuthOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const { toast } = useToast();
 
   const [activeCompetition, setActiveCompetition] = useState(competitions[0].id);
@@ -53,27 +53,31 @@ export default function MatchesPage() {
       setOpponents(opponentsData);
       
       const matchesData = await getMatches();
-      setMatches(matchesData.map(m => ({
-        ...m,
-        details: {
-          venue: 'home', // default
-          competition: 'amical', // default
-          matchday: 1, // default
-          ...(m.details || {}),
-           poll: { // default poll structure nested in details
-            status: 'inactive',
-            deadline: null,
-            availabilities: [],
-            ...((m.details || {}).poll || {})
-          }
-        },
-        tacticsequences: m.tacticsequences || [],
-      })));
+       if (!matchesData) {
+        toast({ title: "Erreur", description: "Impossible de charger la liste des matchs.", variant: "destructive" });
+      } else {
+        setMatches(matchesData.map(m => ({
+          ...m,
+          details: {
+            venue: 'home', // default
+            competition: 'amical', // default
+            matchday: 1, // default
+            ...(m.details || {}),
+             poll: { // default poll structure nested in details
+              status: 'inactive',
+              deadline: null,
+              availabilities: [],
+              ...((m.details || {}).poll || {})
+            }
+          },
+          tacticsequences: m.tacticsequences || [],
+        })));
+      }
       setLoading(false);
     };
 
     fetchMatchesAndOpponents();
-  }, []);
+  }, [toast]);
 
    useEffect(() => {
     const checkRole = async () => {
@@ -91,9 +95,9 @@ export default function MatchesPage() {
     };
   }, [supabase.auth]);
 
-  const onCoachLogin = () => {
+  const onAuthenticated = () => {
     setRole('coach');
-    setIsCoachAuthOpen(false);
+    setIsAuthOpen(false);
   }
 
   const handleCreateMatch = async () => {
@@ -312,8 +316,8 @@ export default function MatchesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <Header onCoachClick={() => setIsCoachAuthOpen(true)} />
-      <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
+      <Header onAuthClick={() => setIsAuthOpen(true)} />
+      <AuthDialog isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} onAuthenticated={onAuthenticated} />
       <main className="flex-grow flex flex-col p-0 md:p-4 main-bg">
         <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col">
           <div className="flex justify-end items-center p-4">
