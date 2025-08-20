@@ -166,9 +166,9 @@ export async function updatePlayer(formData: FormData) {
     return { error: "Player ID is missing for update." };
   }
 
+  // L'email n'est pas modifiable depuis ce formulaire pour éviter la désynchronisation.
   const playerData = {
       name: formData.get('name'),
-      email: formData.get('email'),
       team: formData.get('team'),
       position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
       preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot'),
@@ -268,7 +268,7 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
 
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
-    revalidatePath('/match/*');
+    revalidatePath('/match/*`);
     revalidatePath('/trainings');
     
     return { success: true };

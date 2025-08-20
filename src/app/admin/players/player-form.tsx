@@ -128,13 +128,13 @@ export function PlayerForm({ player }: { player?: Player }) {
                             <h3 className="text-lg font-semibold flex items-center gap-2"><KeyRound/> Compte Utilisateur</h3>
                             <p className="text-sm text-muted-foreground">
                                 {isEditing 
-                                    ? "Modifiez l'email pour le compte de ce joueur." 
+                                    ? "L'email de connexion du joueur. Il ne peut pas être modifié après la création." 
                                     : "Créez un compte pour que ce joueur puisse se connecter. Laissez les champs vides si non nécessaire."
                                 }
                             </p>
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email de connexion</Label>
-                                <Input id="email" name="email" type="email" defaultValue={player?.email || ''} placeholder="email@exemple.com" />
+                                <Input id="email" name="email" type="email" defaultValue={player?.email || ''} placeholder="email@exemple.com" disabled={isEditing && !!player?.email} />
                             </div>
                             {!isEditing && (
                                 <div className="space-y-2">
