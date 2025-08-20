@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { PlayerPosition } from "@/lib/types";
 import { useState } from "react";
-import { sendOneSignalNotification } from "@/ai/flows/send-onesignal-notification";
+import { sendNotificationToAllPlayers } from "@/app/actions";
 import { Loader2 } from "lucide-react";
 
 interface InvitationDialogProps {
@@ -33,30 +33,26 @@ export default function InvitationDialog({ team, children }: InvitationDialogPro
     event.preventDefault();
     setIsLoading(true);
     const formData = new FormData(event.currentTarget);
-    const data = Object.fromEntries(formData.entries());
     
+    const opponent = formData.get('opponent') as string;
+    const location = formData.get('location') as string;
+    const time = formData.get('time') as string;
+    const message = formData.get('message') as string;
+
     const notificationPayload = {
-        title: `Convocation Match vs ${data.opponent}`,
-        message: data.message as string || `Rendez-vous à ${data.location} à ${data.time}`,
+        title: `Convocation Match vs ${opponent}`,
+        body: message || `Rendez-vous à ${location} à ${time}`,
     };
 
-    const result = await sendOneSignalNotification(notificationPayload);
+    const result = await sendNotificationToAllPlayers(notificationPayload);
 
     setIsLoading(false);
 
-    if (result.success) {
-        toast({
-            title: "Notification Envoyée!",
-            description: `Votre notification de match a été envoyée. (${result.sentCount} abonnés)`,
-            variant: "default",
-        });
-    } else {
-        toast({
-            title: "Erreur d'envoi",
-            description: "La notification n'a pas pu être envoyée.",
-            variant: "destructive",
-        });
-    }
+    toast({
+        title: "Notification Envoyée!",
+        description: `Votre notification de match a été envoyée à tous les abonnés.`,
+        variant: "default",
+    });
 
     setIsOpen(false);
   };

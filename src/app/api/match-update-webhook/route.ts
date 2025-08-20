@@ -1,9 +1,9 @@
 
 // src/app/api/match-update-webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { sendOneSignalNotification, type SendOneSignalNotificationInput } from '@/ai/flows/send-onesignal-notification';
 import type { Match, Message, Player } from '@/lib/types';
 import { createClient } from '@/lib/supabase/server';
+import { sendPushNotification, sendNotificationToAllPlayers } from '@/app/actions';
 
 type EventType = 'INSERT' | 'UPDATE' | 'DELETE';
 
@@ -26,64 +26,92 @@ interface MessageWebhookPayload {
 type WebhookPayload = MatchWebhookPayload | MessageWebhookPayload;
 
 
-// ========== Notification Handlers ==========
+// ========== Notification Logic ==========
 
-function getNotificationForMatchUpdate(oldData: Match, newData: Match): SendOneSignalNotificationInput | null {
+async function handleMatchUpdate(oldData: Match, newData: Match) {
   const opponent = newData.details.opponent || 'Adversaire';
   const oldScore = oldData.scoreboard;
   const newScore = newData.scoreboard;
-  const targetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}`;
-  const topic = `match-${newData.id}`;
+  
+  let title: string | null = null;
+  let body: string | null = null;
 
+  // --- Goal Notification ---
   if (newScore.homeScore > oldScore.homeScore) {
-    return {
-      title: `BUT POUR NBFC FUTSAL !`,
-      message: `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore} contre ${opponent}.`,
-      type: 'goal',
-      targetUrl,
-      topic,
-    };
+    title = `BUT POUR NBFC FUTSAL !`;
+    body = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore} contre ${opponent}.`;
+  } else if (newScore.awayScore > oldScore.awayScore) {
+    title = `But pour ${opponent} !`;
+    body = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`;
   }
-  if (newScore.awayScore > oldScore.awayScore) {
-    return {
-      title: `But pour ${opponent} !`,
-      message: `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`,
-      type: 'goal',
-      targetUrl,
-      topic,
-    };
+  if (title && body) {
+    await sendNotificationToAllPlayers({
+      title,
+      body,
+      icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+      tag: `match-goal-${newData.id}`,
+      data: { url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}` }
+    });
   }
 
-  return null; // Pas de changement notable pour une notification
+  // --- Poll Started Notification ---
+  const oldPollStatus = oldData.details?.poll?.status;
+  const newPollStatus = newData.details?.poll?.status;
+  if (oldPollStatus === 'inactive' && newPollStatus === 'active') {
+    await sendNotificationToAllPlayers({
+      title: `Convocation pour le match`,
+      body: `Répondez au sondage pour le match contre ${opponent} le ${new Date(newData.details.date).toLocaleDateString('fr-FR')}.`,
+      icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+      tag: `match-poll-${newData.id}`,
+      data: { url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}` }
+    });
+  }
 }
 
 
-async function getNotificationForNewMessage(message: Message): Promise<SendOneSignalNotificationInput | null> {
+async function handleNewMessage(newMessage: Message) {
     const supabase = createClient();
 
-    // 1. Get sender's name from players table
-    const { data: sender, error: senderError } = await supabase
+    // 1. Find the sender's name
+    const { data: senderData, error: senderError } = await supabase
         .from('players')
         .select('name')
-        .eq('user_id', message.user_id)
+        .eq('user_id', newMessage.user_id)
         .single();
     
-    if (senderError || !sender) {
+    if (senderError) {
         console.error('Could not find sender for new message notification:', senderError);
-        return null;
+        return;
     }
-    
-    // 2. Construct the notification payload
-    const targetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/chat/${message.channel_id}`;
-    const topic = `channel-${message.channel_id}`;
+    const senderName = senderData.name;
 
-    return {
-        title: `Nouveau message de ${sender.name}`,
-        message: message.content,
-        type: 'chat_message',
-        targetUrl,
-        topic,
+    // 2. Find all participants of the channel EXCEPT the sender
+    const { data: participants, error: participantsError } = await supabase
+        .from('channel_participants')
+        .select('user_id')
+        .eq('channel_id', newMessage.channel_id)
+        .neq('user_id', newMessage.user_id);
+    
+    if (participantsError) {
+        console.error('Could not find participants for new message notification:', participantsError);
+        return;
+    }
+
+    // 3. Send a notification to each participant
+    const notificationPayload = {
+        title: `Nouveau message de ${senderName}`,
+        body: newMessage.content,
+        icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+        tag: newMessage.channel_id, // Tag groups notifications for the same chat
+        data: {
+            url: `${process.env.NEXT_PUBLIC_BASE_URL}/chat/${newMessage.channel_id}`
+        }
     };
+
+    for (const participant of participants) {
+        console.log(`Sending notification to user ${participant.user_id}`);
+        await sendPushNotification(participant.user_id, notificationPayload);
+    }
 }
 
 
@@ -93,33 +121,19 @@ export async function POST(req: NextRequest) {
   try {
     const payload = (await req.json()) as WebhookPayload;
 
-    let notificationPayload: SendOneSignalNotificationInput | null = null;
+    console.log('Webhook received for table:', payload.table, 'type:', payload.type);
 
-    // Route payload to the correct handler based on table and type
     if (payload.table === 'matches' && payload.type === 'UPDATE') {
-        const { old_record: oldMatch, record: newMatch } = payload;
-        notificationPayload = getNotificationForMatchUpdate(oldMatch, newMatch);
+        await handleMatchUpdate(payload.old_record, payload.record);
     } 
     else if (payload.table === 'messages' && payload.type === 'INSERT') {
-        notificationPayload = await getNotificationForNewMessage(payload.record);
+        await handleNewMessage(payload.record);
     }
     else {
         return NextResponse.json({ message: 'Ignored: Event does not trigger a notification.' });
     }
 
-    // Send notification if a payload was generated
-    if (notificationPayload) {
-      console.log('Sending notification:', notificationPayload);
-      const result = await sendOneSignalNotification(notificationPayload);
-
-      if (result.success) {
-        return NextResponse.json({ message: 'Notification sent successfully', sentCount: result.sentCount });
-      } else {
-        return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 });
-      }
-    }
-
-    return NextResponse.json({ message: 'No relevant change detected for notification.' });
+    return NextResponse.json({ message: 'Webhook processed.' });
 
   } catch (error) {
     console.error('Error processing webhook:', error);
