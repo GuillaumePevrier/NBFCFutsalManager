@@ -995,5 +995,3 @@ export async function linkProfile(playerId: string, userId: string): Promise<{ s
     revalidatePath('/');
     return { success: true };
 }
-
-    
