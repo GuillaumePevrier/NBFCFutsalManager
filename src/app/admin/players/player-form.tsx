@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState } from 'react';
@@ -23,13 +24,13 @@ const PlayerSchema = z.object({
   avatar_url: z.string().url("L'URL de l'avatar n'est pas valide.").optional().or(z.literal('')),
 });
 
-type FormErrors = z.ZodFormattedError<z.infer<typeof PlayerSchema>>;
+type FormErrors = z.ZodFormattedError<z.infer<typeof PlayerSchema>> | null;
 
 export function PlayerForm({ player }: { player?: Player }) {
     const isEditing = !!player;
     const { toast } = useToast();
     const router = useRouter();
-    const [errors, setErrors] = useState<FormErrors | null>(null);
+    const [errors, setErrors] = useState<FormErrors>(null);
 
     const formAction = async (formData: FormData) => {
         const values = Object.fromEntries(formData.entries());
@@ -49,7 +50,6 @@ export function PlayerForm({ player }: { player?: Player }) {
             } else {
                 await createPlayer(formData);
             }
-            // La redirection est gérée dans l'action serveur
             toast({
                 title: isEditing ? "Joueur modifié" : "Joueur créé",
                 description: `${validatedFields.data.name} a été ${isEditing ? 'mis à jour' : 'ajouté'}.`
@@ -154,3 +154,5 @@ export function PlayerForm({ player }: { player?: Player }) {
         </div>
     );
 }
+
+    

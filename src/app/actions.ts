@@ -224,7 +224,7 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
 
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
-    revalidatePath('/match/*'); 
+    revalidatePath('/match/*`); 
     revalidatePath('/trainings');
     
     return { success: true };
@@ -399,7 +399,7 @@ export async function getOpponentById(opponentId: string): Promise<Opponent | nu
     return data;
 }
 
-export async function createOpponent(previousState: any, formData: FormData) {
+export async function createOpponent(formData: FormData) {
   const supabase = createClient();
   const values = Object.fromEntries(formData.entries());
   const validatedFields = OpponentSchema.safeParse(values);
@@ -423,19 +423,18 @@ export async function createOpponent(previousState: any, formData: FormData) {
       error: error.message
     };
   }
-
   revalidatePath('/admin/opponents');
-  return { data };
+  redirect('/admin/opponents');
 }
 
 
-export async function updateOpponent(previousState: any, formData: FormData) {
+export async function updateOpponent(formData: FormData) {
   const supabase = createClient();
   const values = Object.fromEntries(formData.entries());
   const validatedFields = OpponentSchema.safeParse(values);
   
   if (!validatedFields.success) {
-    return {
+     return {
       errors: validatedFields.error.flatten().fieldErrors,
     };
   }
@@ -461,7 +460,7 @@ export async function updateOpponent(previousState: any, formData: FormData) {
 
   revalidatePath('/admin/opponents');
   revalidatePath(`/opponent/${opponentId}`);
-  return { data };
+  redirect('/admin/opponents');
 }
 
 
@@ -491,7 +490,7 @@ const TrainingSchema = z.object({
   description: z.string().optional(),
 });
 
-export async function createTraining(previousState: any, formData: FormData) {
+export async function createTraining(formData: FormData) {
   const supabase = createClient();
   const values = Object.fromEntries(formData.entries());
   const validatedFields = TrainingSchema.safeParse(values);
@@ -500,7 +499,7 @@ export async function createTraining(previousState: any, formData: FormData) {
     return { errors: validatedFields.error.flatten().fieldErrors };
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('trainings')
     .insert([{ ...validatedFields.data, poll: { status: 'inactive', availabilities: [], deadline: null } }])
     .select();
@@ -511,7 +510,7 @@ export async function createTraining(previousState: any, formData: FormData) {
   }
 
   revalidatePath('/trainings');
-  return { data };
+  redirect('/trainings');
 }
 
 export async function getTrainings(): Promise<Training[]> {
@@ -558,3 +557,5 @@ export async function deleteTraining(trainingId: string): Promise<{ success: boo
   revalidatePath('/trainings');
   return { success: true };
 }
+
+    

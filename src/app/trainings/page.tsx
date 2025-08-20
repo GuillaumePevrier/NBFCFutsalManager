@@ -41,6 +41,21 @@ export default function TrainingsPage() {
     };
 
     fetchData();
+     const trainingChannel = supabase
+      .channel('public:trainings')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'trainings' },
+        (payload) => {
+          console.log('Change received!', payload)
+          fetchData();
+        }
+      )
+      .subscribe()
+
+    return () => {
+        supabase.removeChannel(trainingChannel);
+    }
   }, []);
 
   useEffect(() => {
@@ -160,7 +175,10 @@ export default function TrainingsPage() {
            </Button>
       </Header>
       <CoachAuthDialog isOpen={isCoachAuthOpen} onOpenChange={setIsCoachAuthOpen} onAuthenticated={onCoachLogin} />
-      <CreateTrainingDialog isOpen={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <CreateTrainingDialog 
+        isOpen={isCreateDialogOpen} 
+        onOpenChange={setIsCreateDialogOpen} 
+      />
 
       <main className="flex-grow flex flex-col p-4 md:p-8 main-bg">
         <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col">
@@ -183,3 +201,5 @@ export default function TrainingsPage() {
     </div>
   );
 }
+
+    

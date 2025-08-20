@@ -82,6 +82,22 @@ export default function MatchesPage() {
     };
 
     fetchMatchesAndOpponents();
+    
+    const matchChannel = supabase
+      .channel('public:matches')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'matches' },
+        (payload) => {
+          console.log('Change received!', payload)
+          fetchMatchesAndOpponents();
+        }
+      )
+      .subscribe()
+
+    return () => {
+        supabase.removeChannel(matchChannel);
+    }
   }, [supabase, toast]);
 
    useEffect(() => {
@@ -135,6 +151,7 @@ export default function MatchesPage() {
         period: 1,
         timerLastStarted: null,
       },
+      tacticSequences: [],
     };
 
     const { data, error } = await supabase.from('matches').insert(newMatch).select().single();
@@ -351,3 +368,5 @@ export default function MatchesPage() {
     </div>
   );
 }
+
+    
