@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,59 +45,44 @@ export default function MatchesPage() {
   const [activeFilter, setActiveFilter] = useState('results');
   const [currentMatchday, setCurrentMatchday] = useState(1);
 
-  const fetchMatchesAndOpponents = useCallback(async () => {
-    setLoading(true);
-    
-    const opponentsData = await getOpponents();
-    setOpponents(opponentsData);
-    
-    const { data, error } = await supabase
-      .from('matches')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error("Failed to fetch matches:", error);
-      toast({ title: "Erreur", description: "Impossible de charger la liste des matchs.", variant: "destructive" });
-    } else {
-      setMatches(((data as Match[]) || []).map(m => ({
-        ...m,
-        details: {
-          venue: 'home', // default
-          competition: 'amical', // default
-          matchday: 1, // default
-          ...(m.details || {}),
-           poll: { // default poll structure nested in details
-            status: 'inactive',
-            deadline: null,
-            availabilities: [],
-            ...((m.details || {}).poll || {})
-          }
-        },
-        tacticsequences: m.tacticsequences || [],
-      })));
-    }
-    setLoading(false);
-  }, [supabase, toast]);
-
   useEffect(() => {
-    fetchMatchesAndOpponents();
-    
-    const matchChannel = supabase
-      .channel('public:matches')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'matches' },
-        (payload) => {
-          fetchMatchesAndOpponents();
-        }
-      )
-      .subscribe()
+    const fetchMatchesAndOpponents = async () => {
+      setLoading(true);
+      
+      const opponentsData = await getOpponents();
+      setOpponents(opponentsData);
+      
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    return () => {
-        supabase.removeChannel(matchChannel);
-    }
-  }, [fetchMatchesAndOpponents, supabase]);
+      if (error && Object.keys(error).length > 0 && error.message) {
+        console.error("Failed to fetch matches:", error);
+        toast({ title: "Erreur", description: "Impossible de charger la liste des matchs.", variant: "destructive" });
+      } else {
+        setMatches(((data as Match[]) || []).map(m => ({
+          ...m,
+          details: {
+            venue: 'home', // default
+            competition: 'amical', // default
+            matchday: 1, // default
+            ...(m.details || {}),
+             poll: { // default poll structure nested in details
+              status: 'inactive',
+              deadline: null,
+              availabilities: [],
+              ...((m.details || {}).poll || {})
+            }
+          },
+          tacticsequences: m.tacticsequences || [],
+        })));
+      }
+      setLoading(false);
+    };
+
+    fetchMatchesAndOpponents();
+  }, [supabase, toast]);
 
    useEffect(() => {
     const checkRole = async () => {
@@ -368,5 +352,3 @@ export default function MatchesPage() {
     </div>
   );
 }
-
-    
