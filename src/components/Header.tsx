@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import type { Role } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -13,18 +13,19 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
 import { signOut } from "@/app/actions";
+import AuthDialog from "./AuthDialog";
 
 interface HeaderProps {
     children?: React.ReactNode;
-    onAuthClick?: () => void;
 }
 
-export default function Header({ children, onAuthClick }: HeaderProps) {
+export default function Header({ children }: HeaderProps) {
   const supabase = createClient();
   const { toast } = useToast();
   const router = useRouter();
   const [role, setRole] = useState<Role>('player');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -61,8 +62,26 @@ export default function Header({ children, onAuthClick }: HeaderProps) {
     router.push('/');
   };
 
+  const onAuthenticated = () => {
+    // Re-check session to update role correctly
+    const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        const userIsLoggedIn = !!session;
+        setIsLoggedIn(userIsLoggedIn);
+        if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'g.pevrier@gmail.com' )) {
+             setRole('coach');
+        } else {
+            setRole('player');
+        }
+    };
+    checkSession();
+    setIsAuthOpen(false);
+  }
+
 
   return (
+    <>
+    <AuthDialog isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} onAuthenticated={onAuthenticated} />
     <header className="flex items-center justify-between p-2 border-b bg-card">
       <div className="flex items-center gap-3">
         <Link href="/" aria-label="Retour à l'accueil">
@@ -103,6 +122,12 @@ export default function Header({ children, onAuthClick }: HeaderProps) {
                   <span>Entraînements</span>
                 </Link>
             </DropdownMenuItem>
+             <DropdownMenuItem asChild>
+               <Link href="/chat">
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  <span>Messages</span>
+                </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
                <Link href="/admin/players">
                   <Users className="mr-2 h-4 w-4" />
@@ -124,7 +149,7 @@ export default function Header({ children, onAuthClick }: HeaderProps) {
                   <span>Se déconnecter</span>
               </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem onClick={onAuthClick}>
+            <DropdownMenuItem onClick={() => setIsAuthOpen(true)}>
                 <ShieldCheck className="mr-2 h-4 w-4" />
                 <span>Connexion</span>
             </DropdownMenuItem>
@@ -133,5 +158,6 @@ export default function Header({ children, onAuthClick }: HeaderProps) {
       </DropdownMenu>
       </div>
     </header>
+    </>
   );
 }

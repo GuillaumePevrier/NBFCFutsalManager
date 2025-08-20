@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import type { Player, Opponent, Match, Training } from '@/lib/types';
+import type { Player, Opponent, Match, Training, Channel } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -580,4 +580,16 @@ export async function deleteTraining(trainingId: string): Promise<{ success: boo
   return { success: true };
 }
 
-    
+
+// Chat Actions
+export async function getChannels(): Promise<Channel[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase.from('channels').select('*');
+
+    if (error) {
+        console.error('Failed to fetch channels:', error);
+        return [];
+    }
+
+    return data as Channel[];
+}
