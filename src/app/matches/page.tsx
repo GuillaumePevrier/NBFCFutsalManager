@@ -19,7 +19,7 @@ import MiniScoreboard from '@/components/MiniScoreboard';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import RankingTable from '@/components/RankingTable';
-import { getOpponents } from '../actions';
+import { getOpponents, deleteMatch } from '../actions';
 
 const competitions = [
     { id: 'D2 Nationale', name: 'D2 Nationale' },
@@ -90,7 +90,6 @@ export default function MatchesPage() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'matches' },
         (payload) => {
-          console.log('Change received!', payload)
           fetchMatchesAndOpponents();
         }
       )
@@ -267,7 +266,7 @@ export default function MatchesPage() {
                         </Button>
                     </div>
                 </Card>
-                 {activeCompetition !== 'amical' && (
+                 {activeCompetition !== 'Amical' && (
                     <Card className="p-2 bg-card/50">
                         <div className="flex items-center justify-between gap-2">
                             <Button variant="outline" size="icon" onClick={() => setCurrentMatchday(p => Math.max(1, p - 1))} disabled={currentMatchday === 1}>
