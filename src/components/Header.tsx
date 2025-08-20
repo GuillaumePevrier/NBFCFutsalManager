@@ -35,7 +35,7 @@ export default function Header({ children }: HeaderProps) {
         const { data: { session } } = await supabase.auth.getSession();
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
-        if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'guillaumepevrier@gmail.com' )) {
+        if (userIsLoggedIn && session?.user?.email === 'guillaumepevrier@gmail.com' ) {
              setRole('coach');
         } else {
             setRole('player');
@@ -46,7 +46,7 @@ export default function Header({ children }: HeaderProps) {
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
-         if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'guillaumepevrier@gmail.com')) {
+         if (userIsLoggedIn && session?.user?.email === 'guillaumepevrier@gmail.com') {
              setRole('coach');
         } else {
             setRole('player');
@@ -73,7 +73,7 @@ export default function Header({ children }: HeaderProps) {
         const { data: { session } } = await supabase.auth.getSession();
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
-        if (userIsLoggedIn && (session?.user?.email?.endsWith('@coach.com') || session?.user?.email === 'guillaumepevrier@gmail.com' )) {
+        if (userIsLoggedIn && session?.user?.email === 'guillaumepevrier@gmail.com' ) {
              setRole('coach');
         } else {
             setRole('player');
@@ -131,7 +131,12 @@ export default function Header({ children }: HeaderProps) {
                 <DropdownMenuItem asChild><Link href="/trainings"><Footprints className="mr-2 h-4 w-4" /><span>Entraînements</span></Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/chat"><MessageSquare className="mr-2 h-4 w-4" /><span>Messages</span></Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/admin/players"><Users className="mr-2 h-4 w-4" /><span>Effectif</span></Link></DropdownMenuItem>
-                {role === 'coach' && (<DropdownMenuItem asChild><Link href="/admin/opponents"><Shield className="mr-2 h-4 w-4" /><span>Équipes adverses</span></Link></DropdownMenuItem>)}
+                {role === 'coach' && (
+                  <>
+                    <DropdownMenuItem asChild><Link href="/admin/opponents"><Shield className="mr-2 h-4 w-4" /><span>Équipes adverses</span></Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/admin/notifications"><Bell className="mr-2 h-4 w-4" /><span>Notifications</span></Link></DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 {isLoggedIn ? (
                     <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Se déconnecter</span></DropdownMenuItem>
