@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import type { Player, Opponent, Match, Training, Channel } from '@/lib/types';
+import type { Player, Opponent, Match, Training, Channel, Message } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -268,7 +268,7 @@ export async function incrementPlayerPoints(playerId: string, points: number): P
 
     revalidatePath(`/player/${playerId}`);
     revalidatePath('/admin/players');
-    revalidatePath('/match/*');
+    revalidatePath('/match/*`);
     revalidatePath('/trainings');
     
     return { success: true };
@@ -419,7 +419,7 @@ export async function getOpponentById(opponentId: string): Promise<Opponent | nu
     const supabase = createClient();
     const { data, error } = await supabase
       .from('opponents')
-      .select('*')
+      .select('*
       .eq('id', opponentId)
       .single();
       
@@ -587,26 +587,19 @@ export async function getChannels(): Promise<Channel[]> {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return [];
 
-    const { data, error } = await supabase
-        .from('channels')
-        .select(`
-            id, 
-            name, 
-            type, 
-            match_id,
-            participants:players ( id, name, avatar_url )
-        `)
-        .or(`type.eq.group,participants.user_id.eq.${session.user.id}`); // This filter logic is complex, might need RPC
+    // This RPC function will be created later. It's a placeholder for now.
+    const { data, error } = await supabase.rpc('get_user_channels');
 
     if (error) {
-        console.error('Failed to fetch channels:', error);
+        console.error('Failed to fetch channels via RPC:', error);
         return [];
     }
 
     return data as any[] as Channel[];
 }
 
-export async function createOrGetPrivateChannel(recipientUserId: string): Promise<{ channelId: string | null, error?: string }> {
+
+export async function createOrGetPrivateChannel(recipientId: string): Promise<{ channelId: string | null, error?: string }> {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -614,6 +607,13 @@ export async function createOrGetPrivateChannel(recipientUserId: string): Promis
         return { error: 'Utilisateur non authentifié.', channelId: null };
     }
     
+    // Find the recipient's auth user_id from their player id
+    const { data: recipientPlayer, error: playerError } = await supabase.from('players').select('user_id').eq('id', recipientId).single();
+    if (playerError || !recipientPlayer?.user_id) {
+        return { error: "Ce joueur n'a pas de compte de connexion.", channelId: null };
+    }
+    const recipientUserId = recipientPlayer.user_id;
+
     if (user.id === recipientUserId) {
         return { error: 'Vous ne pouvez pas démarrer une conversation avec vous-même.', channelId: null };
     }
@@ -665,4 +665,60 @@ export async function createOrGetPrivateChannel(recipientUserId: string): Promis
 
     revalidatePath('/chat');
     return { channelId: newChannel.id };
+}
+
+export async function getMessages(channelId: string): Promise<Message[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('messages')
+        .select(`
+            *,
+            sender:players(id, name, avatar_url)
+        `)
+        .eq('channel_id', channelId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error(`Failed to fetch messages for channel ${channelId}:`, error);
+        return [];
+    }
+
+    // The sender relationship is based on user_id, so we need to match it correctly.
+    // Supabase JS v2 doesn't make this easy with nested selects on different columns.
+    // Let's manually correct the sender.
+    const { data: players, error: playersError } = await supabase.from('players').select('id, name, avatar_url, user_id');
+    if (playersError) {
+        return data as Message[]; // return messages without sender info if players fetch fails
+    }
+
+    return (data as Message[]).map(message => ({
+        ...message,
+        sender: players.find(p => p.user_id === message.user_id)
+    }));
+}
+
+
+export async function sendMessage(channelId: string, content: string): Promise<{ success: boolean, error?: any }> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: { message: "Utilisateur non authentifié." } };
+    }
+
+    const { error } = await supabase
+        .from('messages')
+        .insert({
+            content,
+            channel_id: channelId,
+            user_id: user.id
+        });
+
+    if (error) {
+        console.error('Failed to send message:', error);
+        return { success: false, error };
+    }
+
+    // No need to revalidate path here, client will get update via realtime
+    return { success: true };
 }

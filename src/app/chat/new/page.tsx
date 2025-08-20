@@ -9,27 +9,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Player } from '@/lib/types';
-import { ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, MessageSquarePlus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function NewMessagePage() {
     const [players, setPlayers] = useState<Player[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreating, setIsCreating] = useState<string | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const router = useRouter();
     const { toast } = useToast();
+    const supabase = createClient();
 
     useEffect(() => {
-        const fetchPlayers = async () => {
+        const fetchUserAndPlayers = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setCurrentUserId(user?.id || null);
+            
             const data = await getPlayers();
-            setPlayers(data.filter(p => !!p.user_id)); // Only show players who can receive messages
+            // Only show players who can receive messages (have an auth account and are not the current user)
+            setPlayers(data.filter(p => p.user_id && p.user_id !== user?.id));
             setLoading(false);
         };
-        fetchPlayers();
-    }, []);
+        fetchUserAndPlayers();
+    }, [supabase]);
     
     const filteredPlayers = useMemo(() => 
         players.filter(player =>
@@ -44,7 +51,7 @@ export default function NewMessagePage() {
         };
         
         setIsCreating(player.id);
-        const { channelId, error } = await createOrGetPrivateChannel(player.user_id);
+        const { channelId, error } = await createOrGetPrivateChannel(player.id);
         setIsCreating(null);
 
         if (error) {
@@ -69,8 +76,8 @@ export default function NewMessagePage() {
             <main className="flex-grow flex flex-col p-4 md:p-6 main-bg items-center">
                 <Card className="w-full max-w-lg">
                     <CardHeader>
-                        <CardTitle>Nouveau Message</CardTitle>
-                        <CardDescription>Sélectionnez un joueur pour démarrer une conversation.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><MessageSquarePlus/>Nouveau Message</CardTitle>
+                        <CardDescription>Sélectionnez un joueur pour démarrer une conversation privée.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Input 
@@ -84,12 +91,13 @@ export default function NewMessagePage() {
                                 <Loader2 className="h-8 w-8 animate-spin" />
                             </div>
                         ) : (
-                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                            <div className="space-y-1 max-h-[60vh] overflow-y-auto">
                                 {filteredPlayers.length > 0 ? filteredPlayers.map(player => (
-                                    <div 
+                                    <button
                                         key={player.id}
                                         onClick={() => handlePlayerClick(player)}
-                                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted cursor-pointer"
+                                        disabled={isCreating === player.id}
+                                        className="flex items-center w-full text-left justify-between p-2 rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-wait cursor-pointer transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
                                             <Avatar>
@@ -98,14 +106,12 @@ export default function NewMessagePage() {
                                             </Avatar>
                                             <span className="font-medium">{player.name}</span>
                                         </div>
-                                        {isCreating === player.id ? (
+                                        {isCreating === player.id && (
                                             <Loader2 className="h-5 w-5 animate-spin" />
-                                        ) : (
-                                            <MessageSquare className="h-5 w-5 text-muted-foreground" />
                                         )}
-                                    </div>
+                                    </button>
                                 )) : (
-                                    <p className="text-center text-muted-foreground py-4">Aucun joueur trouvé.</p>
+                                    <p className="text-center text-muted-foreground py-4">Aucun joueur (avec un compte) trouvé.</p>
                                 )}
                             </div>
                         )}
