@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation';
 import webpush from 'web-push';
 
 
-if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT) {
+if (process.env.VAPID_SUBJECT && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(
         process.env.VAPID_SUBJECT,
         process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
@@ -800,7 +800,7 @@ interface NotificationPayload {
 }
 
 export async function sendPushNotification(userId: string, payload: NotificationPayload): Promise<{ success: boolean, error?: any }> {
-    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    if (!process.env.VAPID_SUBJECT || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
         console.error("VAPID keys are not configured. Cannot send push notifications.");
         return { success: false, error: "VAPID keys not configured." };
     }
@@ -866,4 +866,25 @@ export async function sendNotificationToAllPlayers(payload: NotificationPayload)
             await sendPushNotification(player.user_id, payload);
         }
     }
+}
+
+export interface Subscriber {
+    id: string;
+    name: string;
+    avatar_url: string;
+    subscribed_at: string;
+}
+
+export async function getSubscribers(): Promise<Subscriber[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('subscribers_view')
+        .select('*');
+    
+    if (error) {
+        console.error("Failed to fetch subscribers:", error);
+        return [];
+    }
+
+    return data as Subscriber[];
 }

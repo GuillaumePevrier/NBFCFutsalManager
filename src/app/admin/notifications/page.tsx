@@ -1,20 +1,81 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Bell, Loader2 } from "lucide-react";
+import { ArrowLeft, Bell, Loader2, Users } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { Role } from "@/lib/types";
+import type { Role, Player } from "@/lib/types";
 import Header from "@/components/Header";
 import AuthDialog from '@/components/AuthDialog';
 import { useRouter } from 'next/navigation';
+import { getSubscribers, type Subscriber } from '@/app/actions';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
+function SubscribersList({ subscribers }: { subscribers: Subscriber[] }) {
+    const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Users/>
+                    Abonnés aux Notifications ({subscribers.length})
+                </CardTitle>
+                <CardDescription>
+                    Liste des joueurs qui ont activé les notifications sur au moins un appareil.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Joueur</TableHead>
+                            <TableHead className="text-right">Abonné depuis le</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {subscribers.length > 0 ? (
+                            subscribers.map((subscriber) => (
+                                <TableRow key={subscriber.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar>
+                                                <AvatarImage src={subscriber.avatar_url} alt={subscriber.name} />
+                                                <AvatarFallback>{getInitials(subscriber.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="font-medium">{subscriber.name}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right text-muted-foreground">
+                                        {format(new Date(subscriber.subscribed_at), "d MMMM yyyy", { locale: fr })}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                             <TableRow>
+                                <TableCell colSpan={2} className="text-center h-24">
+                                    Aucun joueur n'a encore activé les notifications.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    )
+}
 
 export default function NotificationsAdminPage() {
     const [role, setRole] = useState<Role>('player');
     const [loading, setLoading] = useState(true);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
+    const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
     const supabase = createClient();
     const router = useRouter();
 
@@ -24,9 +85,14 @@ export default function NotificationsAdminPage() {
             const { data: { session } } = await supabase.auth.getSession();
             const currentRole = (session && session.user.email === 'guillaumepevrier@gmail.com') ? 'coach' : 'player';
             setRole(currentRole);
+
             if (currentRole !== 'coach') {
                 router.push('/');
+                return;
             }
+            
+            const subs = await getSubscribers();
+            setSubscribers(subs);
             setLoading(false);
         };
         checkRoleAndProtect();
@@ -95,17 +161,7 @@ export default function NotificationsAdminPage() {
                                 <p className="text-muted-foreground text-sm">Le formulaire de création sera ici.</p>
                             </CardContent>
                         </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Abonnés aux Notifications</CardTitle>
-                                <CardDescription>
-                                    Liste des joueurs qui recevront les notifications.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground text-sm">La liste des abonnés apparaîtra ici.</p>
-                            </CardContent>
-                        </Card>
+                        <SubscribersList subscribers={subscribers} />
                     </div>
                 </div>
             </main>
