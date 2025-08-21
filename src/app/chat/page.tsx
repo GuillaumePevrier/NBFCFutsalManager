@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { MessageSquarePlus, Loader2, Users, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { usePresence } from "@/hooks/usePresence";
 
 export default function ChatPage() {
     const [channels, setChannels] = useState<Channel[]>([]);
@@ -18,6 +19,9 @@ export default function ChatPage() {
     const [currentUserId, setCurrentUserId] = useState<string | undefined>();
     const supabase = createClient();
     const router = useRouter();
+
+    // The usePresence hook will automatically handle tracking and updating presence
+    usePresence(currentUserId);
 
     useEffect(() => {
         const fetchUserAndChannels = async () => {
@@ -56,10 +60,18 @@ export default function ChatPage() {
             )
             .subscribe();
 
+         const presenceSubscription = supabase.channel('public:presences')
+            .on('presence', { event: 'sync' }, () => {
+                // Presence state has changed, refetch channels to update participant status
+                fetchUserAndChannels();
+            })
+            .subscribe();
+
 
         return () => {
             authListener.subscription.unsubscribe();
             supabase.removeChannel(channelSubscription);
+            supabase.removeChannel(presenceSubscription);
         }
 
     }, [supabase, router]);
@@ -73,6 +85,7 @@ export default function ChatPage() {
                 avatarUrl: null, // Could add group avatar later
                 fallback: <Users />,
                 isGroup: true,
+                presenceStatus: undefined,
             };
         } else {
             // For private channels, find the other participant
@@ -82,6 +95,7 @@ export default function ChatPage() {
                 avatarUrl: otherParticipant?.avatar_url,
                 fallback: getInitials(otherParticipant?.name),
                 isGroup: false,
+                presenceStatus: otherParticipant?.presence_status,
             };
         }
     };
@@ -113,7 +127,7 @@ export default function ChatPage() {
                                 const display = getChannelDisplay(channel);
                                 return (
                                    <Link href={`/chat/${channel.id}`} key={channel.id} className="flex items-center gap-3 p-2 hover:bg-muted rounded-md cursor-pointer transition-colors">
-                                        <Avatar className="h-12 w-12 border-2 border-primary/20">
+                                        <Avatar className="h-12 w-12 border-2 border-primary/20" presenceStatus={display.presenceStatus}>
                                             <AvatarImage src={display.avatarUrl || undefined} />
                                             <AvatarFallback className={display.isGroup ? `bg-muted` : `bg-primary text-primary-foreground`}>
                                                 {display.fallback}

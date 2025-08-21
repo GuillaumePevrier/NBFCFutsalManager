@@ -29,6 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
 
 const getRankingClass = (rank: number) => {
     switch (rank) {
@@ -108,20 +109,14 @@ export default function PlayersAdminPage() {
         
         // Realtime subscription for players table
         const playerChannel = supabase.channel('public:players:points-update')
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'players' }, (payload) => {
-                // Only refetch if points have changed to avoid unnecessary re-renders
-                if(payload.old.points !== payload.new.points) {
-                    console.log('Player points change detected, refetching players');
-                    fetchPlayers();
-                }
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
+                fetchPlayers();
             })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'players' }, () => {
-                 console.log('New player detected, refetching players');
-                 fetchPlayers();
-            })
-            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'players' }, () => {
-                 console.log('Player deleted, refetching players');
-                 fetchPlayers();
+            .subscribe();
+
+        const presenceChannel = supabase.channel('public:presences')
+            .on('presence', { event: 'sync' }, () => {
+                fetchPlayers(); // Refetch players to update presence status
             })
             .subscribe();
 
@@ -129,6 +124,7 @@ export default function PlayersAdminPage() {
         return () => {
             authListener?.subscription.unsubscribe();
             supabase.removeChannel(playerChannel);
+            supabase.removeChannel(presenceChannel);
         };
     }, [supabase]);
 
@@ -147,7 +143,7 @@ export default function PlayersAdminPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
-            <Header onAuthClick={() => setIsAuthOpen(true)}>
+            <Header>
                 <Button asChild variant="outline" size="sm" className='btn neon-blue-sm'>
                    <Link href="/" className="flex items-center">
                      <ArrowLeft className="mr-2 h-4 w-4" />
@@ -231,7 +227,7 @@ export default function PlayersAdminPage() {
                                                 <TableCell className="font-bold text-lg">{index + 1}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
-                                                        <Avatar className="h-12 w-12">
+                                                        <Avatar className="h-12 w-12" presenceStatus={player.presence_status}>
                                                             <AvatarImage src={player.avatar_url} alt={player.name} />
                                                             <AvatarFallback>{getInitials(player.name)}</AvatarFallback>
                                                         </Avatar>

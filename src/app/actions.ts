@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import type { Player, Opponent, Match, Training, Channel, Message, PushSubscription } from '@/lib/types';
+import type { Player, Opponent, Match, Training, Channel, Message, PushSubscription, UserProfileUpdate } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import webpush from 'web-push';
@@ -90,7 +90,7 @@ export async function getPlayers(): Promise<Player[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('players')
-    .select('*')
+    .select('*, presences:presences(last_seen)')
     // Tri par points (décroissant), puis par nom (alphabétique)
     .order('points', { ascending: false, nullsFirst: true })
     .order('name', { ascending: true });
@@ -99,7 +99,17 @@ export async function getPlayers(): Promise<Player[]> {
     console.error("Failed to fetch players:", error);
     return [];
   }
-  return data as Player[];
+  
+    // Map the presence data to a more accessible format
+  return (data as any[]).map(player => {
+    const isOnline = player.presences && player.presences.length > 0 && new Date(player.presences[0].last_seen).getTime() > Date.now() - 5 * 60 * 1000;
+    return {
+      ...player,
+      presence_status: isOnline ? 'online' : 'offline',
+      last_seen: player.presences?.[0]?.last_seen,
+      presences: undefined, // clean up the original presences field
+    };
+  });
 }
 
 
@@ -117,6 +127,27 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
     }
     return data;
 }
+
+export async function getCurrentPlayer(): Promise<Player | null> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+    
+    if (error) {
+        console.error("Failed to fetch current player profile:", error);
+        return null;
+    }
+
+    return data;
+}
+
 
 export async function createPlayer(formData: FormData) {
   const supabase = createClient();
@@ -993,5 +1024,62 @@ export async function linkProfile(playerId: string, userId: string): Promise<{ s
     }
     
     revalidatePath('/');
+    return { success: true };
+}
+
+// User Profile Actions
+export async function updateUserProfile(playerId: string, profileData: UserProfileUpdate): Promise<{ success: boolean, error?: any }> {
+    const supabase = createClient();
+    const { error } = await supabase
+        .from('players')
+        .update(profileData)
+        .eq('id', playerId);
+
+    if (error) {
+        console.error(`Failed to update profile for player ${playerId}:`, error);
+        return { success: false, error };
+    }
+    revalidatePath('/profile');
+    return { success: true };
+}
+
+
+export async function updateUserAuth(newEmail?: string, newPassword?: string): Promise<{ success: boolean, error?: any }> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: { message: "Utilisateur non authentifié" }};
+    }
+
+    const updateData: any = {};
+    if (newEmail) updateData.email = newEmail;
+    if (newPassword) updateData.password = newPassword;
+
+    if (Object.keys(updateData).length === 0) {
+        return { success: true }; // Nothing to update
+    }
+
+    const { error } = await supabase.auth.updateUser(updateData);
+    
+    if (error) {
+        console.error("Failed to update user auth:", error);
+        return { success: false, error };
+    }
+
+    // If email was changed, also update the 'email' column in the 'players' table
+    if (newEmail) {
+        const { error: playerUpdateError } = await supabase
+            .from('players')
+            .update({ email: newEmail })
+            .eq('user_id', user.id);
+            
+        if(playerUpdateError) {
+             console.error("Failed to update email in player profile:", playerUpdateError);
+             // This is not a fatal error, the auth email was updated. We can just log it.
+        }
+    }
+    
+    revalidatePath('/profile');
     return { success: true };
 }

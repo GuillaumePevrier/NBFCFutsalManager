@@ -3,9 +3,9 @@
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints, MessageSquare, Bell, BellOff } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints, MessageSquare, Bell, BellOff, UserCircle } from "lucide-react";
 import Image from "next/image";
-import type { Role } from "@/lib/types";
+import type { Role, Player } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,8 @@ import AuthDialog from "./AuthDialog";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { ToastAction } from "./ui/toast";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+import { usePresence } from "@/hooks/usePresence";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -28,40 +30,50 @@ export default function Header({ children }: HeaderProps) {
   const router = useRouter();
   const [role, setRole] = useState<Role>('player');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<Player | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   
   const { isSubscribed, subscribeToPush, unsubscribeFromPush, isLoading: isPushLoading, permissionStatus } = usePushNotifications();
 
+  // Initialize presence tracking for the current user
+  usePresence(currentUser?.user_id);
+
   useEffect(() => {
-    const checkSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+    const fetchUserAndPlayer = async (session: any) => {
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
-        if (userIsLoggedIn && session?.user?.email === 'guillaumepevrier@gmail.com' ) {
-             setRole('coach');
+
+        if (userIsLoggedIn) {
+            if (session.user.email === 'guillaumepevrier@gmail.com') {
+                setRole('coach');
+            } else {
+                setRole('player');
+            }
+            const { data: player } = await supabase.from('players').select('*').eq('user_id', session.user.id).single();
+            setCurrentUser(player);
         } else {
             setRole('player');
+            setCurrentUser(null);
         }
     };
+    
+    const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        fetchUserAndPlayer(session);
+    };
+
     checkSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-        const userIsLoggedIn = !!session;
-        setIsLoggedIn(userIsLoggedIn);
-         if (userIsLoggedIn && session?.user?.email === 'guillaumepevrier@gmail.com') {
-             setRole('coach');
-        } else {
-            setRole('player');
-        }
+        fetchUserAndPlayer(session);
     });
 
     return () => {
         authListener?.subscription.unsubscribe();
     };
-  }, [supabase.auth, router]);
+  }, [supabase, router]);
 
   const handleSignOut = async () => {
-    // Unsubscribe from push notifications before signing out
     if(isSubscribed) {
       await unsubscribeFromPush();
     }
@@ -75,18 +87,21 @@ export default function Header({ children }: HeaderProps) {
         const { data: { session } } = await supabase.auth.getSession();
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
-        if (userIsLoggedIn && session?.user?.email === 'guillaumepevrier@gmail.com' ) {
-             setRole('coach');
-        } else {
-            setRole('player');
+        if (userIsLoggedIn) {
+             if (session.user.email === 'guillaumepevrier@gmail.com' ) {
+                setRole('coach');
+            } else {
+                setRole('player');
+            }
+            const { data: player } = await supabase.from('players').select('*').eq('user_id', session.user.id).single();
+            setCurrentUser(player);
         }
 
-        // After authentication, check if we should prompt for notifications
         if (userIsLoggedIn && permissionStatus === 'default') {
             toast({
                 title: "Restez Connecté !",
                 description: "Activez les notifications pour ne rien manquer des convocations et des scores.",
-                duration: 10000, // Keep it on screen longer
+                duration: 10000,
                 action: <ToastAction altText="Activer" onClick={() => subscribeToPush()}>Activer</ToastAction>,
             });
         }
@@ -121,11 +136,33 @@ export default function Header({ children }: HeaderProps) {
       </div>
       <div className="flex items-center gap-2">
         {children}
-        {isLoggedIn && !isPushLoading && (
-            <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm">
-                {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
-            </Button>
+        {isLoggedIn && (
+            <>
+            {!isPushLoading && (
+                <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm">
+                    {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
+                </Button>
+            )}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                         <Avatar className="h-9 w-9" presenceStatus="online">
+                            <AvatarImage src={currentUser?.avatar_url} alt={currentUser?.name || "Avatar"} />
+                            <AvatarFallback>
+                                <UserCircle className="h-6 w-6"/>
+                            </AvatarFallback>
+                        </Avatar>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild><Link href="/profile"><UserCircle className="mr-2 h-4 w-4" /><span>Mon Profil</span></Link></DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Se déconnecter</span></DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            </>
         )}
+
         <ThemeToggle />
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -145,11 +182,11 @@ export default function Header({ children }: HeaderProps) {
                     <DropdownMenuItem asChild><Link href="/admin/notifications"><Bell className="mr-2 h-4 w-4" /><span>Notifications</span></Link></DropdownMenuItem>
                   </>
                 )}
-                <DropdownMenuSeparator />
-                {isLoggedIn ? (
-                    <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Se déconnecter</span></DropdownMenuItem>
-                ) : (
+                {!isLoggedIn && (
+                    <>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setIsAuthOpen(true)}><ShieldCheck className="mr-2 h-4 w-4" /><span>Connexion</span></DropdownMenuItem>
+                    </>
                 )}
             </DropdownMenuContent>
         </DropdownMenu>
