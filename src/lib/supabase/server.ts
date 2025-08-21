@@ -42,11 +42,9 @@ export function createClient() {
 // qui nécessitent la clé de service role.
 export function createAdminClient() {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables.");
+        throw new Error("Clé de service Supabase manquante. Vérifiez vos variables d'environnement.");
     }
 
-    // For service role clients, we don't need to pass cookie handling logic,
-    // as they are not acting on behalf of a user.
     return createServerClient(
         "https://vehbxkqndoqmqwtjbcjr.supabase.co",
         process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -55,15 +53,7 @@ export function createAdminClient() {
                 autoRefreshToken: false,
                 persistSession: false
             },
-            // This empty cookies object is the crucial fix.
-            cookies: {
-                // Return null for any cookie request
-                get: () => null,
-                // Do nothing on set
-                set: () => {},
-                // Do nothing on remove
-                remove: () => {},
-            },
+            cookies: {}, // Le client admin ne doit pas gérer les cookies
         }
     );
 }

@@ -6,7 +6,10 @@ import type { Player, Opponent, Match, Training, Channel, Message, PushSubscript
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import webpush from 'web-push';
+import dotenv from 'dotenv';
 
+// Load environment variables from .env file
+dotenv.config();
 
 // VAPID keys should be configured only if they are set in environment variables
 if (process.env.VAPID_SUBJECT && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
