@@ -3,7 +3,7 @@
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints, MessageSquare, Bell, BellOff, UserCircle } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints, MessageSquare, Bell, BellOff, UserCircle, KeyRound } from "lucide-react";
 import Image from "next/image";
 import type { Role, Player } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -146,7 +146,7 @@ export default function Header({ children }: HeaderProps) {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                         <Avatar className="h-9 w-9" presenceStatus="online">
+                         <Avatar className="h-9 w-9" presenceStatus={currentUser?.presence_status}>
                             <AvatarImage src={currentUser?.avatar_url} alt={currentUser?.name || "Avatar"} />
                             <AvatarFallback>
                                 <UserCircle className="h-6 w-6"/>
@@ -180,6 +180,7 @@ export default function Header({ children }: HeaderProps) {
                   <>
                     <DropdownMenuItem asChild><Link href="/admin/opponents"><Shield className="mr-2 h-4 w-4" /><span>Équipes adverses</span></Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/admin/notifications"><Bell className="mr-2 h-4 w-4" /><span>Notifications</span></Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/admin/access"><KeyRound className="mr-2 h-4 w-4" /><span>Gestion des accès</span></Link></DropdownMenuItem>
                   </>
                 )}
                 {!isLoggedIn && (
