@@ -158,7 +158,6 @@ export default function Home() {
                                 x: offset * 140,
                                 y: Math.abs(offset) * 25,
                                 scale: 1 - Math.abs(offset) * 0.15,
-                                rotateY: offset * -15,
                                 zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
