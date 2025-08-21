@@ -121,9 +121,9 @@ export default function Home() {
             />
         </div>
       
-      <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12 mt-12">
+      <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12">
          <motion.div 
-            className="relative w-full h-[550px] md:h-[650px] flex items-center justify-center"
+            className="relative w-full h-[480px] md:h-[550px] flex items-center justify-center mt-12"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
@@ -155,7 +155,7 @@ export default function Home() {
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
                             animate={{
-                                x: offset * 140,
+                                x: offset * 120,
                                 y: Math.abs(offset) * 25,
                                 scale: 1 - Math.abs(offset) * 0.15,
                                 zIndex: initialCardData.length - Math.abs(offset),
@@ -166,7 +166,7 @@ export default function Home() {
                             <MotionCard
                                 whileHover={isActive ? { y: -10 } : {}}
                                 className={cn(
-                                    "w-[280px] h-[480px] md:w-[340px] md:h-[550px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                                    "w-[260px] h-[450px] md:w-[320px] md:h-[520px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
                                     isActive ? "cursor-pointer border-primary/50" : "cursor-grab border-blue-500/30",
                                     "hover:shadow-primary/60"
                                 )}
