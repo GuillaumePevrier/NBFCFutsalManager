@@ -148,7 +148,7 @@ export default function PlayersAdminPage() {
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             <Header onAuthClick={() => setIsAuthOpen(true)}>
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="outline" size="sm" className='btn neon-blue-sm'>
                    <Link href="/" className="flex items-center">
                      <ArrowLeft className="mr-2 h-4 w-4" />
                      Accueil
@@ -164,7 +164,7 @@ export default function PlayersAdminPage() {
                                 <Users/>
                                 Classement des Joueurs ({players.length})
                             </CardTitle>
-                             <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing} title="Actualiser le classement">
+                             <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing} title="Actualiser le classement" className='btn neon-blue-sm'>
                                 <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
                             </Button>
                          </div>
@@ -174,7 +174,7 @@ export default function PlayersAdminPage() {
                                 <>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" size="sm">
+                                        <Button variant="destructive" size="sm" className='btn neon-primary-sm'>
                                             <Sparkles className="mr-2 h-4 w-4" />
                                             Tout Réinitialiser
                                         </Button>
@@ -194,7 +194,7 @@ export default function PlayersAdminPage() {
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
-                                <Button asChild size="sm">
+                                <Button asChild size="sm" className='btn neon-primary-sm'>
                                     <Link href="/admin/players/new">
                                         <PlusCircle className="mr-2 h-4 w-4"/>
                                         Ajouter un joueur
@@ -253,7 +253,7 @@ export default function PlayersAdminPage() {
                                                     {isCoach ? (
                                                         <PlayerActions player={player}/>
                                                     ) : (
-                                                        <Button asChild variant="outline" size="sm">
+                                                        <Button asChild variant="outline" size="sm" className='btn neon-blue-sm'>
                                                             <Link href={`/player/${player.id}`}>
                                                                 <View className="mr-2 h-4 w-4" />
                                                                 <span className="hidden sm:inline">Voir</span>

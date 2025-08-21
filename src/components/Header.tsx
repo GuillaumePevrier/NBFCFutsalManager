@@ -122,14 +122,14 @@ export default function Header({ children }: HeaderProps) {
       <div className="flex items-center gap-2">
         {children}
         {isLoggedIn && !isPushLoading && (
-            <Button variant="ghost" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm">
+            <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm">
                 {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
             </Button>
         )}
         <ThemeToggle />
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="btn neon-blue-sm">
+                <Button variant="outline" size="icon" className="btn neon-blue-sm">
                     <Menu className="h-6 w-6" />
                 </Button>
             </DropdownMenuTrigger>
