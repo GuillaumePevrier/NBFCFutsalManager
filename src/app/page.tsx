@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, ChevronsLeftRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -124,7 +124,7 @@ export default function Home() {
       
       <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12">
          <motion.div 
-            className="relative w-full h-[400px] md:h-[450px] flex items-center justify-center"
+            className="relative w-full h-[450px] md:h-[500px] flex items-center justify-center"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
@@ -137,11 +137,11 @@ export default function Home() {
                     const isActive = offset === 0;
 
                     const activeNeonStyle = {
-                      boxShadow: `0 0 5px hsl(var(--primary) / 0.8), 0 0 10px hsl(var(--primary) / 0.6), 0 0 20px hsl(var(--primary) / 0.4), inset 0 0 15px hsl(var(--primary) / 0.4)`
+                      boxShadow: `0 0 10px hsl(var(--primary) / 0.8), 0 0 20px hsl(var(--primary) / 0.6), 0 0 40px hsl(var(--primary) / 0.4), inset 0 0 15px hsl(var(--primary) / 0.4)`
                     };
 
                     const inactiveNeonStyle = {
-                      boxShadow: `0 0 5px hsl(212 96% 48% / 0.6), 0 0 10px hsl(212 96% 48% / 0.5), inset 0 0 10px hsl(212 96% 48% / 0.3)`
+                      boxShadow: `0 0 8px hsl(212 96% 48% / 0.6), 0 0 15px hsl(212 96% 48% / 0.5), inset 0 0 10px hsl(212 96% 48% / 0.3)`
                     };
 
                     return (
@@ -168,7 +168,7 @@ export default function Home() {
                             <MotionCard
                                 whileHover={isActive ? { y: -10 } : {}}
                                 className={cn(
-                                    "w-[180px] h-[280px] md:w-[220px] md:h-[320px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                                    "w-[200px] h-[320px] md:w-[240px] md:h-[380px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
                                     isActive ? "cursor-pointer border-primary/50" : "cursor-grab border-blue-500/30",
                                     "hover:shadow-primary/60"
                                 )}
@@ -179,7 +179,7 @@ export default function Home() {
                                         <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className={cn("object-cover opacity-80", card.objectPosition)} data-ai-hint={card.dataAiHint} />
                                     </div>
                                     <div className="relative mt-auto flex-grow flex flex-col justify-end">
-                                        <div className="p-4 bg-gradient-to-t from-black/60 to-transparent">
+                                        <div className="p-4 bg-gradient-to-t from-black/60 via-black/30 to-transparent">
                                             {isActive && (
                                                 <motion.div
                                                     initial={{ opacity: 0, y: 10 }}
@@ -207,10 +207,6 @@ export default function Home() {
                 })}
             </AnimatePresence>
         </motion.div>
-         <div className="absolute bottom-4 text-center text-white/50 flex items-center gap-2 text-xs">
-            <ChevronsLeftRight className="w-3 h-3" />
-            <span>Glisser pour naviguer</span>
-        </div>
       </main>
     </div>
   );
