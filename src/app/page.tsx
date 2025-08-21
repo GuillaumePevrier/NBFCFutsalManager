@@ -111,7 +111,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/50" />
       </div>
       
-       <div className="flex-shrink-0 pt-8 flex justify-center">
+       <div className="flex-shrink-0 pt-10 flex justify-center">
             <Image
                 src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png"
                 alt="Logo du club NBFC Futsal"
@@ -124,7 +124,7 @@ export default function Home() {
       
       <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12">
          <motion.div 
-            className="relative w-full h-[450px] md:h-[500px] flex items-center justify-center"
+            className="relative w-full h-[500px] md:h-[600px] flex items-center justify-center"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
@@ -137,11 +137,11 @@ export default function Home() {
                     const isActive = offset === 0;
 
                     const activeNeonStyle = {
-                      boxShadow: `0 0 10px hsl(var(--primary) / 0.8), 0 0 20px hsl(var(--primary) / 0.6), 0 0 40px hsl(var(--primary) / 0.4), inset 0 0 15px hsl(var(--primary) / 0.4)`
+                      boxShadow: `0 0 12px hsl(var(--primary) / 0.9), 0 0 25px hsl(var(--primary) / 0.7), 0 0 50px hsl(var(--primary) / 0.5), inset 0 0 20px hsl(var(--primary) / 0.5)`
                     };
 
                     const inactiveNeonStyle = {
-                      boxShadow: `0 0 8px hsl(212 96% 48% / 0.6), 0 0 15px hsl(212 96% 48% / 0.5), inset 0 0 10px hsl(212 96% 48% / 0.3)`
+                      boxShadow: `0 0 10px hsl(212 96% 48% / 0.7), 0 0 20px hsl(212 96% 48% / 0.6), inset 0 0 15px hsl(212 96% 48% / 0.4)`
                     };
 
                     return (
@@ -156,7 +156,7 @@ export default function Home() {
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
                             animate={{
-                                x: offset * 110,
+                                x: offset * 120,
                                 y: Math.abs(offset) * 20,
                                 scale: 1 - Math.abs(offset) * 0.15,
                                 rotateY: offset * -15,
@@ -168,7 +168,7 @@ export default function Home() {
                             <MotionCard
                                 whileHover={isActive ? { y: -10 } : {}}
                                 className={cn(
-                                    "w-[200px] h-[320px] md:w-[240px] md:h-[380px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                                    "w-[220px] h-[350px] md:w-[260px] md:h-[420px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
                                     isActive ? "cursor-pointer border-primary/50" : "cursor-grab border-blue-500/30",
                                     "hover:shadow-primary/60"
                                 )}
@@ -178,8 +178,7 @@ export default function Home() {
                                     <div className="absolute inset-0 h-full w-full">
                                         <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className={cn("object-cover opacity-80", card.objectPosition)} data-ai-hint={card.dataAiHint} />
                                     </div>
-                                    <div className="relative mt-auto flex-grow flex flex-col justify-end">
-                                        <div className="p-4 bg-gradient-to-t from-black/60 via-black/30 to-transparent">
+                                    <div className="relative mt-auto flex-grow flex flex-col justify-end p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
                                             {isActive && (
                                                 <motion.div
                                                     initial={{ opacity: 0, y: 10 }}
@@ -199,7 +198,6 @@ export default function Home() {
                                                 </motion.div>
                                             )}
                                         </div>
-                                    </div>
                                 </CardContent>
                             </MotionCard>
                         </motion.div>
@@ -211,5 +209,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
