@@ -15,6 +15,9 @@ export interface Player {
   player_number?: number;
   status?: 'Actif' | 'Blessé' | 'Suspendu' | 'Inactif';
   points: number;
+  // Ajout pour le statut de présence
+  presence_status?: 'online' | 'offline';
+  last_seen?: string; // ISO string
 }
 
 export interface PlayerPosition extends Player {
@@ -157,7 +160,7 @@ export interface Channel {
     name?: string;
     match_id?: string; // uuid
     created_by: string; // uuid
-    participants?: Pick<Player, 'id' | 'name' | 'avatar_url' | 'user_id'>[]; // Not in DB, but useful for UI
+    participants?: Pick<Player, 'id' | 'name' | 'avatar_url' | 'user_id' | 'presence_status'>[]; // Not in DB, but useful for UI
 }
 
 export interface ChannelParticipant {
