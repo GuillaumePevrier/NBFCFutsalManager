@@ -225,8 +225,7 @@ export async function createPlayer(formData: FormData) {
       avatar_url: '',
   };
 
-  const supabase = createClient();
-  const { error: playerError } = await supabase
+  const { error: playerError } = await supabaseAdmin // Use admin client here as well
     .from('players')
     .insert(playerData);
 
@@ -1122,4 +1121,12 @@ export async function updateUserAuth(newEmail?: string, newPassword?: string): P
     
     revalidatePath('/profile');
     return { success: true };
+}
+
+
+export interface UserProfileUpdate {
+    name: string;
+    team: 'D1' | 'D2' | 'Autre';
+    position: 'Gardien' | 'Défenseur' | 'Ailier' | 'Pivot' | 'unspecified' | '';
+    preferred_foot: 'Droit' | 'Gauche' | 'Ambidextre' | 'unspecified' | '';
 }
