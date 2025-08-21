@@ -113,9 +113,9 @@ export default function Header({ children }: HeaderProps) {
             <Image 
                 src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png" 
                 alt="Club Logo" 
-                width={48} 
-                height={48} 
-                className="rounded-sm w-12 h-12"
+                width={56} 
+                height={56} 
+                className="rounded-sm w-14 h-14"
             />
         </Link>
       </div>

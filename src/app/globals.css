@@ -99,4 +99,12 @@ body {
   .btn.btn-ghost:hover, .btn.btn-outline:hover {
     background-color: transparent;
   }
+
+  /* Ensure icon color doesn't change on hover for neon buttons */
+  .btn.neon-blue-sm:hover > svg {
+      color: hsl(var(--foreground));
+  }
+  .dark .btn.neon-blue-sm:hover > svg {
+      color: hsl(var(--foreground));
+  }
 }
