@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints, MessageSquare, Bell, BellOff } from "lucide-react";
 import Image from "next/image";
@@ -16,6 +16,7 @@ import { signOut } from "@/app/actions";
 import AuthDialog from "./AuthDialog";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { ToastAction } from "./ui/toast";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -112,23 +113,23 @@ export default function Header({ children }: HeaderProps) {
             <Image 
                 src="https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png" 
                 alt="Club Logo" 
-                width={40} 
-                height={40} 
-                className="rounded-sm"
+                width={48} 
+                height={48} 
+                className="rounded-sm w-12 h-12"
             />
         </Link>
       </div>
       <div className="flex items-center gap-2">
         {children}
         {isLoggedIn && !isPushLoading && (
-            <Button variant="ghost" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"}>
+            <Button variant="ghost" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm">
                 {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
             </Button>
         )}
         <ThemeToggle />
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="btn neon-blue-sm">
                     <Menu className="h-6 w-6" />
                 </Button>
             </DropdownMenuTrigger>

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -224,11 +223,11 @@ export default function MatchesPage() {
              <div className="space-y-4">
                  <Card className="p-2 bg-card/50">
                     <div className="flex items-center justify-between gap-2">
-                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('prev')}>
+                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('prev')} className="btn neon-blue-sm">
                             <ChevronLeft />
                         </Button>
                         <Select value={activeCompetition} onValueChange={setActiveCompetition}>
-                            <SelectTrigger className="flex-grow">
+                            <SelectTrigger className="flex-grow neon-blue-sm">
                                 <SelectValue placeholder="Choisir une compétition" />
                             </SelectTrigger>
                             <SelectContent>
@@ -237,7 +236,7 @@ export default function MatchesPage() {
                                 ))}
                             </SelectContent>
                         </Select>
-                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('next')}>
+                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('next')} className="btn neon-blue-sm">
                             <ChevronRight />
                         </Button>
                     </div>
@@ -245,11 +244,11 @@ export default function MatchesPage() {
                  {activeCompetition !== 'Amical' && (
                     <Card className="p-2 bg-card/50">
                         <div className="flex items-center justify-between gap-2">
-                            <Button variant="outline" size="icon" onClick={() => setCurrentMatchday(p => Math.max(1, p - 1))} disabled={currentMatchday === 1}>
+                            <Button variant="outline" size="icon" onClick={() => setCurrentMatchday(p => Math.max(1, p - 1))} disabled={currentMatchday === 1} className="btn neon-blue-sm">
                                 <ChevronLeft />
                             </Button>
                             <Select value={String(currentMatchday)} onValueChange={(val) => setCurrentMatchday(Number(val))}>
-                                <SelectTrigger className="flex-grow">
+                                <SelectTrigger className="flex-grow neon-blue-sm">
                                     <SelectValue placeholder="Choisir une journée" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -258,7 +257,7 @@ export default function MatchesPage() {
                                     )) : <SelectItem value="1">Journée 1</SelectItem>}
                                 </SelectContent>
                             </Select>
-                            <Button variant="outline" size="icon" onClick={() => setCurrentMatchday(p => Math.min(maxMatchday, p + 1))} disabled={currentMatchday === maxMatchday}>
+                            <Button variant="outline" size="icon" onClick={() => setCurrentMatchday(p => Math.min(maxMatchday, p + 1))} disabled={currentMatchday === maxMatchday} className="btn neon-blue-sm">
                                 <ChevronRight />
                             </Button>
                         </div>
@@ -279,11 +278,11 @@ export default function MatchesPage() {
             <div className="space-y-4">
                  <Card className="p-2 bg-card/50">
                     <div className="flex items-center justify-between gap-2">
-                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('prev')}>
+                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('prev')} className="btn neon-blue-sm">
                             <ChevronLeft />
                         </Button>
                         <Select value={activeCompetition} onValueChange={setActiveCompetition}>
-                            <SelectTrigger className="flex-grow">
+                            <SelectTrigger className="flex-grow neon-blue-sm">
                                 <SelectValue placeholder="Choisir une compétition" />
                             </SelectTrigger>
                             <SelectContent>
@@ -292,7 +291,7 @@ export default function MatchesPage() {
                                 ))}
                             </SelectContent>
                         </Select>
-                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('next')}>
+                        <Button variant="outline" size="icon" onClick={() => handleCompetitionChange('next')} className="btn neon-blue-sm">
                             <ChevronRight />
                         </Button>
                     </div>
@@ -319,7 +318,7 @@ export default function MatchesPage() {
         <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col">
           <div className="flex justify-end items-center p-4">
             {role === 'coach' && (
-                <Button onClick={handleCreateMatch} size="sm">
+                <Button onClick={handleCreateMatch} size="sm" className="neon-primary-sm">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Nouveau Match
                 </Button>

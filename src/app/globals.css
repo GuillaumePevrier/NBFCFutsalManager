@@ -77,4 +77,26 @@ body {
       linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
       linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
   }
+
+  /* Custom Neon Effect Utilities */
+  .neon-primary-sm {
+    transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out;
+  }
+  .neon-primary-sm:hover, .neon-primary-sm:focus-visible {
+    border-color: hsl(var(--primary) / 0.8);
+    box-shadow: 0 0 8px hsl(var(--primary) / 0.7);
+  }
+  
+  .neon-blue-sm {
+    transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out;
+  }
+  .neon-blue-sm:hover, .neon-blue-sm:focus-visible {
+    border-color: hsl(212 96% 48% / 0.8);
+    box-shadow: 0 0 10px hsl(212 96% 48% / 0.7);
+  }
+
+  /* Remove default hover background from ghost/outline buttons to favor neon effect */
+  .btn.btn-ghost:hover, .btn.btn-outline:hover {
+    background-color: transparent;
+  }
 }
