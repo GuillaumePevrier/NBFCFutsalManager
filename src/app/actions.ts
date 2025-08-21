@@ -90,8 +90,7 @@ export async function getPlayers(): Promise<Player[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('players')
-    .select('*, presences:presences(last_seen)')
-    // Tri par points (décroissant), puis par nom (alphabétique)
+    .select('*')
     .order('points', { ascending: false, nullsFirst: true })
     .order('name', { ascending: true });
     
@@ -100,16 +99,7 @@ export async function getPlayers(): Promise<Player[]> {
     return [];
   }
   
-    // Map the presence data to a more accessible format
-  return (data as any[]).map(player => {
-    const isOnline = player.presences && player.presences.length > 0 && new Date(player.presences[0].last_seen).getTime() > Date.now() - 5 * 60 * 1000;
-    return {
-      ...player,
-      presence_status: isOnline ? 'online' : 'offline',
-      last_seen: player.presences?.[0]?.last_seen,
-      presences: undefined, // clean up the original presences field
-    };
-  });
+  return data as Player[];
 }
 
 
@@ -150,7 +140,6 @@ export async function getCurrentPlayer(): Promise<Player | null> {
 
 
 export async function createPlayer(formData: FormData) {
-  const supabase = createClient();
   const supabaseAdmin = createAdminClient();
   
   const name = formData.get('name') as string;
@@ -175,17 +164,18 @@ export async function createPlayer(formData: FormData) {
   }
   
   // 2. Create player profile
-  const playerData = {
+  const playerData: Partial<Player> = {
       name: name,
       email: email || null,
       user_id: authUserId, // Link to auth user
-      team: formData.get('team'),
-      position: formData.get('position') === 'unspecified' ? '' : formData.get('position'),
-      preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot'),
-      avatar_url: formData.get('avatar_url'),
+      team: formData.get('team') as Player['team'] || 'D1',
+      position: formData.get('position') === 'unspecified' ? '' : formData.get('position') as Player['position'],
+      preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot') as Player['preferred_foot'],
+      avatar_url: formData.get('avatar_url') as string | undefined,
       points: 0
   };
 
+  const supabase = createClient();
   const { error } = await supabase
     .from('players')
     .insert([playerData]);
@@ -1149,3 +1139,4 @@ export async function managePlayerAccess(playerId: string, newEmail: string, new
     revalidatePath('/admin/access');
     return { success: true };
 }
+
