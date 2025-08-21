@@ -89,7 +89,7 @@ export async function deleteMatch(matchId: string): Promise<{ success: boolean, 
 export async function getPlayers(): Promise<Player[]> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from('players')
+    .from('players_with_presence')
     .select('*')
     .order('points', { ascending: false, nullsFirst: true })
     .order('name', { ascending: true });
