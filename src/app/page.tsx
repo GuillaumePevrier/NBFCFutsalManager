@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -122,9 +121,9 @@ export default function Home() {
             />
         </div>
       
-      <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12">
+      <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12 mt-12">
          <motion.div 
-            className="relative w-full h-[500px] md:h-[600px] flex items-center justify-center"
+            className="relative w-full h-[550px] md:h-[650px] flex items-center justify-center"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
@@ -137,11 +136,11 @@ export default function Home() {
                     const isActive = offset === 0;
 
                     const activeNeonStyle = {
-                      boxShadow: `0 0 12px hsl(var(--primary) / 0.9), 0 0 25px hsl(var(--primary) / 0.7), 0 0 50px hsl(var(--primary) / 0.5), inset 0 0 20px hsl(var(--primary) / 0.5)`
+                      boxShadow: `0 0 15px hsl(var(--primary) / 1), 0 0 30px hsl(var(--primary) / 0.8), 0 0 60px hsl(var(--primary) / 0.6), inset 0 0 25px hsl(var(--primary) / 0.6)`
                     };
 
                     const inactiveNeonStyle = {
-                      boxShadow: `0 0 10px hsl(212 96% 48% / 0.7), 0 0 20px hsl(212 96% 48% / 0.6), inset 0 0 15px hsl(212 96% 48% / 0.4)`
+                      boxShadow: `0 0 12px hsl(212 96% 48% / 0.8), 0 0 25px hsl(212 96% 48% / 0.7), inset 0 0 20px hsl(212 96% 48% / 0.5)`
                     };
 
                     return (
@@ -156,8 +155,8 @@ export default function Home() {
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
                             animate={{
-                                x: offset * 120,
-                                y: Math.abs(offset) * 20,
+                                x: offset * 140,
+                                y: Math.abs(offset) * 25,
                                 scale: 1 - Math.abs(offset) * 0.15,
                                 rotateY: offset * -15,
                                 zIndex: initialCardData.length - Math.abs(offset),
@@ -168,7 +167,7 @@ export default function Home() {
                             <MotionCard
                                 whileHover={isActive ? { y: -10 } : {}}
                                 className={cn(
-                                    "w-[220px] h-[350px] md:w-[260px] md:h-[420px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                                    "w-[280px] h-[480px] md:w-[340px] md:h-[550px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
                                     isActive ? "cursor-pointer border-primary/50" : "cursor-grab border-blue-500/30",
                                     "hover:shadow-primary/60"
                                 )}
@@ -188,12 +187,11 @@ export default function Home() {
                                                 >
                                                 <Button 
                                                     size="sm" 
-                                                    variant="default" 
-                                                    className="bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                                                    variant="outline"
+                                                    className="bg-transparent border-2 border-primary/80 text-primary-foreground font-bold hover:bg-transparent hover:text-primary-foreground hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.8)] transition-all duration-300"
                                                     onClick={() => handleCardClick(card)}
                                                     >
                                                         {card.title}
-                                                        <ArrowRight className="w-4 h-4 ml-2" />
                                                     </Button>
                                                 </motion.div>
                                             )}
