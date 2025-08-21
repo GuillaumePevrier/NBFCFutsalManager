@@ -146,48 +146,48 @@ export async function createPlayer(formData: FormData) {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  
-  let authUserId: string | undefined = undefined;
 
-  // 1. Create Auth user if email and password are provided
-  if (email && password) {
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      password: password,
-      email_confirm: true, // Auto-confirm email
-    });
-
-    if (authError) {
-      console.error("Failed to create auth user:", authError);
-      return { error: { message: "Impossible de créer le compte utilisateur : " + authError.message } };
-    }
-    authUserId = authData.user.id;
+  if (!name || !email || !password) {
+      return { error: { message: "Le nom, l'email et le mot de passe sont obligatoires." }};
   }
   
-  // 2. Create player profile
+  // 1. Create Auth user
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email: email,
+    password: password,
+    email_confirm: true, // Auto-confirm email
+  });
+
+  if (authError) {
+    console.error("Failed to create auth user:", authError);
+    return { error: { message: "Impossible de créer le compte utilisateur : " + authError.message } };
+  }
+  const authUserId = authData.user.id;
+  
+  // 2. Create player profile linked to the new auth user
   const playerData: Partial<Player> = {
+      user_id: authUserId,
       name: name,
-      email: email || undefined, // Use undefined instead of null to let default value apply
-      user_id: authUserId, // Link to auth user
-      team: formData.get('team') as Player['team'] || 'D1',
-      position: formData.get('position') === 'unspecified' ? '' : formData.get('position') as Player['position'],
-      preferred_foot: formData.get('preferred_foot') === 'unspecified' ? '' : formData.get('preferred_foot') as Player['preferred_foot'],
-      avatar_url: formData.get('avatar_url') as string | undefined,
-      points: 0
+      email: email,
+      team: 'D1', // Default value
+      position: '',
+      preferred_foot: '',
+      avatar_url: '',
+      points: 0,
+      goals: 0,
+      fouls: 0,
   };
 
   const supabase = createClient();
-  const { error } = await supabase
+  const { error: playerError } = await supabase
     .from('players')
     .insert([playerData]);
 
-  if (error) {
-    console.error("Failed to create player profile:", error);
+  if (playerError) {
+    console.error("Failed to create player profile:", playerError);
     // If player creation fails, delete the auth user to avoid orphans
-    if (authUserId) {
-      await supabaseAdmin.auth.admin.deleteUser(authUserId);
-    }
-    return { error: { message: "Impossible de créer le profil joueur : " + error.message } };
+    await supabaseAdmin.auth.admin.deleteUser(authUserId);
+    return { error: { message: "Impossible de créer le profil joueur : " + playerError.message } };
   }
 
   revalidatePath('/admin/players');
@@ -220,7 +220,7 @@ export async function updatePlayer(formData: FormData) {
   let authUserId = existingPlayer.user_id;
 
   // --- Auth Management ---
-  // Scenario 1: Player already has an auth account.
+  // Scenario 1: Player already has an auth account. Update it if needed.
   if (authUserId) {
     const authUpdates: any = {};
     if (newEmail && newEmail !== existingPlayer.email) {
@@ -236,7 +236,7 @@ export async function updatePlayer(formData: FormData) {
       }
     }
   } 
-  // Scenario 2: Player exists but has no auth account, and a new email and password are provided.
+  // Scenario 2: Player exists but has no auth account. Create one if email/password are provided.
   else if (!authUserId && newEmail && newPassword) {
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: newEmail,
@@ -245,7 +245,7 @@ export async function updatePlayer(formData: FormData) {
       });
 
       if (authError) {
-          return { error: { message: "Failed to create new auth user: " + authError.message }};
+          return { error: { message: "Failed to create new auth user for existing player: " + authError.message }};
       }
       authUserId = authData.user.id; // Get the newly created user ID
   }
