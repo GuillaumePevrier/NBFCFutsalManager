@@ -88,7 +88,6 @@ export async function deleteMatch(matchId: string): Promise<{ success: boolean, 
 
 export async function getPlayers(): Promise<Player[]> {
   const supabase = createClient();
-  // Fetch directly from the players table instead of the problematic view
   const { data, error } = await supabase
     .from('players') 
     .select('*')
@@ -165,7 +164,7 @@ export async function createPlayer(formData: FormData) {
   const authUserId = authData.user.id;
   
   // 2. Create player profile linked to the new auth user
-  const playerData: Partial<Player> = {
+  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen'> = {
       user_id: authUserId,
       name: name,
       email: email,
@@ -173,15 +172,12 @@ export async function createPlayer(formData: FormData) {
       position: '',
       preferred_foot: '',
       avatar_url: '',
-      points: 0,
-      goals: 0,
-      fouls: 0,
   };
 
   const supabase = createClient();
   const { error: playerError } = await supabase
     .from('players')
-    .insert([playerData]);
+    .insert(playerData);
 
   if (playerError) {
     console.error("Failed to create player profile:", playerError);
@@ -223,7 +219,7 @@ export async function updatePlayer(formData: FormData) {
   // Scenario 1: Player already has an auth account. Update it if needed.
   if (authUserId) {
     const authUpdates: any = {};
-    if (newEmail && newEmail !== existingPlayer.email) {
+    if (newEmail && newEmail !== (existingPlayer.email || '')) {
       authUpdates.email = newEmail;
     }
     if (newPassword) {

@@ -45,6 +45,8 @@ export function createAdminClient() {
         throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables.");
     }
 
+    // For service role clients, we don't need to pass cookie handling logic,
+    // as they are not acting on behalf of a user.
     return createServerClient(
         "https://vehbxkqndoqmqwtjbcjr.supabase.co",
         process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -52,8 +54,16 @@ export function createAdminClient() {
             auth: {
                 autoRefreshToken: false,
                 persistSession: false
-            }
+            },
+            // This empty cookies object is the crucial fix.
+            cookies: {
+                // Return null for any cookie request
+                get: () => null,
+                // Do nothing on set
+                set: () => {},
+                // Do nothing on remove
+                remove: () => {},
+            },
         }
     );
 }
-
