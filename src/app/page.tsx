@@ -123,7 +123,7 @@ export default function Home() {
       
       <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12">
          <motion.div 
-            className="relative w-full h-[380px] md:h-[420px] flex items-center justify-center mt-4"
+            className="relative w-full h-[360px] md:h-[390px] flex items-center justify-center mt-6"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
@@ -150,14 +150,13 @@ export default function Home() {
                             initial={{
                                 x: offset * 80,
                                 scale: 1 - Math.abs(offset) * 0.2,
-                                rotateY: offset * -25,
                                 zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
                             animate={{
                                 x: offset * 120,
                                 y: Math.abs(offset) * 25,
-                                scale: 1 - Math.abs(offset) * 0.15,
+                                scale: 1 - Math.abs(offset) * 0.1,
                                 zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
@@ -166,7 +165,7 @@ export default function Home() {
                             <MotionCard
                                 whileHover={isActive ? { y: -10 } : {}}
                                 className={cn(
-                                    "w-[210px] h-[350px] md:w-[250px] md:h-[390px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                                    "w-[200px] h-[340px] md:w-[240px] md:h-[380px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
                                     isActive ? "cursor-pointer border-primary/50" : "cursor-grab border-blue-500/30",
                                     "hover:shadow-primary/60"
                                 )}
@@ -176,13 +175,14 @@ export default function Home() {
                                     <div className="absolute inset-0 h-full w-full">
                                         <Image src={card.imageUrl} alt={`Illustration pour ${card.title}`} fill className={cn("object-cover opacity-80", card.objectPosition)} data-ai-hint={card.dataAiHint} />
                                     </div>
-                                    <div className="relative mt-auto flex-grow flex flex-col justify-end p-4 pb-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                                    <div className="relative mt-auto flex-grow flex flex-col justify-center p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
                                             {isActive && (
                                                 <motion.div
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: 0.1 }}
                                                     onPointerDown={(e) => e.stopPropagation()}
+                                                    className="pt-16"
                                                 >
                                                 <Button 
                                                     size="lg"
