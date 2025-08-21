@@ -123,7 +123,7 @@ export default function Home() {
       
       <main className="flex-grow flex flex-col items-center justify-center relative pb-8 md:pb-12">
          <motion.div 
-            className="relative w-full h-[320px] md:h-[350px] flex items-center justify-center mt-6"
+            className="relative w-full h-[340px] md:h-[370px] flex items-center justify-center mt-6"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.1}
@@ -156,7 +156,7 @@ export default function Home() {
                             animate={{
                                 x: offset * 120,
                                 y: Math.abs(offset) * 25,
-                                scale: 1 - Math.abs(offset) * 0.1,
+                                scale: 1 - Math.abs(offset) * 0.15,
                                 zIndex: initialCardData.length - Math.abs(offset),
                                 opacity: Math.abs(offset) > 2 ? 0 : 1,
                             }}
@@ -165,7 +165,7 @@ export default function Home() {
                             <MotionCard
                                 whileHover={isActive ? { y: -10 } : {}}
                                 className={cn(
-                                    "w-[220px] h-[300px] md:w-[260px] md:h-[340px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                                    "w-[240px] h-[320px] md:w-[270px] md:h-[350px] bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 transition-all duration-300",
                                     isActive ? "cursor-pointer border-primary/50" : "cursor-grab border-blue-500/30",
                                     "hover:shadow-primary/60"
                                 )}
@@ -182,12 +182,12 @@ export default function Home() {
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: 0.1 }}
                                                     onPointerDown={(e) => e.stopPropagation()}
-                                                    className="pb-8"
+                                                    className="pb-2"
                                                 >
                                                 <Button 
                                                     size="sm"
                                                     variant="outline"
-                                                    className="bg-transparent border-2 border-primary/80 text-primary-foreground font-['Black_Ops_One',_system-ui] text-xl tracking-wider uppercase hover:bg-transparent hover:text-primary-foreground hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.8)] transition-all duration-300 px-4"
+                                                    className="bg-transparent border-2 border-primary/80 text-primary-foreground font-['Black_Ops_One',_system-ui] text-lg tracking-wider uppercase hover:bg-transparent hover:text-primary-foreground hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.8)] transition-all duration-300 px-4"
                                                     onClick={() => handleCardClick(card)}
                                                     >
                                                         {card.title}
