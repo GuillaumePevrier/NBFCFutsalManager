@@ -44,11 +44,10 @@ export default function Header({ children }: HeaderProps) {
         setIsLoggedIn(userIsLoggedIn);
 
         if (userIsLoggedIn) {
-            if (session.user.email === 'guillaumepevrier@gmail.com') {
-                setRole('coach');
-            } else {
-                setRole('player');
-            }
+            // Simplified role check
+            const userEmail = session.user.email;
+            setRole(userEmail === 'guillaumepevrier@gmail.com' ? 'coach' : 'player');
+            
             const { data: player } = await supabase.from('players').select('*').eq('user_id', session.user.id).single();
             setCurrentUser(player);
         } else {
@@ -88,11 +87,8 @@ export default function Header({ children }: HeaderProps) {
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
         if (userIsLoggedIn) {
-             if (session.user.email === 'guillaumepevrier@gmail.com' ) {
-                setRole('coach');
-            } else {
-                setRole('player');
-            }
+             const userEmail = session.user.email;
+             setRole(userEmail === 'guillaumepevrier@gmail.com' ? 'coach' : 'player');
             const { data: player } = await supabase.from('players').select('*').eq('user_id', session.user.id).single();
             setCurrentUser(player);
         }
@@ -180,7 +176,6 @@ export default function Header({ children }: HeaderProps) {
                   <>
                     <DropdownMenuItem asChild><Link href="/admin/opponents"><Shield className="mr-2 h-4 w-4" /><span>Équipes adverses</span></Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/admin/notifications"><Bell className="mr-2 h-4 w-4" /><span>Notifications</span></Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild><Link href="/admin/access"><KeyRound className="mr-2 h-4 w-4" /><span>Gestion des accès</span></Link></DropdownMenuItem>
                   </>
                 )}
                 {!isLoggedIn && (
