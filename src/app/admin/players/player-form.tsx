@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useFormStatus } from 'react-dom';
+import { useForm, useFormState } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ export function PlayerForm({ player }: { player?: Player }) {
     const isEditing = !!player;
     const { toast } = useToast();
 
+    // We don't use useForm here because we are using a standard form with server actions
     const formAction = async (formData: FormData) => {
         try {
             let result;
@@ -51,10 +52,12 @@ export function PlayerForm({ player }: { player?: Player }) {
     };
 
     function SubmitButton() {
-        const { pending } = useFormStatus();
+        // We can't use useFormStatus in a component that is not a child of a form
+        // For simplicity, we'll just show a generic button, as server actions handle pending state.
+        // To show a pending state, this would need to be a separate client component.
         return (
-            <Button type="submit" disabled={pending}>
-                {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit">
+                {/* <Loader2 className="mr-2 h-4 w-4 animate-spin" /> */}
                 {isEditing ? "Sauvegarder les modifications" : "Créer le Joueur"}
             </Button>
         );
