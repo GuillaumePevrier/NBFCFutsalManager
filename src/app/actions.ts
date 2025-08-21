@@ -201,7 +201,7 @@ export async function updatePlayer(formData: FormData) {
   
   const playerId = formData.get('id') as string;
   const newEmail = formData.get('email') as string;
-  const newPassword = formData.get('password') as string; // Optional new password
+  const newPassword = formData.get('password') as string;
 
   if (!playerId) {
     return { error: { message: "Player ID is missing for update." }};
@@ -219,16 +219,25 @@ export async function updatePlayer(formData: FormData) {
 
   let authUserId = existingPlayer.user_id;
 
-  // Scenario 1: Player has an auth account, and email is being changed.
-  if (authUserId && newEmail && newEmail !== existingPlayer.email) {
-      const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, { email: newEmail });
+  // --- Auth Management ---
+  // Scenario 1: Player already has an auth account.
+  if (authUserId) {
+    const authUpdates: any = {};
+    if (newEmail && newEmail !== existingPlayer.email) {
+      authUpdates.email = newEmail;
+    }
+    if (newPassword) {
+      authUpdates.password = newPassword;
+    }
+    if (Object.keys(authUpdates).length > 0) {
+      const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, authUpdates);
       if (updateUserError) {
-          return { error: { message: "Failed to update auth user email: " + updateUserError.message }};
+        return { error: { message: "Failed to update auth user: " + updateUserError.message }};
       }
-  }
-
+    }
+  } 
   // Scenario 2: Player exists but has no auth account, and a new email and password are provided.
-  if (!authUserId && newEmail && newPassword) {
+  else if (!authUserId && newEmail && newPassword) {
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: newEmail,
           password: newPassword,
@@ -238,17 +247,10 @@ export async function updatePlayer(formData: FormData) {
       if (authError) {
           return { error: { message: "Failed to create new auth user: " + authError.message }};
       }
-      authUserId = authData.user.id;
+      authUserId = authData.user.id; // Get the newly created user ID
   }
   
-  // Scenario 3: User has an auth account and a new password is provided
-  if(authUserId && newPassword){
-      const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, { password: newPassword });
-      if(passwordError){
-           return { error: { message: "Failed to update password: " + passwordError.message }};
-      }
-  }
-
+  // --- Player Profile Update ---
   const playerData: Partial<Player> = {
       name: formData.get('name') as string,
       email: newEmail || null,
