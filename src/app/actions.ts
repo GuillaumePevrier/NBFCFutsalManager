@@ -6,10 +6,6 @@ import type { Player, Opponent, Match, Training, Channel, Message, PushSubscript
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import webpush from 'web-push';
-import dotenv from 'dotenv';
-
-// Load environment variables from .env file
-dotenv.config();
 
 // VAPID keys should be configured only if they are set in environment variables
 if (process.env.VAPID_SUBJECT && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -26,6 +22,58 @@ if (process.env.VAPID_SUBJECT && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && pro
 
 
 // Auth Actions
+export async function signUp(formData: FormData) {
+  const name = formData.get('name') as string;
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  const supabase = createClient();
+
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: name, // You can add custom data to the user
+      },
+    },
+  });
+
+  if (authError) {
+    return { success: false, error: { message: "Impossible de créer le compte : " + authError.message } };
+  }
+  
+  if (!authData.user) {
+     return { success: false, error: { message: "L'utilisateur n'a pas été créé, veuillez réessayer." } };
+  }
+
+  // Create player profile linked to the new auth user
+  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen'> = {
+      user_id: authData.user.id,
+      name: name,
+      email: email,
+      team: 'D1', // Default value
+      position: '',
+      preferred_foot: '',
+      avatar_url: '',
+  };
+
+  const { error: playerError } = await supabase
+    .from('players')
+    .insert(playerData);
+
+  if (playerError) {
+    console.error("Failed to create player profile after signup:", playerError);
+    // If player creation fails, you might want to delete the auth user to avoid orphans
+    const supabaseAdmin = createAdminClient();
+    await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+    return { success: false, error: { message: "Impossible de créer le profil joueur : " + playerError.message } };
+  }
+
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+
 export async function signInWithPassword(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
@@ -92,7 +140,7 @@ export async function deleteMatch(matchId: string): Promise<{ success: boolean, 
 export async function getPlayers(): Promise<Player[]> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from('players') 
+    .from('players')
     .select('*')
     .order('points', { ascending: false, nullsFirst: true })
     .order('name', { ascending: true });
