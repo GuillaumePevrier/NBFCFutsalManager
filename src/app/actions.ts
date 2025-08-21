@@ -88,8 +88,9 @@ export async function deleteMatch(matchId: string): Promise<{ success: boolean, 
 
 export async function getPlayers(): Promise<Player[]> {
   const supabase = createClient();
+  // Fetch directly from the players table instead of the problematic view
   const { data, error } = await supabase
-    .from('players_with_presence')
+    .from('players') 
     .select('*')
     .order('points', { ascending: false, nullsFirst: true })
     .order('name', { ascending: true });
@@ -166,7 +167,7 @@ export async function createPlayer(formData: FormData) {
   // 2. Create player profile
   const playerData: Partial<Player> = {
       name: name,
-      email: email || null,
+      email: email || undefined, // Use undefined instead of null to let default value apply
       user_id: authUserId, // Link to auth user
       team: formData.get('team') as Player['team'] || 'D1',
       position: formData.get('position') === 'unspecified' ? '' : formData.get('position') as Player['position'],
@@ -1139,4 +1140,5 @@ export async function managePlayerAccess(playerId: string, newEmail: string, new
     revalidatePath('/admin/access');
     return { success: true };
 }
+
 

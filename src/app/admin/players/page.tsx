@@ -107,16 +107,26 @@ export default function PlayersAdminPage() {
             setRole(newRole);
         });
         
-        // Realtime subscription for players table
-        const playerChannel = supabase.channel('public:players:points-update')
+        const playerChannel = supabase.channel('public:players')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
                 fetchPlayers();
             })
             .subscribe();
 
-        const presenceChannel = supabase.channel('public:presences')
+        const presenceChannel = supabase.channel('presences')
             .on('presence', { event: 'sync' }, () => {
-                fetchPlayers(); // Refetch players to update presence status
+                const presenceState = presenceChannel.presenceState<{ online_at: string }>();
+                const presences = Object.entries(presenceState).map(([userId, states]) => ({
+                    user_id: userId,
+                    status: (states as any[]).length > 0 ? 'online' : 'offline',
+                }));
+                
+                setPlayers(currentPlayers => 
+                    currentPlayers.map(player => {
+                        const presence = presences.find(p => p.user_id === player.user_id);
+                        return presence ? { ...player, presence_status: presence.status as 'online' | 'offline' } : player;
+                    })
+                );
             })
             .subscribe();
 
