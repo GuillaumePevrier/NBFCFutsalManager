@@ -225,7 +225,7 @@ export async function createPlayer(formData: FormData) {
       avatar_url: '',
   };
 
-  const { error: playerError } = await supabaseAdmin // Use admin client here as well
+  const { error: playerError } = await supabaseAdmin
     .from('players')
     .insert(playerData);
 
