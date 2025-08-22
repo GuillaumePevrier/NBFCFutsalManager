@@ -206,7 +206,7 @@ export async function createPlayer(formData: FormData) {
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
     password: password,
-    email_confirm: false, // Do not require email confirmation
+    email_confirm: true, // Mark email as confirmed immediately
   });
 
   if (authError) {
@@ -288,7 +288,7 @@ export async function updatePlayer(formData: FormData) {
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: newEmail,
           password: newPassword,
-          email_confirm: false, // Account is active immediately
+          email_confirm: true, // Account is active immediately
       });
 
       if (authError) {
@@ -1123,4 +1123,34 @@ export async function updateUserAuth(newEmail?: string, newPassword?: string): P
     
     revalidatePath('/profile');
     return { success: true };
+}
+
+export async function validateAllUsers(): Promise<{ success: boolean, error?: any, count: number }> {
+    const supabaseAdmin = createAdminClient();
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+        perPage: 1000,
+    });
+
+    if (error) {
+        console.error('Failed to list users for validation:', error);
+        return { success: false, error, count: 0 };
+    }
+
+    let validatedCount = 0;
+    for (const user of data.users) {
+        if (!user.email_confirmed_at) {
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+                user.id,
+                { email_confirm: true }
+            );
+            if (updateError) {
+                console.error(`Failed to validate user ${user.id}:`, updateError);
+            } else {
+                validatedCount++;
+            }
+        }
+    }
+    
+    revalidatePath('/admin/players');
+    return { success: true, count: validatedCount };
 }

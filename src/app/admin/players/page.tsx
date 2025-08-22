@@ -5,9 +5,9 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, ArrowLeft, View, Users, Medal, RefreshCw, Sparkles, Target } from "lucide-react";
+import { PlusCircle, ArrowLeft, View, Users, Medal, RefreshCw, Sparkles, Target, UserCheck } from "lucide-react";
 import Link from "next/link";
-import { getPlayers, resetAllPlayersStats } from "@/app/actions";
+import { getPlayers, resetAllPlayersStats, validateAllUsers } from "@/app/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlayerActions } from "./player-actions";
 import { createClient } from "@/lib/supabase/client";
@@ -85,6 +85,22 @@ export default function PlayersAdminPage() {
              toast({
                 title: "Erreur",
                 description: "La réinitialisation des statistiques a échoué.",
+                variant: "destructive"
+            });
+        }
+    }
+
+    const handleValidateUsers = async () => {
+        const result = await validateAllUsers();
+        if (result.success) {
+            toast({
+                title: "Validation réussie",
+                description: `${result.count} joueur(s) ont été validés et peuvent maintenant se connecter.`
+            });
+        } else {
+             toast({
+                title: "Erreur de validation",
+                description: "Une erreur est survenue lors de la validation des joueurs.",
                 variant: "destructive"
             });
         }
@@ -178,6 +194,29 @@ export default function PlayersAdminPage() {
                             <PointsScaleDialog />
                             {isCoach && (
                                 <>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="secondary" size="sm">
+                                            <UserCheck className="mr-2 h-4 w-4" />
+                                            Valider Joueurs
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Confirmer la validation</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Cette action va forcer la validation de tous les joueurs en attente. Ils pourront ensuite se connecter. Voulez-vous continuer ?
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleValidateUsers}>
+                                                Oui, valider tout le monde
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="destructive" size="sm" className='btn neon-primary-sm'>
