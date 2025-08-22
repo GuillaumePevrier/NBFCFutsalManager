@@ -205,7 +205,7 @@ export async function createPlayer(formData: FormData) {
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
     password: password,
-    email_confirm: true, // Auto-confirm email
+    email_confirm: false, // Do not require email confirmation
   });
 
   if (authError) {
@@ -1130,3 +1130,5 @@ export interface UserProfileUpdate {
     position: 'Gardien' | 'Défenseur' | 'Ailier' | 'Pivot' | 'unspecified' | '';
     preferred_foot: 'Droit' | 'Gauche' | 'Ambidextre' | 'unspecified' | '';
 }
+
+    
