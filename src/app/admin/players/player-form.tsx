@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Player } from "@/lib/types";
-import { ArrowLeft, KeyRound, UserPlus, FileEdit } from "lucide-react";
+import { ArrowLeft, KeyRound, UserPlus, FileEdit, Loader2 } from "lucide-react";
 import { createPlayer, updatePlayer } from "@/app/actions";
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -19,44 +19,30 @@ export function PlayerForm({ player }: { player?: Player }) {
     const { toast } = useToast();
 
     const formAction = async (formData: FormData) => {
-        try {
-            let result;
-            if (isEditing) {
-                // This is an update action
-                formData.set('id', player.id);
-                result = await updatePlayer(formData);
-            } else {
-                // This is a create action
-                result = await createPlayer(formData);
-            }
+        const result = isEditing ? await updatePlayer(formData) : await createPlayer(formData);
 
-            if (result?.error) {
-                toast({
-                    title: "Erreur",
-                    description: result.error.message,
-                    variant: "destructive",
-                });
-            } else {
-                const playerName = formData.get('name') || 'Le joueur';
-                toast({
-                    title: isEditing ? "Joueur modifié" : "Joueur créé",
-                    description: `${playerName} a été ${isEditing ? 'mis à jour' : 'ajouté avec succès'}.`
-                });
-                // Redirect will happen inside the server action
-            }
-        } catch (error: any) {
+        if (result?.error) {
             toast({
-                title: "Erreur inattendue",
-                description: error.message || "Une erreur est survenue.",
+                title: "Erreur",
+                description: result.error.message,
                 variant: "destructive",
             });
+        } else {
+            const playerName = formData.get('name') || 'Le joueur';
+            toast({
+                title: isEditing ? "Joueur modifié" : "Joueur créé",
+                description: `${playerName} a été ${isEditing ? 'mis à jour' : 'ajouté avec succès'}.`
+            });
+            // Redirect will happen inside the server action for both create and update
         }
     };
+
 
     function SubmitButton() {
         const { pending } = useFormStatus();
         return (
             <Button type="submit" disabled={pending}>
+                {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? "Sauvegarder les modifications" : "Créer le Joueur"}
             </Button>
         );

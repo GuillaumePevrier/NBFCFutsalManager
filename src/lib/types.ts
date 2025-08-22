@@ -2,9 +2,9 @@
 
 export interface Player {
   id: string; // uuid
-  user_id?: string; // uuid, foreign key to auth.users
+  user_id: string | null; // uuid, foreign key to auth.users, CAN BE NULL
   name: string;
-  email?: string;
+  email: string | null;
   age?: number;
   avatar_url?: string;
   team: 'D1' | 'D2' | 'Autre';
@@ -19,6 +19,14 @@ export interface Player {
   presence_status?: 'online' | 'offline';
   last_seen?: string; // ISO string
 }
+
+export interface UserProfileUpdate {
+    name: string;
+    team: 'D1' | 'D2' | 'Autre';
+    position: 'Gardien' | 'Défenseur' | 'Ailier' | 'Pivot' | 'unspecified' | '';
+    preferred_foot: 'Droit' | 'Gauche' | 'Ambidextre' | 'unspecified' | '';
+}
+
 
 export interface PlayerPosition extends Player {
   position: { x: number; y: number };

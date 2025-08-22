@@ -35,6 +35,7 @@ export async function signUp(formData: FormData) {
       data: {
         full_name: name, // You can add custom data to the user
       },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/`,
     },
   });
 
@@ -242,7 +243,6 @@ export async function createPlayer(formData: FormData) {
 
 
 export async function updatePlayer(formData: FormData) {
-  const supabase = createClient();
   const supabaseAdmin = createAdminClient();
   
   const playerId = formData.get('id') as string;
@@ -253,7 +253,8 @@ export async function updatePlayer(formData: FormData) {
     return { error: { message: "Player ID is missing for update." }};
   }
   
-  const { data: existingPlayer, error: fetchError } = await supabase
+  // Use the admin client to fetch the player, bypassing RLS
+  const { data: existingPlayer, error: fetchError } = await supabaseAdmin
     .from('players')
     .select('user_id, email')
     .eq('id', playerId)
@@ -269,7 +270,7 @@ export async function updatePlayer(formData: FormData) {
   // Scenario 1: Player already has an auth account. Update it if needed.
   if (authUserId) {
     const authUpdates: any = {};
-    if (newEmail && newEmail !== (existingPlayer.email || '')) {
+    if (newEmail && newEmail !== existingPlayer.email) {
       authUpdates.email = newEmail;
     }
     if (newPassword) {
@@ -287,7 +288,7 @@ export async function updatePlayer(formData: FormData) {
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: newEmail,
           password: newPassword,
-          email_confirm: true,
+          email_confirm: false, // Account is active immediately
       });
 
       if (authError) {
@@ -297,7 +298,8 @@ export async function updatePlayer(formData: FormData) {
   }
   
   // --- Player Profile Update ---
-  const playerData: Partial<Player> = {
+  // Ensure we use a partial type for the update payload
+  const playerData: Partial<Omit<Player, 'id'>> = {
       name: formData.get('name') as string,
       email: newEmail || null,
       user_id: authUserId, // Update user_id in case it was just created
@@ -307,7 +309,7 @@ export async function updatePlayer(formData: FormData) {
       avatar_url: formData.get('avatar_url') as string,
   };
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('players')
     .update(playerData)
     .eq('id', playerId);
@@ -324,11 +326,10 @@ export async function updatePlayer(formData: FormData) {
 
 
 export async function deletePlayer(playerId: string) {
-    const supabase = createClient();
     const supabaseAdmin = createAdminClient();
     
     // First, find the player to get their user_id
-    const { data: player, error: fetchError } = await supabase
+    const { data: player, error: fetchError } = await supabaseAdmin
         .from('players')
         .select('user_id')
         .eq('id', playerId)
@@ -348,8 +349,8 @@ export async function deletePlayer(playerId: string) {
         }
     }
     
-    // Then, delete the player profile. This will cascade and delete related entries.
-    const { error } = await supabase
+    // Then, delete the player profile.
+    const { error } = await supabaseAdmin
         .from('players')
         .delete()
         .eq('id', playerId);
@@ -361,6 +362,7 @@ export async function deletePlayer(playerId: string) {
 
     revalidatePath('/admin/players');
     revalidatePath('/');
+    redirect('/admin/players');
 }
 
 
@@ -1122,13 +1124,3 @@ export async function updateUserAuth(newEmail?: string, newPassword?: string): P
     revalidatePath('/profile');
     return { success: true };
 }
-
-
-export interface UserProfileUpdate {
-    name: string;
-    team: 'D1' | 'D2' | 'Autre';
-    position: 'Gardien' | 'Défenseur' | 'Ailier' | 'Pivot' | 'unspecified' | '';
-    preferred_foot: 'Droit' | 'Gauche' | 'Ambidextre' | 'unspecified' | '';
-}
-
-    
