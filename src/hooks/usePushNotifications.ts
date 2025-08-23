@@ -24,6 +24,7 @@ export function usePushNotifications() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isPushSupported, setIsPushSupported] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
@@ -31,12 +32,15 @@ export function usePushNotifications() {
       setPermissionStatus(Notification.permission);
 
       const checkSubscription = async () => {
+        setLoading(true);
         try {
           const swRegistration = await navigator.serviceWorker.ready;
           const sub = await swRegistration.pushManager.getSubscription();
           setIsSubscribed(!!sub);
         } catch (error) {
           console.error("Error checking for push subscription:", error);
+        } finally {
+          setLoading(false);
         }
       };
       checkSubscription();
@@ -48,13 +52,24 @@ export function usePushNotifications() {
       console.error("Push notifications not supported or VAPID key missing.");
       return false;
     }
+    
+    // Check permission status first. If denied, don't proceed.
+    if (Notification.permission === 'denied') {
+        toast({
+          title: "Permissions bloquées",
+          description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur pour ce site.",
+          variant: "destructive",
+          duration: 10000,
+        });
+        return false;
+    }
 
     try {
       const swRegistration = await navigator.serviceWorker.ready;
       let sub = await swRegistration.pushManager.getSubscription();
 
       if (!sub) {
-        // This will trigger the browser's permission prompt
+        // This is where the browser's permission prompt is triggered
         const applicationServerKey = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
         sub = await swRegistration.pushManager.subscribe({
           userVisibleOnly: true,
@@ -62,18 +77,8 @@ export function usePushNotifications() {
         });
       }
       
-      // Update permission status after the prompt
+      // Update permission status after the prompt might have changed it
       setPermissionStatus(Notification.permission);
-      
-      // If permission is denied, we can't proceed
-      if (Notification.permission === 'denied') {
-        toast({
-          title: "Permissions bloquées",
-          description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur.",
-          variant: "destructive",
-        });
-        return false;
-      }
       
       const result = await savePushSubscription(sub.toJSON());
 
@@ -92,6 +97,7 @@ export function usePushNotifications() {
         });
         // If saving fails, we should unsubscribe to avoid a broken state
         await sub.unsubscribe();
+        setIsSubscribed(false);
         return false;
       }
     } catch (error) {
@@ -148,6 +154,7 @@ export function usePushNotifications() {
     isSubscribed,
     isPushSupported,
     permissionStatus,
+    loading,
     subscribeToPush,
     unsubscribeFromPush,
   };
