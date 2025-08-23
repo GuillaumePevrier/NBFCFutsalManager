@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -38,8 +37,7 @@ export default function Header({ children }: HeaderProps) {
   // Initialize presence tracking for the current user
   usePresence(currentUser?.user_id);
 
-  useEffect(() => {
-    const fetchUserAndPlayer = async (session: any) => {
+  const fetchUserAndPlayer = async (session: any) => {
         const userIsLoggedIn = !!session;
         setIsLoggedIn(userIsLoggedIn);
 
@@ -56,11 +54,12 @@ export default function Header({ children }: HeaderProps) {
         }
     };
     
+
+  useEffect(() => {
     const checkSession = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         fetchUserAndPlayer(session);
     };
-
     checkSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
@@ -70,7 +69,21 @@ export default function Header({ children }: HeaderProps) {
     return () => {
         authListener?.subscription.unsubscribe();
     };
-  }, [supabase, router]);
+  }, [supabase]);
+
+
+  // Effect to show toast notification for push subscription
+  useEffect(() => {
+      if(isLoggedIn && !isPushLoading && permissionStatus === 'default') {
+            toast({
+                title: "Restez Connecté !",
+                description: "Activez les notifications pour ne rien manquer des convocations et des scores.",
+                duration: 10000,
+                action: <ToastAction altText="Activer" onClick={() => subscribeToPush()}>Activer</ToastAction>,
+            });
+      }
+  }, [isLoggedIn, isPushLoading, permissionStatus, subscribeToPush, toast]);
+
 
   const handleSignOut = async () => {
     if(isSubscribed) {
@@ -84,23 +97,7 @@ export default function Header({ children }: HeaderProps) {
   const onAuthenticated = () => {
     const checkSession = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        const userIsLoggedIn = !!session;
-        setIsLoggedIn(userIsLoggedIn);
-        if (userIsLoggedIn) {
-             const userEmail = session.user.email;
-             setRole(userEmail === 'guillaumepevrier@gmail.com' ? 'coach' : 'player');
-            const { data: player } = await supabase.from('players').select('*').eq('user_id', session.user.id).single();
-            setCurrentUser(player);
-        }
-
-        if (userIsLoggedIn && permissionStatus === 'default') {
-            toast({
-                title: "Restez Connecté !",
-                description: "Activez les notifications pour ne rien manquer des convocations et des scores.",
-                duration: 10000,
-                action: <ToastAction altText="Activer" onClick={() => subscribeToPush()}>Activer</ToastAction>,
-            });
-        }
+        fetchUserAndPlayer(session);
     };
     checkSession();
     setIsAuthOpen(false);
@@ -152,8 +149,8 @@ export default function Header({ children }: HeaderProps) {
             </DropdownMenu>
         )}
         
-        {isLoggedIn && !isPushLoading && (
-            <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm h-8 w-8">
+        {isLoggedIn && (
+            <Button variant="outline" size="icon" onClick={handleNotificationToggle} disabled={isPushLoading} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm h-8 w-8">
                 {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
             </Button>
         )}
