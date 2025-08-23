@@ -160,15 +160,19 @@ export interface Ranking {
   points: number;
 }
 
+// Simplified Participant Type for UI display
+export type ChannelParticipantInfo = Pick<Player, 'id' | 'name' | 'avatar_url' | 'user_id' | 'presence_status'>;
+
+
 // Chat Types
 export interface Channel {
     id: string; // uuid
     created_at: string; // timestamptz
     type: 'group' | 'private';
-    name?: string;
+    name?: string | null;
     match_id?: string; // uuid
     created_by: string; // uuid
-    participants?: Pick<Player, 'id' | 'name' | 'avatar_url' | 'user_id' | 'presence_status'>[]; // Not in DB, but useful for UI
+    participants?: ChannelParticipantInfo[]; // Not in DB, but useful for UI
 }
 
 export interface ChannelParticipant {

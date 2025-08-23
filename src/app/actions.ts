@@ -765,7 +765,7 @@ export async function createOrGetPrivateChannel(recipientId: string): Promise<{ 
     }
     
     // Find the recipient's auth user_id from their player id
-    const { data: recipientPlayer, error: playerError } = await supabase.from('players').select('user_id').eq('id', recipientId).single();
+    const { data: recipientPlayer, error: playerError } = await supabase.from('players').select('*').eq('id', recipientId).single();
     if (playerError || !recipientPlayer?.user_id) {
         return { error: "Ce joueur n'a pas de compte de connexion.", channelId: null };
     }
@@ -776,7 +776,7 @@ export async function createOrGetPrivateChannel(recipientId: string): Promise<{ 
     }
 
     // Check if a private channel already exists between the two users
-    const { data: existingChannel, error: rpcError } = await supabase.rpc('find_private_channel', {
+    const { data: existingChannelId, error: rpcError } = await supabase.rpc('find_private_channel', {
       user_1_id: user.id,
       user_2_id: recipientUserId
     });
@@ -786,8 +786,8 @@ export async function createOrGetPrivateChannel(recipientId: string): Promise<{ 
         return { error: "Erreur lors de la recherche du canal.", channelId: null };
     }
     
-    if (existingChannel) {
-        return { channelId: existingChannel };
+    if (existingChannelId) {
+        return { channelId: existingChannelId };
     }
 
     // If not, create a new private channel
@@ -796,7 +796,7 @@ export async function createOrGetPrivateChannel(recipientId: string): Promise<{ 
         .insert({
             type: 'private',
             created_by: user.id,
-            name: null, // Explicitly set name to null for private channels
+            name: null, 
         })
         .select()
         .single();
