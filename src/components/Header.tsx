@@ -32,7 +32,7 @@ export default function Header({ children }: HeaderProps) {
   const [currentUser, setCurrentUser] = useState<Player | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   
-  const { isSubscribed, subscribeToPush, unsubscribeFromPush, isLoading: isPushLoading, permissionStatus } = usePushNotifications();
+  const { isSubscribed, subscribeToPush, unsubscribeFromPush, isPushSupported, permissionStatus } = usePushNotifications();
 
   // Initialize presence tracking for the current user
   usePresence(currentUser?.user_id);
@@ -74,15 +74,17 @@ export default function Header({ children }: HeaderProps) {
 
   // Effect to show toast notification for push subscription
   useEffect(() => {
-      if(isLoggedIn && !isPushLoading && permissionStatus === 'default') {
+      // We only want to show the toast if the user is logged in, push is supported,
+      // and the permission has not been asked yet ('default').
+      if(isLoggedIn && isPushSupported && permissionStatus === 'default' && !isSubscribed) {
             toast({
                 title: "Restez Connecté !",
                 description: "Activez les notifications pour ne rien manquer des convocations et des scores.",
-                duration: 10000,
+                duration: 15000,
                 action: <ToastAction altText="Activer" onClick={() => subscribeToPush()}>Activer</ToastAction>,
             });
       }
-  }, [isLoggedIn, isPushLoading, permissionStatus, subscribeToPush, toast]);
+  }, [isLoggedIn, isPushSupported, permissionStatus, isSubscribed, subscribeToPush, toast]);
 
 
   const handleSignOut = async () => {
@@ -129,6 +131,7 @@ export default function Header({ children }: HeaderProps) {
       </div>
       <div className="flex items-center gap-2">
         {children}
+
         {isLoggedIn && (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -149,8 +152,8 @@ export default function Header({ children }: HeaderProps) {
             </DropdownMenu>
         )}
         
-        {isLoggedIn && (
-            <Button variant="outline" size="icon" onClick={handleNotificationToggle} disabled={isPushLoading} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm h-8 w-8">
+        {isLoggedIn && isPushSupported && (
+            <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm h-8 w-8">
                 {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
             </Button>
         )}
