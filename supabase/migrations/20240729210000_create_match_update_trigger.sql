@@ -12,7 +12,7 @@ security definer -- Important pour permettre à la fonction d'utiliser des secre
 as $$
 declare
   -- Récupère  du webhook depuis les secrets de Supabase (Vault).
-  -- C'est plus sécurisé que de la coder en dur.
+  -- C'est 
   -- Allez dans Project Settings > Vault pour ajouter un secret nommé `MATCH_UPDATE_WEBHOOK_URL`.
   webhook_url text := 'https://nbfc-futsal-manager.vercel.app/api/match-update-webhook';
   payload jsonb;
