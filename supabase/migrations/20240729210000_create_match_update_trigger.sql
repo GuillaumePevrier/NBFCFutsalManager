@@ -2,7 +2,7 @@
 --  de données.
 -- Il est exécuté automatiquement par Supabase lorsque vous déployez vos migrations.
 -- IMPORTANT : Ce trigger nécessite que l'extension `http` soit activée.
---`crth schema extensions;` dans l'éditeur SQL de Supabase avant d'appliquer cette migration.
+--`crth schema ext;` dans l'éditeur SQL de Supabase avant d'appliquer cette migration.
 
 -- 1. Définition de la fonction qui sera appelée par le trigger.
 create or replace function handle_match_update_and_notify()
@@ -11,7 +11,7 @@ language plpgsql
 security definer -- Important pour permettre à la fonction d'utiliser des secrets.
 as $$
 declare
-  -- Récupère  du webhook depuis les secrets de Supabase (Vault).
+  -- Récupère  du webhook depuis les secrts de Supabase (Vault).
   -- C'est 
   -- Allez dans Project Settings > Vault pour ajouter un secret nommé `MATCH_UPDATE_WEBHOOK_URL`.
   webhook_url text := 'https://nbfc-futsal-manager.vercel.app/api/match-update-webhook';
