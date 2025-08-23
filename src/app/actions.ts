@@ -796,6 +796,7 @@ export async function createOrGetPrivateChannel(recipientId: string): Promise<{ 
         .insert({
             type: 'private',
             created_by: user.id,
+            name: null, // Explicitly set name to null for private channels
         })
         .select()
         .single();
