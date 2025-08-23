@@ -124,10 +124,12 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
         <main className="flex-grow flex flex-col items-center justify-center p-4">
             <Card className="w-full max-w-sm mx-auto bg-gradient-to-br from-card to-background border-2 border-primary/20 shadow-2xl rounded-2xl overflow-hidden">
                 <CardHeader className="p-6 bg-gradient-to-b from-primary/20 via-transparent to-transparent relative">
-                   <div 
-                        className="absolute inset-0 bg-cover bg-center opacity-10" 
-                        style={{ backgroundImage: "url('https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png')" }}
-                    />
+                   {player.avatar_url && (
+                        <div 
+                            className="absolute inset-0 bg-cover bg-center opacity-10 blur-sm scale-110" 
+                            style={{ backgroundImage: `url('${player.avatar_url}')` }}
+                        />
+                   )}
                     <div className="flex flex-col items-center gap-4 relative">
                         <Avatar className="w-36 h-36 border-4 border-accent shadow-lg">
                             <AvatarImage src={player.avatar_url} alt={player.name} className="object-cover" />
