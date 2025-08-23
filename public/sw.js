@@ -1,55 +1,63 @@
-// public/sw.js
 
-self.addEventListener('push', (event) => {
-  const data = event.data?.json() ?? {};
+// Listen for push events
+self.addEventListener('push', function (event) {
+  const data = event.data.json();
   const title = data.title || 'Nouvelle Notification';
   const options = {
-    body: data.body || 'Vous avez une nouvelle mise à jour.',
-    icon: data.icon || '/icon-192x192.png',
-    badge: '/icon-96x96.png', // Icône pour la barre de statut
+    body: data.body,
+    icon: data.icon || '/icon-192x192.png', // Default icon
+    badge: '/icon-96x96.png', // Badge for notifications (must be monochrome)
+    vibrate: [200, 100, 200],
     tag: data.tag || 'default-tag',
-    renotify: true,
     data: {
-      url: data.data?.url || '/',
+      url: data.data?.url || '/', // URL to open on click
     },
   };
 
-  // Keep the service worker alive until the notification is shown.
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
-  
-  // Set a badge on the app icon if the Badging API is supported
+  // Set a badge on the app icon if the API is available
   if (self.navigator.setAppBadge) {
-     self.navigator.setAppBadge();
+    self.navigator.setAppBadge();
   }
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
-self.addEventListener('notificationclick', (event) => {
-  const notification = event.notification;
-  const urlToOpen = notification.data.url;
+// Listen for notification click events
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close(); // Close the notification
 
-  notification.close(); // Close the notification
+  const urlToOpen = new URL(event.notification.data.url, self.location.origin).href;
+  
+  // Clear the badge when the notification is clicked
+  if (self.navigator.clearAppBadge) {
+      self.navigator.clearAppBadge();
+  }
 
-  // This looks for an existing window and focuses it.
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    }).then((clientList) => {
+      // If a window for the app is already open, focus it
       if (clientList.length > 0) {
-        let client = clientList[0];
-        for (let i = 0; i < clientList.length; i++) {
-          if (clientList[i].focused) {
-            client = clientList[i];
-          }
+        for (const client of clientList) {
+            // Check if a client for the exact URL is already open
+            if (client.url === urlToOpen && 'focus' in client) {
+                return client.focus();
+            }
         }
-        client.focus();
-        return client.navigate(urlToOpen);
+        // If no exact match is found, focus the first available client and navigate it
+         if (clientList[0].url && 'focus' in clientList[0] && 'navigate' in clientList[0]) {
+             clientList[0].focus();
+             return clientList[0].navigate(urlToOpen);
+         }
       }
-      return clients.openWindow(urlToOpen);
-    }).then(() => {
-        // Clear the badge when the notification is clicked.
-        if (self.navigator.clearAppBadge) {
-            self.navigator.clearAppBadge();
-        }
+      
+      // Otherwise, open a new window
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
     })
   );
 });
