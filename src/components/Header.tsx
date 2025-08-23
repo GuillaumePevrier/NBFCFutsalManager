@@ -106,6 +106,7 @@ export default function Header({ children }: HeaderProps) {
   }
 
   const handleNotificationToggle = () => {
+    if (!isPushSupported) return;
     if (isSubscribed) {
       unsubscribeFromPush();
     } else {

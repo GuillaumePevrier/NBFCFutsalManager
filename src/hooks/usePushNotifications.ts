@@ -31,10 +31,12 @@ export function usePushNotifications() {
       setPermissionStatus(Notification.permission);
 
       const checkSubscription = async () => {
-        const swRegistration = await navigator.serviceWorker.ready;
-        const sub = await swRegistration.pushManager.getSubscription();
-        if (sub) {
-          setIsSubscribed(true);
+        try {
+          const swRegistration = await navigator.serviceWorker.ready;
+          const sub = await swRegistration.pushManager.getSubscription();
+          setIsSubscribed(!!sub);
+        } catch (error) {
+          console.error("Error checking for push subscription:", error);
         }
       };
       checkSubscription();
