@@ -131,10 +131,12 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                         />
                    )}
                     <div className="flex flex-col items-center gap-4 relative">
-                        <Avatar className="w-36 h-36 border-4 border-accent shadow-lg">
-                            <AvatarImage src={player.avatar_url} alt={player.name} className="object-cover" />
-                            <AvatarFallback className="text-5xl bg-primary text-primary-foreground">{fallbackInitials}</AvatarFallback>
-                        </Avatar>
+                        <div className="p-1 rounded-full bg-transparent ring-2 ring-accent shadow-lg shadow-accent/40">
+                          <Avatar className="w-36 h-36">
+                              <AvatarImage src={player.avatar_url} alt={player.name} className="object-cover" />
+                              <AvatarFallback className="text-5xl bg-primary text-primary-foreground">{fallbackInitials}</AvatarFallback>
+                          </Avatar>
+                        </div>
                         <div className="text-center">
                             <h1 className="text-3xl font-bold text-card-foreground tracking-tight">{player.name}</h1>
                             <p className="text-lg font-semibold text-primary">{player.position || 'Non spécifié'}</p>
@@ -182,7 +184,3 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
     </div>
   );
 }
-
-
-
-    
