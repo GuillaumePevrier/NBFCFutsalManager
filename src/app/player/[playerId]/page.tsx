@@ -126,7 +126,7 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
                 <CardHeader className="p-6 bg-gradient-to-b from-primary/20 via-transparent to-transparent relative">
                    {player.avatar_url && (
                         <div 
-                            className="absolute inset-0 bg-cover bg-center opacity-10 blur-sm scale-110" 
+                            className="absolute inset-0 bg-cover bg-center opacity-10 blur-sm scale-110 rounded-full" 
                             style={{ backgroundImage: `url('${player.avatar_url}')` }}
                         />
                    )}
@@ -182,3 +182,4 @@ export default async function PlayerPage({ params }: { params: { playerId: strin
     </div>
   );
 }
+

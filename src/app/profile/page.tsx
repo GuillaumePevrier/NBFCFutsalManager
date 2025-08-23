@@ -10,16 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Loader2, KeyRound, User, Save } from "lucide-react";
+import { Loader2, KeyRound, User, Save, UserCircle } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
 import type { Player, UserProfileUpdate } from '@/lib/types';
 import { getCurrentPlayer, updateUserProfile, updateUserAuth } from '@/app/actions';
 import Header from '@/components/Header';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-
 
 const profileSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères."),
@@ -133,30 +130,30 @@ export default function ProfilePage() {
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             <Header />
             <main className="flex-grow p-4 md:p-8 main-bg flex items-center justify-center">
-                <div className="w-full max-w-2xl space-y-6">
-                    <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                        <User className="w-8 h-8 text-primary" />
+                <div className="w-full max-w-2xl space-y-8">
+                    <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3 text-center justify-center">
+                        <UserCircle className="w-10 h-10 text-primary" />
                         Mon Profil
                     </h1>
 
                     {/* Profile Information Form */}
                     <form onSubmit={handleProfileSubmit(onProfileSubmit)}>
-                        <Card>
+                        <Card className="bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
                             <CardHeader>
-                                <CardTitle>Informations Personnelles</CardTitle>
+                                <CardTitle className="flex items-center gap-2"><User />Informations Personnelles</CardTitle>
                                 <CardDescription>Modifiez vos informations de joueur ici.</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-6">
                                  <div className="space-y-2">
                                     <Label htmlFor="name">Nom complet</Label>
                                     <Input id="name" {...registerProfile('name')} />
                                     {profileErrors.name && <p className="text-sm text-destructive">{profileErrors.name.message}</p>}
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                      <div className="space-y-2">
                                         <Label htmlFor="team">Équipe</Label>
-                                        <Select {...registerProfile('team')} onValueChange={(value) => resetProfile({ ...player, team: value as any })} defaultValue={player.team}>
-                                            <SelectTrigger id="team"><SelectValue /></SelectTrigger>
+                                        <Select onValueChange={(value) => resetProfile({ ...player, team: value as any })} defaultValue={player.team}>
+                                            <SelectTrigger id="team" {...registerProfile('team')}><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="D1">D1</SelectItem>
                                                 <SelectItem value="D2">D2</SelectItem>
@@ -166,8 +163,8 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="position">Poste</Label>
-                                        <Select {...registerProfile('position')} onValueChange={(value) => resetProfile({ ...player, position: value as any })} defaultValue={player.position || 'unspecified'}>
-                                            <SelectTrigger id="position"><SelectValue /></SelectTrigger>
+                                        <Select onValueChange={(value) => resetProfile({ ...player, position: value as any })} defaultValue={player.position || 'unspecified'}>
+                                            <SelectTrigger id="position" {...registerProfile('position')}><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="Gardien">Gardien</SelectItem>
                                                 <SelectItem value="Défenseur">Défenseur</SelectItem>
@@ -180,8 +177,8 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="preferred_foot">Pied Fort</Label>
-                                    <Select {...registerProfile('preferred_foot')} onValueChange={(value) => resetProfile({ ...player, preferred_foot: value as any })} defaultValue={player.preferred_foot || 'unspecified'}>
-                                        <SelectTrigger id="preferred_foot"><SelectValue /></SelectTrigger>
+                                    <Select onValueChange={(value) => resetProfile({ ...player, preferred_foot: value as any })} defaultValue={player.preferred_foot || 'unspecified'}>
+                                        <SelectTrigger id="preferred_foot" {...registerProfile('preferred_foot')}><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Droit">Droit</SelectItem>
                                             <SelectItem value="Gauche">Gauche</SelectItem>
@@ -192,7 +189,7 @@ export default function ProfilePage() {
                                 </div>
                             </CardContent>
                              <CardFooter>
-                                <Button type="submit" disabled={profileLoading}>
+                                <Button type="submit" disabled={profileLoading} className="neon-primary-sm">
                                     {profileLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                     Enregistrer le profil
                                 </Button>
@@ -202,12 +199,12 @@ export default function ProfilePage() {
                     
                     {/* Authentication Form */}
                     <form onSubmit={handleAuthSubmit(onAuthSubmit)}>
-                        <Card>
+                        <Card className="bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2"><KeyRound/> Compte & Sécurité</CardTitle>
                                 <CardDescription>Modifiez votre email ou votre mot de passe.</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email de connexion</Label>
                                     <Input id="email" type="email" {...registerAuth('email')} placeholder={player.email || "email@exemple.com"} />
@@ -225,7 +222,7 @@ export default function ProfilePage() {
                                 </div>
                             </CardContent>
                              <CardFooter>
-                                <Button type="submit" disabled={authLoading}>
+                                <Button type="submit" disabled={authLoading} className="neon-primary-sm">
                                     {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                     Mettre à jour les identifiants
                                 </Button>
@@ -237,3 +234,4 @@ export default function ProfilePage() {
         </div>
     );
 }
+
