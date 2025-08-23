@@ -133,16 +133,10 @@ export default function Header({ children }: HeaderProps) {
       <div className="flex items-center gap-2">
         {children}
         {isLoggedIn && (
-            <>
-            {!isPushLoading && (
-                <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm">
-                    {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
-                </Button>
-            )}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                         <Avatar className="h-9 w-9" presenceStatus={currentUser?.presence_status}>
+                    <Button variant="outline" size="icon" className="relative h-10 w-10 rounded-full btn neon-blue-sm">
+                         <Avatar className="h-8 w-8" presenceStatus={currentUser?.presence_status}>
                             <AvatarImage src={currentUser?.avatar_url} alt={currentUser?.name || "Avatar"} />
                             <AvatarFallback>
                                 <UserCircle className="h-6 w-6"/>
@@ -156,7 +150,12 @@ export default function Header({ children }: HeaderProps) {
                     <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Se déconnecter</span></DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-            </>
+        )}
+        
+        {isLoggedIn && !isPushLoading && (
+            <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm">
+                {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
+            </Button>
         )}
 
         <ThemeToggle />
