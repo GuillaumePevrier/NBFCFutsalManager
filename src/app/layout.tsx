@@ -14,6 +14,14 @@ export default function RootLayout({
 }>) {
 
   useEffect(() => {
+    // This is for registering the service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((registration) => console.log('Service Worker registered with scope:', registration.scope))
+        .catch((error) => console.error('Service Worker registration failed:', error));
+    }
+
     // Clear the app badge when the app is opened or becomes visible
     const clearBadge = () => {
       if (navigator.clearAppBadge) {
@@ -25,15 +33,16 @@ export default function RootLayout({
     clearBadge();
     
     // Clear badge when the tab becomes visible again
-    document.addEventListener('visibilitychange', () => {
+    const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         clearBadge();
       }
-    });
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Clean up the event listener
     return () => {
-      document.removeEventListener('visibilitychange', clearBadge);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
 
   }, []);

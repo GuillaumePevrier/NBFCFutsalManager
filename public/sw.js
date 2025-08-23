@@ -1,64 +1,55 @@
 // public/sw.js
 
 self.addEventListener('push', (event) => {
-  if (!event.data) {
-    console.error('Push event but no data');
-    return;
-  }
-  
-  const data = event.data.json();
-  const title = data.title || 'NBFC Futsal';
+  const data = event.data?.json() ?? {};
+  const title = data.title || 'Nouvelle Notification';
   const options = {
-    body: data.body,
-    icon: data.icon || '/icon-192x192.png', // Default icon
-    badge: '/badge-72x72.png', // Icon for the notification bar (monochrome)
-    tag: data.tag, // Group notifications
+    body: data.body || 'Vous avez une nouvelle mise à jour.',
+    icon: data.icon || '/icon-192x192.png',
+    badge: '/icon-96x96.png', // Icône pour la barre de statut
+    tag: data.tag || 'default-tag',
+    renotify: true,
     data: {
-      url: data.data?.url // URL to open on click
-    }
+      url: data.data?.url || '/',
+    },
   };
 
-  // Show notification
-  const notificationPromise = self.registration.showNotification(title, options);
+  // Keep the service worker alive until the notification is shown.
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
   
-  // Set the badge on the app icon
-  if (navigator.setAppBadge) {
-    // We don't know the exact count, so we just show a dot by incrementing.
-    // The badge is cleared when the app is opened.
-    navigator.setAppBadge(); 
+  // Set a badge on the app icon if the Badging API is supported
+  if (self.navigator.setAppBadge) {
+     self.navigator.setAppBadge();
   }
-
-  event.waitUntil(notificationPromise);
 });
 
-
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close(); // Close the notification
+  const notification = event.notification;
+  const urlToOpen = notification.data.url;
 
-  const urlToOpen = event.notification.data?.url || '/';
+  notification.close(); // Close the notification
 
-  // This looks at all open tabs and focuses the one that matches the URL,
-  // otherwise it opens a new tab.
-  const promiseChain = clients.matchAll({
-    type: 'window',
-    includeUncontrolled: true
-  }).then((windowClients) => {
-    let matchingClient = null;
-
-    for (let i = 0; i < windowClients.length; i++) {
-      const windowClient = windowClients[i];
-      if (windowClient.url === urlToOpen) {
-        matchingClient = windowClient;
-        break;
+  // This looks for an existing window and focuses it.
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].focused) {
+            client = clientList[i];
+          }
+        }
+        client.focus();
+        return client.navigate(urlToOpen);
       }
-    }
-
-    if (matchingClient) {
-      return matchingClient.focus();
-    } else {
       return clients.openWindow(urlToOpen);
-    }
-  });
-
-  event.waitUntil(promiseChain);
+    }).then(() => {
+        // Clear the badge when the notification is clicked.
+        if (self.navigator.clearAppBadge) {
+            self.navigator.clearAppBadge();
+        }
+    })
+  );
 });

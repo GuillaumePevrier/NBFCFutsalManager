@@ -135,7 +135,7 @@ export default function Header({ children }: HeaderProps) {
         {isLoggedIn && (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="relative h-10 w-10 rounded-full btn neon-blue-sm">
+                    <Button variant="outline" size="icon" className="relative h-8 w-8 rounded-full btn neon-blue-sm">
                          <Avatar className="h-8 w-8" presenceStatus={currentUser?.presence_status}>
                             <AvatarImage src={currentUser?.avatar_url} alt={currentUser?.name || "Avatar"} />
                             <AvatarFallback>
@@ -153,7 +153,7 @@ export default function Header({ children }: HeaderProps) {
         )}
         
         {isLoggedIn && !isPushLoading && (
-            <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm">
+            <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm h-8 w-8">
                 {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
             </Button>
         )}
@@ -161,7 +161,7 @@ export default function Header({ children }: HeaderProps) {
         <ThemeToggle />
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="btn neon-blue-sm">
+                <Button variant="outline" size="icon" className="btn neon-blue-sm h-8 w-8">
                     <Menu className="h-6 w-6" />
                 </Button>
             </DropdownMenuTrigger>

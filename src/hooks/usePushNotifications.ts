@@ -45,6 +45,11 @@ export function usePushNotifications() {
   const subscribeToPush = async (): Promise<boolean> => {
     if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
       console.error("VAPID public key not found.");
+      toast({
+          title: "Erreur de configuration",
+          description: "La clé de notification n'est pas configurée.",
+          variant: "destructive",
+        });
       return false;
     }
 
@@ -82,11 +87,20 @@ export function usePushNotifications() {
     } catch (error) {
       console.error("Failed to subscribe to push notifications", error);
        setPermissionStatus(Notification.permission);
-       toast({
-        title: "Erreur",
-        description: "L'activation des notifications a échoué. Avez-vous autorisé les notifications pour ce site ?",
-        variant: "destructive",
-      });
+       if (Notification.permission === 'denied') {
+            toast({
+              title: "Permissions bloquées",
+              description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur pour ce site.",
+              variant: "destructive",
+              duration: 10000,
+            });
+       } else {
+           toast({
+            title: "Erreur",
+            description: "L'activation des notifications a échoué.",
+            variant: "destructive",
+          });
+       }
       return false;
     }
   };
