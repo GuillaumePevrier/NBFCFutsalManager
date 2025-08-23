@@ -18,7 +18,7 @@ declare
   payload jsonb;
 begin
   -- Construit le payload JSON dans le même format que les webhooks natifs de Supabase.
-  -- `old` et `new` sont des variables spéciales dans les triggers qui contiennent l'ancienne et la nouvelle ligne.
+  -- `old` et `new` sont des variables spéans les triggers qui contiennent l'ancienne et la nouvelle ligne.
   payload := jsonb_build_object(
     'type',       'UPDATE',
     'table',      TG_TABLE_NAME,
