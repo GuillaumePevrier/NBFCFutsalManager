@@ -2,7 +2,7 @@
 --  de données.
 -- Il est exécuté automatiquement par Supabase lorsque vous déployez vos migrations.
 -- IMPORTANT : Ce trigger nécessite que l'extension `http` soit activée.
---`crth schema ext;` dans l'éditeur SQL de Supabase avant d'appliquer cette migration.
+--`crth schema ext;` dans l'éditeur SQL de avant d'appliquer cette migration.
 
 -- 1. Définition de la fonction qui sera appelée par le trigger.
 create or replace function handle_match_update_and_notify()
