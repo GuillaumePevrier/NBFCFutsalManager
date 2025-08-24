@@ -1,6 +1,8 @@
+
 // src/app/api/match-update-webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Match, Message, Player } from '@/lib/types';
+import { sendNotificationToAllPlayers } from '@/ai/flows/send-onesignal-notification';
 
 type EventType = 'INSERT' | 'UPDATE' | 'DELETE';
 
@@ -24,22 +26,44 @@ type WebhookPayload = MatchWebhookPayload | MessageWebhookPayload;
 
 
 // ========== Notification Logic ==========
-// These functions will be re-implemented with OneSignal logic
 
 async function handleMatchUpdate(oldData: Match, newData: Match) {
-  // --- Goal Notification Logic ---
-  // TODO: Call OneSignal API to send goal notification to all players
+  const opponent = newData.details.opponent || 'Adversaire';
+  const oldScore = oldData.scoreboard;
+  const newScore = newData.scoreboard;
   
-  // --- Poll Started Notification Logic ---
-  // TODO: Call OneSignal API to send poll notification to all players
-  
-  console.log('Match update detected. Notification logic will be handled by OneSignal.');
+  let title: string | null = null;
+  let message: string | null = null;
+  let url: string = `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}`;
+
+  // --- Goal Notification ---
+  if (newScore.homeScore > oldScore.homeScore) {
+    title = `BUT POUR NBFC FUTSAL !`;
+    message = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore} contre ${opponent}.`;
+  } else if (newScore.awayScore > oldScore.awayScore) {
+    title = `But pour ${opponent} !`;
+    message = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`;
+  }
+  if (title && message) {
+    await sendNotificationToAllPlayers({ title, message, url });
+  }
+
+  // --- Poll Started Notification ---
+  const oldPollStatus = oldData.details?.poll?.status;
+  const newPollStatus = newData.details?.poll?.status;
+  if (oldPollStatus === 'inactive' && newPollStatus === 'active') {
+    await sendNotificationToAllPlayers({
+      title: `Convocation pour le match`,
+      message: `Répondez au sondage pour le match contre ${opponent} le ${new Date(newData.details.date).toLocaleDateString('fr-FR')}.`,
+      url
+    });
+  }
 }
 
 
 async function handleNewMessage(newMessage: Message) {
-    // TODO: Call OneSignal API to send new message notification to relevant participants
-    console.log('New message detected. Notification logic will be handled by OneSignal.');
+    // TODO: Re-implement with OneSignal to target specific users
+    console.log('New message detected. Notification logic to be implemented with OneSignal targeting specific users.');
 }
 
 

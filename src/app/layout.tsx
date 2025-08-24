@@ -5,13 +5,19 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { useEffect } from 'react';
-
+import OneSignal from 'react-onesignal';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      OneSignal.init({ appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID! });
+    }
+  }, []);
 
   return (
     <html lang="fr" suppressHydrationWarning>

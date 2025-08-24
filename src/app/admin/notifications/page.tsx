@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useFormStatus } from 'react-dom';
+import { sendNotificationToAllPlayers } from '@/ai/flows/send-onesignal-notification';
 
 
 function ManualNotificationForm() {
@@ -23,28 +24,31 @@ function ManualNotificationForm() {
     async function formAction(formData: FormData) {
         const payload = {
             title: formData.get('title') as string,
-            body: formData.get('body') as string,
-            icon: formData.get('icon') as string || 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
-            data: {
-                url: formData.get('url') as string || `${process.env.NEXT_PUBLIC_BASE_URL}`
-            }
+            message: formData.get('body') as string,
+            url: formData.get('url') as string || `${process.env.NEXT_PUBLIC_BASE_URL}`
         };
 
-        if (!payload.title || !payload.body) {
+        if (!payload.title || !payload.message) {
             toast({ title: "Champs requis", description: "Le titre et le message sont obligatoires.", variant: "destructive" });
             return;
         }
 
-        // TODO: Re-implement with OneSignal
-        // await sendNotificationToAllPlayers(payload);
+        const result = await sendNotificationToAllPlayers(payload);
 
-        toast({
-            title: "Fonctionnalité en cours de migration",
-            description: "L'envoi de notifications sera bientôt disponible avec OneSignal."
-        });
-        
-        const form = document.getElementById('manual-notification-form') as HTMLFormElement;
-        form.reset();
+        if (result.success) {
+            toast({
+                title: "Notification Envoyée !",
+                description: "Le message a été envoyé à tous les abonnés."
+            });
+            const form = document.getElementById('manual-notification-form') as HTMLFormElement;
+            form.reset();
+        } else {
+             toast({
+                title: "Erreur d'envoi",
+                description: result.error || "La notification n'a pas pu être envoyée.",
+                variant: "destructive"
+            });
+        }
     }
     
     function SubmitButton() {
@@ -62,7 +66,7 @@ function ManualNotificationForm() {
             <CardHeader>
                 <CardTitle>Envoyer une Notification Manuelle</CardTitle>
                 <CardDescription>
-                    Envoyez un message personnalisé à tous les joueurs abonnés.
+                    Envoyez un message personnalisé à tous les joueurs abonnés via OneSignal.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -74,10 +78,6 @@ function ManualNotificationForm() {
                     <div className="space-y-2">
                         <Label htmlFor="body">Message</Label>
                         <Textarea id="body" name="body" placeholder="Ex: N'oubliez pas vos gourdes ce soir !" required />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="icon">URL de l'icône (optionnel)</Label>
-                        <Input id="icon" name="icon" placeholder="Lien vers une image .png" />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="url">URL cible (optionnel)</Label>
@@ -158,7 +158,7 @@ export default function NotificationsAdminPage() {
                             <CardHeader>
                                 <CardTitle>Gestion des Abonnés</CardTitle>
                                 <CardDescription>
-                                    La liste des abonnés et la gestion des utilisateurs seront désormais disponibles directement sur votre tableau de bord OneSignal.
+                                    La liste des abonnés et la gestion des utilisateurs sont maintenant disponibles directement sur votre tableau de bord OneSignal.
                                 </CardDescription>
                             </CardHeader>
                          </Card>
