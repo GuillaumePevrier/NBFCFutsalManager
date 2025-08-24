@@ -2,9 +2,11 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import type { Player, Opponent, Match, Training, Channel, Message, UserProfileUpdate } from '@/lib/types';
+import type { Player, Opponent, Match, Training, Channel, Message, UserProfileUpdate, NotificationPayload } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { sendFcmNotification } from '@/ai/flows/send-fcm-notification';
+
 
 // Auth Actions
 export async function signUp(formData: FormData) {
@@ -33,7 +35,7 @@ export async function signUp(formData: FormData) {
   }
 
   // Create player profile linked to the new auth user
-  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen'> = {
+  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'fcm_tokens'> = {
       user_id: authData.user.id,
       name: name,
       email: email,
@@ -45,7 +47,7 @@ export async function signUp(formData: FormData) {
 
   const { error: playerError } = await supabase
     .from('players')
-    .insert(playerData);
+    .insert({...playerData, fcm_tokens: []});
 
   if (playerError) {
     console.error("Failed to create player profile after signup:", playerError);
@@ -201,7 +203,7 @@ export async function createPlayer(formData: FormData) {
   const authUserId = authData.user.id;
   
   // 2. Create player profile linked to the new auth user
-  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen'> = {
+  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'fcm_tokens'> = {
       user_id: authUserId,
       name: name,
       email: email,
@@ -213,7 +215,7 @@ export async function createPlayer(formData: FormData) {
 
   const { error: playerError } = await supabaseAdmin
     .from('players')
-    .insert(playerData);
+    .insert({...playerData, fcm_tokens: []});
 
   if (playerError) {
     console.error("Failed to create player profile:", playerError);
@@ -284,7 +286,7 @@ export async function updatePlayer(formData: FormData) {
   
   // --- Player Profile Update ---
   // Ensure we use a partial type for the update payload
-  const playerData: Partial<Omit<Player, 'id'>> = {
+  const playerData: Partial<Omit<Player, 'id' | 'fcm_tokens'>> = {
       name: formData.get('name') as string,
       email: newEmail || null,
       user_id: authUserId, // Update user_id in case it was just created
@@ -985,15 +987,81 @@ export async function validateAllUsers(): Promise<{ success: boolean, error?: an
     return { success: true, count: validatedCount };
 }
 
-// Placeholder notification functions
-export async function sendNotificationToAllPlayers({ title, body }: { title: string, body: string }): Promise<{ success: boolean }> {
-    console.log(`[Placeholder] sendNotificationToAllPlayers called with title: "${title}", body: "${body}"`);
-    // TODO: Implement actual notification sending logic
+
+// FCM Token Management
+export async function saveFcmToken(token: string) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'User not authenticated' };
+
+    const { data: player, error: playerError } = await supabase
+        .from('players')
+        .select('id, fcm_tokens')
+        .eq('user_id', user.id)
+        .single();
+    
+    if (playerError || !player) return { success: false, error: 'Player profile not found' };
+
+    const tokens = player.fcm_tokens || [];
+    if (!tokens.includes(token)) {
+        const updatedTokens = [...tokens, token];
+        const { error: updateError } = await supabase
+            .from('players')
+            .update({ fcm_tokens: updatedTokens })
+            .eq('id', player.id);
+        
+        if (updateError) return { success: false, error: updateError.message };
+    }
+
     return { success: true };
 }
 
-export async function sendPushNotification({ userId, title, body }: { userId: string, title: string, body: string }): Promise<{ success: boolean }> {
-    console.log(`[Placeholder] sendPushNotification called for userId: "${userId}" with title: "${title}", body: "${body}"`);
-    // TODO: Implement actual push notification sending logic for a specific user
+// Notification Functions
+export async function sendNotificationToAllPlayers(payload: NotificationPayload): Promise<{ success: boolean }> {
+  try {
+    const supabase = createClient();
+    const { data: players, error } = await supabase
+      .from('players')
+      .select('fcm_tokens')
+      .not('fcm_tokens', 'is', null);
+
+    if (error) {
+      console.error('Error fetching players for notification:', error);
+      return { success: false };
+    }
+
+    const allTokens = players.flatMap(p => p.fcm_tokens).filter(t => t);
+
+    if (allTokens.length > 0) {
+      await sendFcmNotification({ tokens: allTokens, ...payload });
+    }
+    
     return { success: true };
+  } catch (e) {
+    console.error('Failed to send notifications to all players:', e);
+    return { success: false };
+  }
+}
+
+export async function sendPushNotification(userId: string, payload: NotificationPayload): Promise<{ success: boolean }> {
+   try {
+    const supabase = createClient();
+    const { data: player, error } = await supabase
+      .from('players')
+      .select('fcm_tokens')
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !player || !player.fcm_tokens || player.fcm_tokens.length === 0) {
+      console.error('Error fetching player or no FCM tokens for user:', userId, error);
+      return { success: false };
+    }
+
+    await sendFcmNotification({ tokens: player.fcm_tokens, ...payload });
+
+    return { success: true };
+  } catch (e) {
+    console.error(`Failed to send push notification to user ${userId}:`, e);
+    return { success: false };
+  }
 }

@@ -1,0 +1,21 @@
+{
+  "name": "NBFC Futsal Manager",
+  "short_name": "NBFC Futsal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#01182a",
+  "theme_color": "#fd5156",
+  "icons": [
+    {
+      "src": "/logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "gcm_sender_id": "711611587508"
+}

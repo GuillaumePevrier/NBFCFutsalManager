@@ -18,6 +18,7 @@ export interface Player {
   // Ajout pour le statut de présence
   presence_status?: 'online' | 'offline';
   last_seen?: string; // ISO string
+  fcm_tokens: string[]; // Array of Firebase Cloud Messaging tokens
 }
 
 export interface UserProfileUpdate {
@@ -188,4 +189,14 @@ export interface Message {
     user_id: string;
     channel_id: string;
     sender?: Pick<Player, 'id' | 'name' | 'avatar_url' | 'user_id'>; // Added user_id
+}
+
+
+// Notification types
+export interface NotificationPayload {
+  title: string;
+  body: string;
+  icon?: string;
+  tag?: string;
+  data?: Record<string, any>;
 }
