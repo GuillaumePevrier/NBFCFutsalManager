@@ -1,7 +1,6 @@
 // src/app/api/match-update-webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import type { Match, Message } from '@/lib/types';
-import { createClient } from '@/lib/supabase/server';
+import type { Match, Message, Player } from '@/lib/types';
 
 type EventType = 'INSERT' | 'UPDATE' | 'DELETE';
 
@@ -25,18 +24,22 @@ type WebhookPayload = MatchWebhookPayload | MessageWebhookPayload;
 
 
 // ========== Notification Logic ==========
+// These functions will be re-implemented with OneSignal logic
 
 async function handleMatchUpdate(oldData: Match, newData: Match) {
-  // This function is kept for potential future use or non-push notification logic,
-  // but the push notification part will be handled by OneSignal.
-  console.log('Match update detected, but push notifications are now handled by a separate service.');
+  // --- Goal Notification Logic ---
+  // TODO: Call OneSignal API to send goal notification to all players
+  
+  // --- Poll Started Notification Logic ---
+  // TODO: Call OneSignal API to send poll notification to all players
+  
+  console.log('Match update detected. Notification logic will be handled by OneSignal.');
 }
 
 
 async function handleNewMessage(newMessage: Message) {
-    // This function is kept for potential future use or non-push notification logic,
-    // but the push notification part will be handled by OneSignal.
-    console.log('New message detected, but push notifications are now handled by a separate service.');
+    // TODO: Call OneSignal API to send new message notification to relevant participants
+    console.log('New message detected. Notification logic will be handled by OneSignal.');
 }
 
 
