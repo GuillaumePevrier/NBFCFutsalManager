@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NBFC Futsal Manager</string>
+    <string name="title_activity_main">NBFC Futsal Manager</string>
+    <string name="package_name">com.nbfc.futsal</string>
+    <string name="custom_url_scheme">com.nbfc.futsal</string>
+</resources>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useFormStatus } from 'react-dom';
-import { sendNotificationToAllPlayers } from '@/ai/flows/send-onesignal-notification';
+import { sendNotificationToAllPlayers } from '@/app/actions';
 
 
 function ManualNotificationForm() {
@@ -24,28 +25,28 @@ function ManualNotificationForm() {
     async function formAction(formData: FormData) {
         const payload = {
             title: formData.get('title') as string,
-            message: formData.get('body') as string,
-            url: formData.get('url') as string || `${process.env.NEXT_PUBLIC_BASE_URL}`
+            body: formData.get('body') as string,
         };
 
-        if (!payload.title || !payload.message) {
+        if (!payload.title || !payload.body) {
             toast({ title: "Champs requis", description: "Le titre et le message sont obligatoires.", variant: "destructive" });
             return;
         }
 
+        // This function is now a placeholder, it will log to the console.
         const result = await sendNotificationToAllPlayers(payload);
 
         if (result.success) {
             toast({
-                title: "Notification Envoyée !",
-                description: "Le message a été envoyé à tous les abonnés."
+                title: "Notification en attente",
+                description: "La logique d'envoi sera bientôt connectée à Firebase."
             });
             const form = document.getElementById('manual-notification-form') as HTMLFormElement;
             form.reset();
         } else {
              toast({
-                title: "Erreur d'envoi",
-                description: result.error || "La notification n'a pas pu être envoyée.",
+                title: "Erreur",
+                description: "La notification n'a pas pu être traitée.",
                 variant: "destructive"
             });
         }
@@ -66,7 +67,7 @@ function ManualNotificationForm() {
             <CardHeader>
                 <CardTitle>Envoyer une Notification Manuelle</CardTitle>
                 <CardDescription>
-                    Envoyez un message personnalisé à tous les joueurs abonnés via OneSignal.
+                    Envoyez un message personnalisé à tous les joueurs. (Bientôt avec Firebase)
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -122,7 +123,7 @@ export default function NotificationsAdminPage() {
         return () => {
             authListener?.subscription.unsubscribe();
         };
-    }, [supabase.auth, router]);
+    }, [supabase, router]);
     
     if(loading) {
         return (
@@ -154,14 +155,6 @@ export default function NotificationsAdminPage() {
 
                     <div className="grid grid-cols-1 gap-6 items-start">
                         <ManualNotificationForm />
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Gestion des Abonnés</CardTitle>
-                                <CardDescription>
-                                    La liste des abonnés et la gestion des utilisateurs sont maintenant disponibles directement sur votre tableau de bord OneSignal.
-                                </CardDescription>
-                            </CardHeader>
-                         </Card>
                     </div>
                 </div>
             </main>
