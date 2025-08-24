@@ -1,4 +1,3 @@
-
 'use client';
 
 import './globals.css';
@@ -7,6 +6,15 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { useEffect } from 'react';
 import OneSignal from 'react-onesignal';
 
+async function initializeOneSignal() {
+  const oneSignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+  if (oneSignalAppId) {
+    await OneSignal.init({ appId: oneSignalAppId });
+  } else {
+    console.error("OneSignal App ID is not configured. Please set NEXT_PUBLIC_ONESIGNAL_APP_ID in your environment variables.");
+  }
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -14,11 +22,8 @@ export default function RootLayout({
 }>) {
 
   useEffect(() => {
-    const oneSignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
-    if (typeof window !== 'undefined' && oneSignalAppId) {
-      OneSignal.init({ appId: oneSignalAppId });
-    } else if (typeof window !== 'undefined') {
-      console.error("OneSignal App ID is not configured. Please set NEXT_PUBLIC_ONESIGNAL_APP_ID in your environment variables.");
+    if (typeof window !== 'undefined') {
+      initializeOneSignal();
     }
   }, []);
 
