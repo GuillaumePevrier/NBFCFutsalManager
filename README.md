@@ -2,12 +2,12 @@
 
 ## Descri problème sur Vercel
 
-NBFC Futsal Manager est une application web moderne et interactive conçue pour aider les coachs du Noyal Brécé FC à gérer leurs tactiques, leurs équipes et leurs matchs de futsal. Elle offre une plateforme centralisée pour la planification stratégique, la communication avec les joueurs et le suivi des matchs en temps réel.
+NBFC Futsal Manager est une application web moderne et interactive conçue pour aider les coachs du Noyal Brécé FC à gérer leurs tactiques, leurs équipes et leurs matchs de futsal. Elle offre une plateforme centralisée pour , la communication avec les joueurs et le suivi des matchs en temps réel.
 
  l'application garantit une expérience utilisateur fluide que ce soit sur un ordinateur de bureau ou sur le terrain depuis un téléphone portable.
 
 -   **Tableau Tactique Interactif** : Un terrain de futsal SVG où les coachs peuvent glisser-déposer des pions (joueurs) pour définir des stratégies et des compositions.
--   **Gestion de Composition** : Sélectionnez les joueurs pour le match, organisez les titulaires et les remplaçants sur un banc de touche dédié.
+-   **Gestion de Composition** : les joueurs pour le match, organisez les titulaires et les remplaçants sur un banc de touche dédié.
 -   **Suivi de Match en Direct** : Un tableau de marque complet avec score, chronomètre (temps arrêté ou continu), gestion des fautes et des périodes.
 -   **Synchronisation en Temps Réel** : Grâce à **Supabase Realtime**, toutes les modifications (positions des joueurs, score, chronomètre, fautes) sont synchronisées instantanément sur tous les appareils connectés. Les spectateurs voient les mises à jour en direct.
 -   **Notifications Push avec OneSignal** : Un système de notification push puissant pour tenir les joueurs et les supporters informés. Les notifications sont envoyées automatiquement à chaque but marqué.
