@@ -37,6 +37,8 @@ export default function Home() {
   const supabase = createClient();
 
   useEffect(() => {
+    if (!supabase) return;
+
     const checkPlayerProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
