@@ -14,8 +14,11 @@ export default function RootLayout({
 }>) {
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      OneSignal.init({ appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID! });
+    const oneSignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+    if (typeof window !== 'undefined' && oneSignalAppId) {
+      OneSignal.init({ appId: oneSignalAppId });
+    } else if (typeof window !== 'undefined') {
+      console.error("OneSignal App ID is not configured. Please set NEXT_PUBLIC_ONESIGNAL_APP_ID.");
     }
   }, []);
 
