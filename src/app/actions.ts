@@ -765,7 +765,7 @@ export async function createOrGetPrivateChannel(recipientId: string): Promise<{ 
     }
     
     // Find the recipient's auth user_id from their player id
-    const { data: recipientPlayer, error: playerError } = await supabase.from('players').select('*').eq('id', recipientId).single();
+    const { data: recipientPlayer, error: playerError } = await supabase.from('players').select('id, name, avatar_url, user_id').eq('id', recipientId).single();
     if (playerError || !recipientPlayer?.user_id) {
         return { error: "Ce joueur n'a pas de compte de connexion.", channelId: null };
     }
@@ -950,7 +950,7 @@ interface NotificationPayload {
 
 export async function sendPushNotification(userId: string, payload: NotificationPayload): Promise<{ success: boolean, error?: any }> {
     if (!process.env.VAPID_SUBJECT || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-        const errorMsg = "VAPID keys are not configured. Cannot send push notifications.";
+        const errorMsg = "VAPID keys are not configured on the server. Cannot send push notifications.";
         console.error(errorMsg);
         return { success: false, error: errorMsg };
     }

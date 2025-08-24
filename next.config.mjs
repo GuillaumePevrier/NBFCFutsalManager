@@ -35,6 +35,15 @@ const pwaConfig = withPWA({
   customWorkerSrc: 'public',
   customWorkerDest: 'public',
   buildExcludes: [/app-build-manifest.json$/],
+  publicExcludes: ['!noprecache/**/*', '!_next/static/chunks/pages/_app-*.js', '!_next/static/chunks/webpack-*.js'],
+  workboxOptions: {
+    // This is a crucial step: we are injecting the VAPID public key
+    // into the service worker's environment.
+    buildId: process.env.BUILD_ID || 'dev', // ensures a new service worker is generated on each build
+    define: {
+      'process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY': JSON.stringify(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+    },
+  },
 });
 
 export default pwaConfig(nextConfig);

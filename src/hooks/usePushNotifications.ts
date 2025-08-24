@@ -28,23 +28,38 @@ export function usePushNotifications() {
       if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
         setIsPushSupported(true);
         setPermissionStatus(Notification.permission);
-        const swRegistration = await navigator.serviceWorker.ready;
-        const sub = await swRegistration.pushManager.getSubscription();
-        setSubscription(sub);
-        setIsSubscribed(!!sub);
+        try {
+          const swRegistration = await navigator.serviceWorker.ready;
+          const sub = await swRegistration.pushManager.getSubscription();
+          setSubscription(sub);
+          setIsSubscribed(!!sub);
+        } catch (error) {
+          console.error("Error getting service worker or subscription:", error);
+        }
       }
     };
     checkSupportAndSubscription();
   }, []);
 
   const subscribeToPush = useCallback(async () => {
-    if (!isPushSupported || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-      console.error("Push notifications not supported or VAPID key missing.");
-      toast({ title: "Erreur", description: "Les notifications ne sont pas supportées sur cet appareil ou navigateur.", variant: "destructive"});
+    // Check for VAPID key availability. This is critical for production.
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+      console.error("VAPID public key is not defined. Cannot subscribe.");
+      toast({ title: "Erreur de configuration", description: "La clé de notification est manquante.", variant: "destructive"});
       return;
     }
 
-    if (Notification.permission === 'denied') {
+    if (!isPushSupported) {
+      console.error("Push notifications not supported.");
+      toast({ title: "Erreur", description: "Les notifications ne sont pas supportées sur cet appareil ou navigateur.", variant: "destructive"});
+      return;
+    }
+    
+    // Explicitly re-check permission status
+    const currentPermission = Notification.permission;
+    setPermissionStatus(currentPermission);
+
+    if (currentPermission === 'denied') {
       toast({
         title: "Permissions bloquées",
         description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur pour ce site.",
@@ -58,7 +73,8 @@ export function usePushNotifications() {
       const swRegistration = await navigator.serviceWorker.ready;
       
       const applicationServerKey = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
-      // This is where the browser's permission prompt is triggered
+      
+      // The subscribe call will trigger the browser's permission prompt if permission is 'default'
       const sub = await swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey,
