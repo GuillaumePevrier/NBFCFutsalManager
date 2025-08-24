@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { MatchPoll, Player, Role, PlayerAvailability } from '@/lib/types';
@@ -24,7 +23,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import AvailabilityDialog from './AvailabilityDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from '@/lib/utils';
-import { sendNotificationToAllPlayers } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 interface MatchPollProps {

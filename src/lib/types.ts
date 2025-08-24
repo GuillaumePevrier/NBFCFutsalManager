@@ -189,20 +189,3 @@ export interface Message {
     channel_id: string;
     sender?: Pick<Player, 'id' | 'name' | 'avatar_url' | 'user_id'>; // Added user_id
 }
-
-// Push Notifications
-export interface PushSubscription {
-    endpoint: string;
-    expirationTime?: number | null;
-    keys: {
-        p256dh: string;
-        auth: string;
-    };
-}
-
-export interface Subscriber {
-    id: string;
-    name: string;
-    avatar_url: string;
-    subscribed_at: string;
-}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Player, PlayerPosition, Role, MatchPoll } from '@/lib/types';
@@ -7,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Save, Send, Trash2, Users, X } from 'lucide-react';
-import InvitationDialog from './InvitationDialog';
+import { Save, Trash2, Users, X } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
 interface ControlPanelProps {
@@ -135,11 +133,6 @@ const ControlPanel = ({
       
       {role === 'coach' && (
         <div className="mt-auto p-4 space-y-2 flex-shrink-0 border-t">
-          <InvitationDialog team={team}>
-            <Button className="w-full" disabled={team.length === 0}>
-              <Send className="mr-2 h-4 w-4" /> Envoyer une notification
-            </Button>
-          </InvitationDialog>
           <div className="flex gap-2">
               <Button variant="outline" className="w-full" onClick={onSave}>
               <Save className="mr-2 h-4 w-4" /> Sauvegarder

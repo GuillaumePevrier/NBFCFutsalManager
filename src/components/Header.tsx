@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Users, Home, Shield, Trophy, Footprints, MessageSquare, Bell, BellOff, UserCircle } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users, Home, Shield, Trophy, Footprints, MessageSquare, Bell, UserCircle } from "lucide-react";
 import Image from "next/image";
 import type { Role, Player } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -13,9 +13,6 @@ import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
 import { signOut } from "@/app/actions";
 import AuthDialog from "./AuthDialog";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { ToastAction } from "./ui/toast";
-import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { usePresence } from "@/hooks/usePresence";
 
@@ -32,14 +29,6 @@ export default function Header({ children }: HeaderProps) {
   const [currentUser, setCurrentUser] = useState<Player | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   
-  const { 
-      isSubscribed, 
-      subscribeToPush, 
-      unsubscribeFromPush, 
-      isPushSupported,
-      permissionStatus,
-   } = usePushNotifications();
-
   // Initialize presence tracking for the current user
   usePresence(currentUser?.user_id);
 
@@ -77,29 +66,7 @@ export default function Header({ children }: HeaderProps) {
     };
   }, [supabase]);
 
-
-  // Effect to show toast notification for push subscription
-  useEffect(() => {
-      // Show the toast only if the user is logged in, push is supported,
-      // permission hasn't been asked yet ('default'), and they aren't already subscribed.
-      if (isLoggedIn && isPushSupported && permissionStatus === 'default' && !isSubscribed) {
-          const timer = setTimeout(() => {
-            toast({
-                title: "Restez Connecté !",
-                description: "Activez les notifications pour ne rien manquer des convocations et des scores.",
-                duration: 15000,
-                action: <ToastAction altText="Activer" onClick={subscribeToPush}>Activer</ToastAction>,
-            });
-          }, 3000); // Wait 3 seconds before showing the toast
-          return () => clearTimeout(timer);
-      }
-  }, [isLoggedIn, isPushSupported, permissionStatus, isSubscribed, subscribeToPush, toast]);
-
-
   const handleSignOut = async () => {
-    if(isSubscribed) {
-      await unsubscribeFromPush();
-    }
     await signOut();
     toast({ title: "Déconnexion", description: "Vous avez été déconnecté." });
     router.push('/');
@@ -113,16 +80,6 @@ export default function Header({ children }: HeaderProps) {
     checkSession();
     setIsAuthOpen(false);
   }
-
-  const handleNotificationToggle = () => {
-    if (!isPushSupported) return;
-    if (isSubscribed) {
-      unsubscribeFromPush();
-    } else {
-      subscribeToPush();
-    }
-  }
-
 
   return (
     <>
@@ -162,12 +119,6 @@ export default function Header({ children }: HeaderProps) {
             </DropdownMenu>
         )}
         
-        {isLoggedIn && isPushSupported && (
-            <Button variant="outline" size="icon" onClick={handleNotificationToggle} title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"} className="btn neon-blue-sm h-8 w-8">
-                {isSubscribed ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5" />}
-            </Button>
-        )}
-
         <ThemeToggle />
         <DropdownMenu>
             <DropdownMenuTrigger asChild>

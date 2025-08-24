@@ -1,5 +1,3 @@
-import withPWA from 'next-pwa';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -26,14 +24,4 @@ const nextConfig = {
   },
 };
 
-const pwaConfig = withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  customWorkerSrc: 'public',
-  customWorkerDest: 'public',
-  buildExcludes: [/app-build-manifest.json$/],
-});
-
-export default pwaConfig(nextConfig);
+export default nextConfig;
