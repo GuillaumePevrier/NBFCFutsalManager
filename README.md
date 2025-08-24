@@ -10,7 +10,7 @@ NBFC Futsal Manager est une application web moderne et interactive conçue pour 
 -   **Gestion de Composition** : les joueurs pour le match, organisez les titulaires et les remplaçants sur un banc de touche dédié.
 -   **Suivi de Match en Direct** : Un tableau de marque complet avec score, chronomètre (temps arrêté ou continu), gestion des fautes et des périodes.
 -   **Synchronisation en Temps Réel** : Grâce à **Supabase Realtime**, toutes les modifications (positions des joueurs, score, chronomètre, fautes) sont synchronisées instantanément sur tous les appareils connectés. Les spectateurs voient les mises à jour en direct.
--   **Notifications Push avec OneSignal** : Un système de notification push puissant pour tenir les joueurs et les supporters informés. Les notifications sont envoyées automatiquement à chaque but marqué.
+-   **Notifications   : Un système de notification push puissant pour tenir les joueurs et les supporters informés. Les notifications sont envoyées automatiquement à chaque but marqué.
 -   **Gestion des Matchs** : Planifiez les matchs à venir en définissant l'adversaire, la date, l'heure et le lieu.
 -   **Accès par Rôle (Coach/Visiteur)** : Les coachs, authentifiés via **Supabase Auth**, disposent de pleins pouvoirs d'édition. Les joueurs et les visiteurs ont un accès en lecture seule, leur permettant de suivre le match en direct sans pouvoir altérer les données.
 
