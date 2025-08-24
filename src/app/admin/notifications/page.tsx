@@ -4,14 +4,14 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Bell, Loader2, Send, Users } from "lucide-react";
+import { ArrowLeft, Bell, Loader2, Send, Users, TestTube2 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Role } from "@/lib/types";
 import Header from "@/components/Header";
 import AuthDialog from '@/components/AuthDialog';
 import { useRouter } from 'next/navigation';
-import { getSubscribers, sendNotificationToAllPlayers, type Subscriber } from '@/app/actions';
+import { getSubscribers, sendNotificationToAllPlayers, type Subscriber, sendPushNotification } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -25,6 +25,8 @@ import { useFormStatus } from 'react-dom';
 
 function ManualNotificationForm() {
     const { toast } = useToast();
+    const [isSendingTest, setIsSendingTest] = useState(false);
+    const supabase = createClient();
 
     async function formAction(formData: FormData) {
         const payload = {
@@ -51,6 +53,30 @@ function ManualNotificationForm() {
         // Reset the form
         const form = document.getElementById('manual-notification-form') as HTMLFormElement;
         form.reset();
+    }
+    
+    async function handleSendTest() {
+        setIsSendingTest(true);
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            toast({ title: "Erreur", description: "Vous devez être connecté pour envoyer un test.", variant: "destructive"});
+            setIsSendingTest(false);
+            return;
+        }
+
+        const result = await sendPushNotification(user.id, {
+            title: "Notification de Test 🚀",
+            body: "Si vous recevez ceci, tout fonctionne parfaitement !",
+            icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+        });
+
+        if (result.success) {
+            toast({ title: "Notification test envoyée", description: "Vérifiez vos appareils pour la recevoir." });
+        } else {
+             toast({ title: "Erreur d'envoi", description: result.error || "Impossible d'envoyer la notification test.", variant: "destructive"});
+        }
+        setIsSendingTest(false);
     }
     
     function SubmitButton() {
@@ -89,7 +115,19 @@ function ManualNotificationForm() {
                         <Label htmlFor="url">URL cible (optionnel)</Label>
                         <Input id="url" name="url" placeholder="Lien vers une page de l'app" />
                     </div>
-                    <SubmitButton />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleSendTest}
+                            disabled={isSendingTest}
+                            className="w-full sm:w-auto"
+                        >
+                            {isSendingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TestTube2 className="mr-2 h-4 w-4" />}
+                            Test pour moi
+                        </Button>
+                        <SubmitButton />
+                    </div>
                 </form>
             </CardContent>
         </Card>
@@ -213,7 +251,7 @@ export default function NotificationsAdminPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
-            <Header onAuthClick={() => setIsAuthOpen(true)}>
+            <Header>
                 <Button asChild variant="outline" size="sm">
                    <Link href="/" className="flex items-center">
                      <ArrowLeft className="mr-2 h-4 w-4" />

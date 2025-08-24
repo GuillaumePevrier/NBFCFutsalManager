@@ -1,12 +1,10 @@
 
-// src/hooks/usePushNotifications.ts
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
 import { savePushSubscription, deletePushSubscription } from '@/app/actions';
 
-// This function is needed to convert the VAPID key to the correct format
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -18,68 +16,54 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-
 export function usePushNotifications() {
   const { toast } = useToast();
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [isPushSupported, setIsPushSupported] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
-  const [loading, setLoading] = useState(true);
-
+  
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
-      setIsPushSupported(true);
-      setPermissionStatus(Notification.permission);
-
-      const checkSubscription = async () => {
-        setLoading(true);
-        try {
-          const swRegistration = await navigator.serviceWorker.ready;
-          const sub = await swRegistration.pushManager.getSubscription();
-          setIsSubscribed(!!sub);
-        } catch (error) {
-          console.error("Error checking for push subscription:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      checkSubscription();
-    }
+    const checkSupportAndSubscription = async () => {
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
+        setIsPushSupported(true);
+        setPermissionStatus(Notification.permission);
+        const swRegistration = await navigator.serviceWorker.ready;
+        const sub = await swRegistration.pushManager.getSubscription();
+        setSubscription(sub);
+        setIsSubscribed(!!sub);
+      }
+    };
+    checkSupportAndSubscription();
   }, []);
 
-  const subscribeToPush = useCallback(async (): Promise<boolean> => {
+  const subscribeToPush = useCallback(async () => {
     if (!isPushSupported || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
       console.error("Push notifications not supported or VAPID key missing.");
-      return false;
+      toast({ title: "Erreur", description: "Les notifications ne sont pas supportées sur cet appareil ou navigateur.", variant: "destructive"});
+      return;
     }
-    
-    // Check permission status first. If denied, don't proceed.
+
     if (Notification.permission === 'denied') {
-        toast({
-          title: "Permissions bloquées",
-          description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur pour ce site.",
-          variant: "destructive",
-          duration: 10000,
-        });
-        return false;
+      toast({
+        title: "Permissions bloquées",
+        description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur pour ce site.",
+        variant: "destructive",
+        duration: 10000,
+      });
+      return;
     }
 
     try {
       const swRegistration = await navigator.serviceWorker.ready;
-      let sub = await swRegistration.pushManager.getSubscription();
+      
+      const applicationServerKey = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
+      // This is where the browser's permission prompt is triggered
+      const sub = await swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
 
-      if (!sub) {
-        // This is where the browser's permission prompt is triggered
-        const applicationServerKey = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
-        sub = await swRegistration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey,
-        });
-      }
-      
-      // Update permission status after the prompt might have changed it
-      setPermissionStatus(Notification.permission);
-      
       const result = await savePushSubscription(sub.toJSON());
 
       if (result.success) {
@@ -87,58 +71,46 @@ export function usePushNotifications() {
           title: "Notifications activées !",
           description: "Vous recevrez désormais les mises à jour importantes.",
         });
+        setSubscription(sub);
         setIsSubscribed(true);
-        return true;
       } else {
         toast({
           title: "Erreur d'enregistrement",
           description: result.error || "L'enregistrement de l'abonnement a échoué.",
           variant: "destructive",
         });
-        // If saving fails, we should unsubscribe to avoid a broken state
-        await sub.unsubscribe();
-        setIsSubscribed(false);
-        return false;
+        await sub.unsubscribe(); // Clean up failed subscription
       }
     } catch (error) {
       console.error("Failed to subscribe to push notifications", error);
-      const currentPermission = Notification.permission;
-      setPermissionStatus(currentPermission);
-      
-      if (currentPermission === 'denied') {
-        toast({
-          title: "Permissions bloquées",
-          description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur pour ce site.",
-          variant: "destructive",
-          duration: 10000,
-        });
+      // This will catch if the user clicks "Block" on the permission prompt
+      if (Notification.permission === 'denied') {
+          toast({
+              title: "Activation annulée",
+              description: "Vous avez refusé les notifications. Vous pouvez les réactiver plus tard dans les paramètres du site.",
+              variant: "destructive"
+          });
       } else {
-        toast({
-          title: "Erreur d'activation",
-          description: "Une erreur est survenue lors de l'activation des notifications.",
-          variant: "destructive",
-        });
+          toast({
+              title: "Erreur d'activation",
+              description: "Une erreur est survenue lors de l'activation des notifications.",
+              variant: "destructive",
+          });
       }
-      return false;
+      setIsSubscribed(false);
+      setSubscription(null);
     }
   }, [isPushSupported, toast]);
 
-  const unsubscribeFromPush = useCallback(async (): Promise<boolean> => {
-    if (!isPushSupported) return false;
+  const unsubscribeFromPush = useCallback(async () => {
+    if (!subscription) return;
 
     try {
-      const swRegistration = await navigator.serviceWorker.ready;
-      const sub = await swRegistration.pushManager.getSubscription();
-
-      if (sub) {
-        // We tell our server first, then unsubscribe from the browser's push service
-        await deletePushSubscription(sub.endpoint);
-        await sub.unsubscribe();
-        setIsSubscribed(false);
-        toast({ title: "Notifications désactivées" });
-        return true;
-      }
-      return true; // Already unsubscribed
+      await deletePushSubscription(subscription.endpoint);
+      await subscription.unsubscribe();
+      setSubscription(null);
+      setIsSubscribed(false);
+      toast({ title: "Notifications désactivées" });
     } catch (error) {
       console.error("Failed to unsubscribe from push notifications", error);
       toast({
@@ -146,16 +118,14 @@ export function usePushNotifications() {
         description: "La désactivation des notifications a échoué.",
         variant: "destructive",
       });
-      return false;
     }
-  }, [isPushSupported, toast]);
+  }, [subscription, toast]);
 
   return {
     isSubscribed,
-    isPushSupported,
-    permissionStatus,
-    loading,
     subscribeToPush,
     unsubscribeFromPush,
+    isPushSupported,
+    permissionStatus,
   };
 }

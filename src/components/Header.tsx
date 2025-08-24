@@ -1,8 +1,8 @@
 'use client';
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Users, Globe, Home, Shield, Trophy, Footprints, MessageSquare, Bell, BellOff, UserCircle, KeyRound } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users, Home, Shield, Trophy, Footprints, MessageSquare, Bell, BellOff, UserCircle } from "lucide-react";
 import Image from "next/image";
 import type { Role, Player } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -32,7 +32,13 @@ export default function Header({ children }: HeaderProps) {
   const [currentUser, setCurrentUser] = useState<Player | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   
-  const { isSubscribed, subscribeToPush, unsubscribeFromPush, isPushSupported, permissionStatus } = usePushNotifications();
+  const { 
+      isSubscribed, 
+      subscribeToPush, 
+      unsubscribeFromPush, 
+      isPushSupported,
+      permissionStatus,
+   } = usePushNotifications();
 
   // Initialize presence tracking for the current user
   usePresence(currentUser?.user_id);
@@ -74,15 +80,18 @@ export default function Header({ children }: HeaderProps) {
 
   // Effect to show toast notification for push subscription
   useEffect(() => {
-      // We only want to show the toast if the user is logged in, push is supported,
-      // and the permission has not been asked yet ('default').
-      if(isLoggedIn && isPushSupported && permissionStatus === 'default' && !isSubscribed) {
+      // Show the toast only if the user is logged in, push is supported,
+      // permission hasn't been asked yet ('default'), and they aren't already subscribed.
+      if (isLoggedIn && isPushSupported && permissionStatus === 'default' && !isSubscribed) {
+          const timer = setTimeout(() => {
             toast({
                 title: "Restez Connecté !",
                 description: "Activez les notifications pour ne rien manquer des convocations et des scores.",
                 duration: 15000,
-                action: <ToastAction altText="Activer" onClick={() => subscribeToPush()}>Activer</ToastAction>,
+                action: <ToastAction altText="Activer" onClick={subscribeToPush}>Activer</ToastAction>,
             });
+          }, 3000); // Wait 3 seconds before showing the toast
+          return () => clearTimeout(timer);
       }
   }, [isLoggedIn, isPushSupported, permissionStatus, isSubscribed, subscribeToPush, toast]);
 

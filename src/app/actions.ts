@@ -950,8 +950,9 @@ interface NotificationPayload {
 
 export async function sendPushNotification(userId: string, payload: NotificationPayload): Promise<{ success: boolean, error?: any }> {
     if (!process.env.VAPID_SUBJECT || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-        console.error("VAPID keys are not configured. Cannot send push notifications.");
-        return { success: false, error: "VAPID keys not configured." };
+        const errorMsg = "VAPID keys are not configured. Cannot send push notifications.";
+        console.error(errorMsg);
+        return { success: false, error: errorMsg };
     }
 
     // This action must use the service role key to bypass RLS and read subscriptions.
