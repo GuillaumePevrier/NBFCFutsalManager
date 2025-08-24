@@ -1,6 +1,3 @@
-
-import withPWA from 'next-pwa';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -27,19 +24,4 @@ const nextConfig = {
   },
 };
 
-const pwaConfig = withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  sw: 'sw.js',
-  workboxOptions: {
-    // This is the correct way to pass environment variables to the service worker.
-    // The value will be replaced at build time.
-    define: {
-      'process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY': JSON.stringify(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY)
-    }
-  }
-});
-
-export default pwaConfig(nextConfig);
+export default nextConfig;

@@ -13,40 +13,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
 
-  useEffect(() => {
-    // This is for registering the service worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => console.log('Service Worker registered with scope:', registration.scope))
-        .catch((error) => console.error('Service Worker registration failed:', error));
-    }
-
-    // Clear the app badge when the app is opened or becomes visible
-    const clearBadge = () => {
-      if (navigator.clearAppBadge) {
-        navigator.clearAppBadge();
-      }
-    };
-    
-    // Clear badge on initial load
-    clearBadge();
-    
-    // Clear badge when the tab becomes visible again
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        clearBadge();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Clean up the event listener
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-
-  }, []);
-
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
@@ -57,17 +23,6 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap" rel="stylesheet" />
-        
-        {/* PWA Manifest */}
-        <link rel="manifest" href="/manifest.webmanifest" />
-
-        {/* Theme and Icons for PWA */}
-        <meta name="theme-color" content="#01182a" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="NBFC Futsal" />
-
       </head>
       <body className="font-body antialiased min-h-screen">
         <ThemeProvider
