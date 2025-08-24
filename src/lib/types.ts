@@ -1,5 +1,7 @@
 
 
+import { z } from 'zod';
+
 export interface Player {
   id: string; // uuid
   user_id: string | null; // uuid, foreign key to auth.users, CAN BE NULL
@@ -200,3 +202,13 @@ export interface NotificationPayload {
   tag?: string;
   data?: Record<string, any>;
 }
+
+export const FcmNotificationPayloadSchema = z.object({
+  tokens: z.array(z.string()).describe('A list of FCM registration tokens.'),
+  title: z.string().describe('The title of the notification.'),
+  body: z.string().describe('The body of the notification.'),
+  icon: z.string().optional().describe('URL to an icon for the notification.'),
+  tag: z.string().optional().describe('A tag to group notifications.'),
+  data: z.record(z.any()).optional().describe('Arbitrary data payload.'),
+});
+export type FcmNotificationPayload = z.infer<typeof FcmNotificationPayloadSchema>;
