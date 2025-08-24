@@ -32,18 +32,14 @@ const pwaConfig = withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  customWorkerSrc: 'public',
-  customWorkerDest: 'public',
-  buildExcludes: [/app-build-manifest.json$/],
-  publicExcludes: ['!noprecache/**/*', '!_next/static/chunks/pages/_app-*.js', '!_next/static/chunks/webpack-*.js'],
+  sw: 'sw.js',
   workboxOptions: {
-    // This is a crucial step: we are injecting the VAPID public key
-    // into the service worker's environment.
-    buildId: process.env.BUILD_ID || 'dev', // ensures a new service worker is generated on each build
+    // This is the correct way to pass environment variables to the service worker.
+    // The value will be replaced at build time.
     define: {
-      'process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY': JSON.stringify(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
-    },
-  },
+      'process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY': JSON.stringify(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY)
+    }
+  }
 });
 
 export default pwaConfig(nextConfig);

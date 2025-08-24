@@ -1,63 +1,51 @@
 
-// Listen for push events
-self.addEventListener('push', function (event) {
+// This is a custom service worker.
+// `self` is the service worker instance.
+
+self.addEventListener('push', (event) => {
   const data = event.data.json();
-  const title = data.title || 'Nouvelle Notification';
+  const title = data.title || 'NBFC Futsal';
   const options = {
     body: data.body,
-    icon: data.icon || '/icon-192x192.png', // Default icon
-    badge: '/icon-96x96.png', // Badge for notifications (must be monochrome)
-    vibrate: [200, 100, 200],
-    tag: data.tag || 'default-tag',
+    icon: data.icon || '/icon-192x192.png',
+    badge: '/badge-72x72.png',
+    tag: data.tag || 'nbfc-notification',
     data: {
-      url: data.data?.url || '/', // URL to open on click
+      url: data.data?.url || self.registration.scope,
     },
   };
-
-  // Set a badge on the app icon if the API is available
-  if (self.navigator.setAppBadge) {
-    self.navigator.setAppBadge();
-  }
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Listen for notification click events
-self.addEventListener('notificationclick', function (event) {
-  event.notification.close(); // Close the notification
 
-  const urlToOpen = new URL(event.notification.data.url, self.location.origin).href;
-  
-  // Clear the badge when the notification is clicked
-  if (self.navigator.clearAppBadge) {
-      self.navigator.clearAppBadge();
-  }
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
 
+  const urlToOpen = event.notification.data.url;
 
   event.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true,
-    }).then((clientList) => {
-      // If a window for the app is already open, focus it
-      if (clientList.length > 0) {
-        for (const client of clientList) {
-            // Check if a client for the exact URL is already open
-            if (client.url === urlToOpen && 'focus' in client) {
-                return client.focus();
-            }
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If a window for the app is already open, focus it.
+      for (const client of clientList) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
         }
-        // If no exact match is found, focus the first available client and navigate it
-         if (clientList[0].url && 'focus' in clientList[0] && 'navigate' in clientList[0]) {
-             clientList[0].focus();
-             return clientList[0].navigate(urlToOpen);
-         }
       }
-      
-      // Otherwise, open a new window
+      // Otherwise, open a new window.
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
     })
   );
 });
+
+// This is required for the service worker to be installable.
+self.addEventListener('fetch', (event) => {
+  // We are not doing any caching here, just fulfilling the requirement.
+  // Next-PWA will inject its own precaching logic.
+});
+
+// This is the part that was missing a proper way to get the env var.
+// process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY will be replaced by its actual value at build time by Workbox.
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
