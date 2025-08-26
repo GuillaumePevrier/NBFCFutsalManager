@@ -1,8 +1,9 @@
 
+      
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import type { Player, Opponent, Match, Training, Channel, Message, UserProfileUpdate, NotificationPayload, FcmSubscription } from '@/lib/types';
+import type { Player, Opponent, Match, Training, Channel, Message, UserProfileUpdate, NotificationPayload, PushSubscription } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { sendFcmNotification } from '@/ai/flows/send-fcm-notification';
@@ -990,31 +991,27 @@ export async function validateAllUsers(): Promise<{ success: boolean, error?: an
 
 
 // FCM Token Management & Push Subscriptions
-export async function savePushSubscription(subscription: FcmSubscription) {
+export async function savePushSubscription(subscription: PushSubscription) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'User not authenticated' };
-
-    const { data: player, error: playerError } = await supabase
-        .from('players')
-        .select('id, push_subscriptions')
-        .eq('user_id', user.id)
-        .single();
     
-    if (playerError || !player) return { success: false, error: 'Player profile not found' };
+    // The `endpoint` is a unique identifier for the subscription.
+    // Upsert ensures we don't create duplicate entries for the same device.
+    const { error } = await supabase.from('push_subscriptions').upsert(
+      {
+        user_id: user.id,
+        endpoint: subscription.endpoint,
+        keys: subscription.keys,
+      },
+      {
+        onConflict: 'endpoint', // If a subscription with this endpoint exists, update it
+      }
+    );
 
-    const subscriptions = player.push_subscriptions || [];
-    const endpoint = subscription.endpoint;
-    
-    // Check if a subscription with the same endpoint already exists
-    if (!subscriptions.some(s => JSON.parse(s).endpoint === endpoint)) {
-        const updatedSubscriptions = [...subscriptions, JSON.stringify(subscription)];
-        const { error: updateError } = await supabase
-            .from('players')
-            .update({ push_subscriptions: updatedSubscriptions })
-            .eq('id', player.id);
-        
-        if (updateError) return { success: false, error: updateError.message };
+    if (error) {
+        console.error("Failed to save push subscription:", error);
+        return { success: false, error: error.message };
     }
 
     return { success: true };
@@ -1025,30 +1022,15 @@ export async function deletePushSubscription(endpoint: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'User not authenticated' };
 
-    const { data: player, error: playerError } = await supabase
-        .from('players')
-        .select('id, push_subscriptions')
-        .eq('user_id', user.id)
-        .single();
+    const { error } = await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('endpoint', endpoint)
+        .eq('user_id', user.id);
         
-    if (playerError || !player) return { success: false, error: 'Player profile not found' };
-
-    const subscriptions = player.push_subscriptions || [];
-    const updatedSubscriptions = subscriptions.filter(s => {
-        try {
-            return JSON.parse(s).endpoint !== endpoint;
-        } catch (e) {
-            return false; // Remove invalid JSON entries
-        }
-    });
-
-    if (updatedSubscriptions.length < subscriptions.length) {
-        const { error: updateError } = await supabase
-            .from('players')
-            .update({ push_subscriptions: updatedSubscriptions })
-            .eq('id', player.id);
-            
-        if (updateError) return { success: false, error: updateError.message };
+    if (error) {
+        console.error("Failed to delete push subscription:", error);
+        return { success: false, error: error.message };
     }
     
     return { success: true };
@@ -1059,30 +1041,18 @@ export async function deletePushSubscription(endpoint: string) {
 export async function sendNotificationToAllPlayers(payload: NotificationPayload): Promise<{ success: boolean }> {
   try {
     const supabase = createClient();
-    const { data: players, error } = await supabase
-      .from('players')
-      .select('push_subscriptions')
-      .not('push_subscriptions', 'is', null);
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('keys, endpoint');
 
     if (error) {
-      console.error('Error fetching players for notification:', error);
+      console.error('Error fetching subscriptions for notification:', error);
       return { success: false };
     }
 
-    // Since push_subscriptions is an array of JSON strings, we need to parse them
-    const allSubscriptions = players.flatMap(p => {
-        return p.push_subscriptions.map(subString => {
-            try {
-                return JSON.parse(subString);
-            } catch (e) {
-                return null;
-            }
-        }).filter(Boolean); // Filter out nulls from failed parsing
-    });
-
-
-    if (allSubscriptions.length > 0) {
-      await sendFcmNotification({ subscriptions: allSubscriptions, ...payload });
+    if (subscriptions.length > 0) {
+        // The flow now expects just the subscription objects
+      await sendFcmNotification({ subscriptions: subscriptions as PushSubscription[], ...payload });
     }
     
     return { success: true };
@@ -1095,25 +1065,18 @@ export async function sendNotificationToAllPlayers(payload: NotificationPayload)
 export async function sendPushNotification(userId: string, payload: NotificationPayload): Promise<{ success: boolean }> {
    try {
     const supabase = createClient();
-    const { data: player, error } = await supabase
-      .from('players')
-      .select('push_subscriptions')
-      .eq('user_id', userId)
-      .single();
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('keys, endpoint')
+      .eq('user_id', userId);
 
-    if (error || !player || !player.push_subscriptions || player.push_subscriptions.length === 0) {
+    if (error || !subscriptions || subscriptions.length === 0) {
       console.error('Error fetching player or no push subscriptions for user:', userId, error);
       return { success: false };
     }
 
-    const subscriptions = player.push_subscriptions.map(subString => {
-        try {
-            return JSON.parse(subString);
-        } catch(e) { return null; }
-    }).filter(Boolean);
-
     if (subscriptions.length > 0) {
-      await sendFcmNotification({ subscriptions, ...payload });
+      await sendFcmNotification({ subscriptions: subscriptions as PushSubscription[], ...payload });
     }
 
     return { success: true };
@@ -1122,3 +1085,33 @@ export async function sendPushNotification(userId: string, payload: Notification
     return { success: false };
   }
 }
+
+export async function sendNotificationToSelectedPlayers(
+    userIds: string[], 
+    payload: NotificationPayload
+): Promise<{ success: boolean }> {
+  try {
+    const supabase = createClient();
+    
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('keys, endpoint')
+      .in('user_id', userIds);
+
+    if (error) {
+      console.error('Error fetching subscriptions for selected players:', error);
+      return { success: false };
+    }
+
+    if (subscriptions && subscriptions.length > 0) {
+      await sendFcmNotification({ subscriptions: subscriptions as PushSubscription[], ...payload });
+    }
+    
+    return { success: true };
+  } catch (e) {
+    console.error('Failed to send notifications to selected players:', e);
+    return { success: false };
+  }
+}
+
+    

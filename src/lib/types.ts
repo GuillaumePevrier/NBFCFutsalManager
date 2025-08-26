@@ -1,5 +1,5 @@
 
-
+      
 import { z } from 'zod';
 
 export interface Player {
@@ -20,7 +20,7 @@ export interface Player {
   // Ajout pour le statut de présence
   presence_status?: 'online' | 'offline';
   last_seen?: string; // ISO string
-  push_subscriptions: string[]; // Array of stringified PushSubscription JSON objects
+  push_subscriptions: string[]; // This is now legacy, will be removed later.
 }
 
 export interface UserProfileUpdate {
@@ -204,18 +204,19 @@ export interface NotificationPayload {
 }
 
 // Represents the structure of a Web Push Subscription object
-export const FcmSubscriptionSchema = z.object({
+export const PushSubscriptionSchema = z.object({
   endpoint: z.string(),
-  expirationTime: z.number().nullable(),
+  expirationTime: z.number().nullable().optional(),
   keys: z.object({
     p256dh: z.string(),
     auth: z.string(),
   }),
 });
-export type FcmSubscription = z.infer<typeof FcmSubscriptionSchema>;
+export type PushSubscription = z.infer<typeof PushSubscriptionSchema>;
+
 
 export const FcmNotificationPayloadSchema = z.object({
-  subscriptions: z.array(FcmSubscriptionSchema).describe('An array of Web Push subscription objects.'),
+  subscriptions: z.array(PushSubscriptionSchema).describe('An array of Web Push subscription objects.'),
   title: z.string().describe('The title of the notification.'),
   body: z.string().describe('The body of the notification.'),
   icon: z.string().optional().describe('URL to an icon for the notification.'),
@@ -223,3 +224,5 @@ export const FcmNotificationPayloadSchema = z.object({
   data: z.record(z.any()).optional().describe('Arbitrary data payload.'),
 });
 export type FcmNotificationPayload = z.infer<typeof FcmNotificationPayloadSchema>;
+
+    
