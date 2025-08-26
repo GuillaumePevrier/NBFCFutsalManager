@@ -36,6 +36,7 @@ export function usePushNotifications() {
     
     setPermissionStatus(Notification.permission);
     
+    // Only try to get subscription if permission is already granted
     if (Notification.permission === 'granted') {
         try {
           const swRegistration = await navigator.serviceWorker.ready;
@@ -53,8 +54,34 @@ export function usePushNotifications() {
   }, [isPushSupported]);
 
   useEffect(() => {
-    init();
-  }, [init]);
+    // We only initialize if the user is logged in.
+    const checkUserAndInit = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            await init();
+        } else {
+            setIsLoading(false); // Not logged in, stop loading
+        }
+    };
+    checkUserAndInit();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+        if(event === 'SIGNED_IN') {
+             checkUserAndInit();
+        }
+        if (event === 'SIGNED_OUT') {
+            setIsSubscribed(false);
+            setSubscription(null);
+            setPermissionStatus('default');
+            setIsLoading(false);
+        }
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+
+  }, [supabase, init]);
 
   const subscribe = useCallback(async () => {
     setIsActionLoading(true);
@@ -88,6 +115,7 @@ export function usePushNotifications() {
               description: permission === 'denied' ? "Vous avez bloqué les notifications." : "Vous n'avez pas accordé la permission.",
               variant: 'destructive'
           });
+          setIsActionLoading(false);
           return;
       }
       
@@ -109,16 +137,16 @@ export function usePushNotifications() {
       } else {
         toast({
           title: "Erreur d'enregistrement",
-          description: result.error || "L'enregistrement de l'abonnement a échoué.",
+          description: result.error || "L'enregistrement de l'abonnement a échoué. Assurez-vous d'être connecté et réessayez.",
           variant: "destructive",
         });
-        await sub.unsubscribe();
+        await sub.unsubscribe(); // Clean up the failed subscription
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to subscribe to push notifications", error);
       toast({
             title: "Erreur d'activation",
-            description: "Une erreur est survenue.",
+            description: error.message || "Une erreur est survenue.",
             variant: "destructive",
       });
       setIsSubscribed(false);
@@ -133,16 +161,23 @@ export function usePushNotifications() {
     setIsActionLoading(true);
 
     try {
-      await deletePushSubscription(subscription.endpoint);
-      await subscription.unsubscribe();
-      setSubscription(null);
-      setIsSubscribed(false);
-      toast({ title: "Notifications désactivées" });
-    } catch (error) {
+      // Unsubscribe from the push manager first
+      const successfulUnsubscribe = await subscription.unsubscribe();
+      
+      if(successfulUnsubscribe) {
+          // Then delete the record from our DB
+          await deletePushSubscription(subscription.endpoint);
+          setSubscription(null);
+          setIsSubscribed(false);
+          toast({ title: "Notifications désactivées" });
+      } else {
+          throw new Error("La désinscription du navigateur a échoué.");
+      }
+    } catch (error: any) {
       console.error("Failed to unsubscribe from push notifications", error);
       toast({
         title: "Erreur",
-        description: "La désactivation des notifications a échoué.",
+        description: error.message || "La désactivation des notifications a échoué.",
         variant: "destructive",
       });
     } finally {
