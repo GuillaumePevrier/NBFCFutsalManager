@@ -23,20 +23,19 @@ export function usePushNotifications() {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const isPushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 
   const init = useCallback(async () => {
-    setIsLoading(true);
+    setIsInitializing(true);
     if (!isPushSupported) {
-        setIsLoading(false);
+        setIsInitializing(false);
         return;
     };
     
     setPermissionStatus(Notification.permission);
     
-    // Only try to get subscription if permission is already granted
     if (Notification.permission === 'granted') {
         try {
           const swRegistration = await navigator.serviceWorker.ready;
@@ -50,17 +49,16 @@ export function usePushNotifications() {
         }
     }
     
-    setIsLoading(false);
+    setIsInitializing(false);
   }, [isPushSupported]);
 
   useEffect(() => {
-    // We only initialize if the user is logged in.
     const checkUserAndInit = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             await init();
         } else {
-            setIsLoading(false); // Not logged in, stop loading
+            setIsInitializing(false);
         }
     };
     checkUserAndInit();
@@ -73,7 +71,7 @@ export function usePushNotifications() {
             setIsSubscribed(false);
             setSubscription(null);
             setPermissionStatus('default');
-            setIsLoading(false);
+            setIsInitializing(false);
         }
     });
 
@@ -140,13 +138,13 @@ export function usePushNotifications() {
           description: result.error || "L'enregistrement de l'abonnement a échoué. Assurez-vous d'être connecté et réessayez.",
           variant: "destructive",
         });
-        await sub.unsubscribe(); // Clean up the failed subscription
+        await sub.unsubscribe();
       }
     } catch (error: any) {
       console.error("Failed to subscribe to push notifications", error);
       toast({
             title: "Erreur d'activation",
-            description: error.message || "Une erreur est survenue.",
+            description: error.message || "Une erreur est survenue lors de l'abonnement.",
             variant: "destructive",
       });
       setIsSubscribed(false);
@@ -161,11 +159,9 @@ export function usePushNotifications() {
     setIsActionLoading(true);
 
     try {
-      // Unsubscribe from the push manager first
       const successfulUnsubscribe = await subscription.unsubscribe();
       
       if(successfulUnsubscribe) {
-          // Then delete the record from our DB
           await deletePushSubscription(subscription.endpoint);
           setSubscription(null);
           setIsSubscribed(false);
@@ -191,7 +187,7 @@ export function usePushNotifications() {
     unsubscribe,
     permissionStatus,
     isPushSupported,
-    isLoading,
+    isLoading: isInitializing,
     isActionLoading,
     init,
   };
