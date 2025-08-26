@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
 import { savePushSubscription, deletePushSubscription } from '@/app/actions';
 import { createClient } from '@/lib/supabase/client';
+import { requestForToken } from '@/lib/firebase'; // We will use this instead of the subscription object directly
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -27,45 +28,45 @@ export function usePushNotifications() {
   const [isActionLoading, setIsActionLoading] = useState(false);
   const isPushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 
+
   const init = useCallback(async () => {
-    setIsInitializing(true);
-    if (!isPushSupported) {
+    if (!isPushSupported || !supabase) {
         setIsInitializing(false);
         return;
     };
     
-    setPermissionStatus(Notification.permission);
+    setIsInitializing(true);
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (Notification.permission === 'granted') {
-        try {
-          const swRegistration = await navigator.serviceWorker.ready;
-          const sub = await swRegistration.pushManager.getSubscription();
-          setSubscription(sub);
-          setIsSubscribed(!!sub);
-        } catch (error) {
-          console.error("Error getting service worker or subscription:", error);
-          setIsSubscribed(false);
-          setSubscription(null);
-        }
+    if (session) {
+      setPermissionStatus(Notification.permission);
+      
+      if (Notification.permission === 'granted') {
+          try {
+            const swRegistration = await navigator.serviceWorker.ready;
+            const sub = await swRegistration.pushManager.getSubscription();
+            setSubscription(sub);
+            setIsSubscribed(!!sub);
+          } catch (error) {
+            console.error("Error getting service worker or subscription:", error);
+            setIsSubscribed(false);
+            setSubscription(null);
+          }
+      }
     }
     
     setIsInitializing(false);
-  }, [isPushSupported]);
+  }, [isPushSupported, supabase]);
+
 
   useEffect(() => {
-    const checkUserAndInit = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            await init();
-        } else {
-            setIsInitializing(false);
-        }
-    };
-    checkUserAndInit();
+    init(); // Initial check
     
+    if (!supabase) return;
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
         if(event === 'SIGNED_IN') {
-             checkUserAndInit();
+             init();
         }
         if (event === 'SIGNED_OUT') {
             setIsSubscribed(false);
@@ -79,7 +80,8 @@ export function usePushNotifications() {
       authListener?.subscription.unsubscribe();
     };
 
-  }, [supabase, init]);
+  }, [init, supabase]);
+
 
   const subscribe = useCallback(async () => {
     setIsActionLoading(true);
@@ -94,6 +96,12 @@ export function usePushNotifications() {
       toast({ title: "Erreur", description: "Les notifications ne sont pas supportées.", variant: "destructive"});
        setIsActionLoading(false);
       return;
+    }
+    
+    if(!supabase) {
+        toast({ title: "Erreur", description: "La connexion à la base de données n'est pas disponible.", variant: "destructive"});
+        setIsActionLoading(false);
+        return;
     }
 
     const { data: { user } } = await supabase.auth.getUser();

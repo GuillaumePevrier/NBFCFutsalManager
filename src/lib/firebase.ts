@@ -13,11 +13,24 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const messaging = (typeof window !== 'undefined' && 'PushManager' in window) ? getMessaging(app) : null;
+// Function to safely initialize Firebase
+function initializeFirebaseApp() {
+    // Check if all necessary keys are present
+    if (
+        firebaseConfig.apiKey &&
+        firebaseConfig.projectId &&
+        firebaseConfig.appId
+    ) {
+        return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    }
+    return null;
+}
+
+const app = initializeFirebaseApp();
+const messaging = (app && typeof window !== 'undefined' && 'PushManager' in window) ? getMessaging(app) : null;
 
 export { app, messaging };
+
 
 export const requestForToken = async () => {
   if (!messaging) {
