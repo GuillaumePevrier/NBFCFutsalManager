@@ -23,8 +23,8 @@ export function usePushNotifications() {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
-  const [isLoading, setIsLoading] = useState(true); // General loading state for initialization
-  const [isActionLoading, setIsActionLoading] = useState(false); // Specific loading for subscribe/unsubscribe actions
+  const [isLoading, setIsLoading] = useState(true);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const isPushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 
   const init = useCallback(async () => {
@@ -36,7 +36,6 @@ export function usePushNotifications() {
     
     setPermissionStatus(Notification.permission);
     
-    // Only try to get subscription if permission is already granted
     if (Notification.permission === 'granted') {
         try {
           const swRegistration = await navigator.serviceWorker.ready;
@@ -53,7 +52,6 @@ export function usePushNotifications() {
     setIsLoading(false);
   }, [isPushSupported]);
 
-  // Run init once on component mount
   useEffect(() => {
     init();
   }, [init]);
@@ -80,23 +78,19 @@ export function usePushNotifications() {
       return;
     }
     
-    let permission = Notification.permission;
-    if (permission === 'default') {
-        permission = await Notification.requestPermission();
-        setPermissionStatus(permission);
-    }
-
-    if (permission !== 'granted') {
-        toast({
-            title: permission === 'denied' ? "Permissions refusées" : "Activation annulée",
-            description: permission === 'denied' ? "Vous avez bloqué les notifications." : "Vous n'avez pas accordé la permission.",
-            variant: 'destructive'
-        });
-        setIsActionLoading(false);
-        return;
-    }
-    
     try {
+      const permission = await Notification.requestPermission();
+      setPermissionStatus(permission);
+
+      if (permission !== 'granted') {
+          toast({
+              title: permission === 'denied' ? "Permissions refusées" : "Activation annulée",
+              description: permission === 'denied' ? "Vous avez bloqué les notifications." : "Vous n'avez pas accordé la permission.",
+              variant: 'destructive'
+          });
+          return;
+      }
+      
       const swRegistration = await navigator.serviceWorker.ready;
       const sub = await swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -162,8 +156,8 @@ export function usePushNotifications() {
     unsubscribe,
     permissionStatus,
     isPushSupported,
-    isLoading, // Use this for the initial check
-    isActionLoading, // Use this for click actions
+    isLoading,
+    isActionLoading,
     init,
   };
 }

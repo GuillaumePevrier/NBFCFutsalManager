@@ -1,10 +1,9 @@
 
-      
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Bell, Send } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +11,7 @@ import type { Role } from "@/lib/types";
 import Header from "@/components/Header";
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import SubscribersList from '@/components/SubscribersList';
 
 
 export default function NotificationsAdminPage() {
@@ -70,7 +70,7 @@ export default function NotificationsAdminPage() {
                  </Button>
             </Header>
             <main className="flex-grow p-4 md:p-8 main-bg">
-                <div className="w-full max-w-2xl mx-auto space-y-6">
+                <div className="w-full max-w-4xl mx-auto space-y-6">
                      <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
                         <Bell className="w-8 h-8 text-primary" />
                         Tableau de bord des Notifications
@@ -87,21 +87,10 @@ export default function NotificationsAdminPage() {
                         </Link>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Abonnés aux Notifications</CardTitle>
-                            <CardDescription>
-                                Suivez le nombre de joueurs qui ont activé les notifications. Cette section est en cours de développement.
-                            </CardDescription>
-                        </CardHeader>
-                         <CardContent>
-                            <p className="text-muted-foreground">Bientôt disponible : statistiques sur les abonnés.</p>
-                        </CardContent>
-                    </Card>
+                    <SubscribersList />
+
                 </div>
             </main>
         </div>
     );
 }
-
-    

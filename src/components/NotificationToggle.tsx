@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils";
 
 export default function NotificationToggle() {
     const {
@@ -22,12 +23,16 @@ export default function NotificationToggle() {
         isActionLoading
     } = usePushNotifications();
 
-    if (!isPushSupported) {
-        return null; // Don't render the button if push is not supported
+    if (!isPushSupported || isLoading) {
+        return (
+             <Button variant="outline" size="icon" disabled className="h-8 w-8 btn neon-blue-sm">
+                <Loader2 className="animate-spin" />
+             </Button>
+        );
     }
 
     const handleClick = () => {
-        if (isActionLoading || isLoading) return;
+        if (isActionLoading) return;
         if (isSubscribed) {
             unsubscribe();
         } else {
@@ -36,8 +41,8 @@ export default function NotificationToggle() {
     }
     
     const getTooltipContent = () => {
-        if (isLoading) {
-            return "Vérification...";
+        if (isActionLoading) {
+            return isSubscribed ? "Désabonnement..." : "Abonnement...";
         }
         if (permissionStatus === 'denied') {
             return "Notifications bloquées par le navigateur";
@@ -49,7 +54,7 @@ export default function NotificationToggle() {
     }
 
     const renderIcon = () => {
-        if (isLoading || isActionLoading) {
+        if (isActionLoading) {
             return <Loader2 className="animate-spin" />;
         }
         if (permissionStatus === 'denied') {
@@ -69,8 +74,8 @@ export default function NotificationToggle() {
                         variant="outline" 
                         size="icon" 
                         onClick={handleClick}
-                        disabled={permissionStatus === 'denied' || isLoading || isActionLoading}
-                        className="h-8 w-8 btn neon-blue-sm"
+                        disabled={permissionStatus === 'denied' || isActionLoading}
+                        className={cn("h-8 w-8 btn neon-blue-sm", isSubscribed && "border-green-500/50 hover:border-green-500/80")}
                     >
                        {renderIcon()}
                     </Button>

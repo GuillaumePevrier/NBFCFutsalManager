@@ -20,7 +20,6 @@ export interface Player {
   // Ajout pour le statut de présence
   presence_status?: 'online' | 'offline';
   last_seen?: string; // ISO string
-  push_subscriptions: string[]; // This is now legacy, will be removed later.
 }
 
 export interface UserProfileUpdate {
@@ -224,5 +223,3 @@ export const FcmNotificationPayloadSchema = z.object({
   data: z.record(z.any()).optional().describe('Arbitrary data payload.'),
 });
 export type FcmNotificationPayload = z.infer<typeof FcmNotificationPayloadSchema>;
-
-    
