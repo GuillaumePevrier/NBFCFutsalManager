@@ -4,7 +4,7 @@
 
 NBFC Futsal Manager est une application web moderne et interactive conçue pour aider les coachs du Noya FC à gérer leurs tactiques, leurs équipes et leurs matchs de futsal. Elle offre une plateforme centralisée pour , la communication avec les joueurs et le suivi des matchs en temps réel.
 
- l'application garantit une expérience utilisateur fluide que ce soit sur un ordinateur de bureau ou sur le terrain depu one portable.
+ l'application garantit une expérience utilisateur fluide que ce soit sur un ordinateur de bureau ou sur le terrain depu one.
 
 -   **Tableau Tactique Interactif** : Un terrain de futsal SVG où les coachs peuvent glisser-déposer des pions (joueurs) pour définir des stratégies et des compositions.
 -   **Gestion de Composition** : les joueurs pour le match, organisez les titulaires et les remplaçants sur un banc de touche dédié.
