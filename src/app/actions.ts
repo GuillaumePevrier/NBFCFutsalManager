@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import type { Player, Opponent, Match, Training, Channel, Message, UserProfileUpdate, NotificationPayload } from '@/lib/types';
+import type { Player, Opponent, Match, Training, Channel, Message, UserProfileUpdate, NotificationPayload, FcmSubscription } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { sendFcmNotification } from '@/ai/flows/send-fcm-notification';
@@ -988,8 +988,8 @@ export async function validateAllUsers(): Promise<{ success: boolean, error?: an
 }
 
 
-// FCM Token Management
-export async function saveFcmToken(token: string) {
+// FCM Token Management & Push Subscriptions
+export async function savePushSubscription(subscription: FcmSubscription) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'User not authenticated' };
@@ -1003,8 +1003,11 @@ export async function saveFcmToken(token: string) {
     if (playerError || !player) return { success: false, error: 'Player profile not found' };
 
     const tokens = player.fcm_tokens || [];
-    if (!tokens.includes(token)) {
-        const updatedTokens = [...tokens, token];
+    const endpoint = subscription.endpoint;
+    
+    // Check if a subscription with the same endpoint already exists
+    if (!tokens.some(t => JSON.parse(t).endpoint === endpoint)) {
+        const updatedTokens = [...tokens, JSON.stringify(subscription)];
         const { error: updateError } = await supabase
             .from('players')
             .update({ fcm_tokens: updatedTokens })
@@ -1015,6 +1018,41 @@ export async function saveFcmToken(token: string) {
 
     return { success: true };
 }
+
+export async function deletePushSubscription(endpoint: string) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'User not authenticated' };
+
+    const { data: player, error: playerError } = await supabase
+        .from('players')
+        .select('id, fcm_tokens')
+        .eq('user_id', user.id)
+        .single();
+        
+    if (playerError || !player) return { success: false, error: 'Player profile not found' };
+
+    const tokens = player.fcm_tokens || [];
+    const updatedTokens = tokens.filter(t => {
+        try {
+            return JSON.parse(t).endpoint !== endpoint;
+        } catch (e) {
+            return false; // Remove invalid JSON entries
+        }
+    });
+
+    if (updatedTokens.length < tokens.length) {
+        const { error: updateError } = await supabase
+            .from('players')
+            .update({ fcm_tokens: updatedTokens })
+            .eq('id', player.id);
+            
+        if (updateError) return { success: false, error: updateError.message };
+    }
+    
+    return { success: true };
+}
+
 
 // Notification Functions
 export async function sendNotificationToAllPlayers(payload: NotificationPayload): Promise<{ success: boolean }> {
@@ -1030,10 +1068,20 @@ export async function sendNotificationToAllPlayers(payload: NotificationPayload)
       return { success: false };
     }
 
-    const allTokens = players.flatMap(p => p.fcm_tokens).filter(t => t);
+    // Since fcm_tokens is an array of JSON strings, we need to parse them
+    const allTokens = players.flatMap(p => {
+        return p.fcm_tokens.map(tokenString => {
+            try {
+                return JSON.parse(tokenString);
+            } catch (e) {
+                return null;
+            }
+        }).filter(Boolean); // Filter out nulls from failed parsing
+    });
+
 
     if (allTokens.length > 0) {
-      await sendFcmNotification({ tokens: allTokens, ...payload });
+      await sendFcmNotification({ subscriptions: allTokens, ...payload });
     }
     
     return { success: true };
@@ -1057,7 +1105,13 @@ export async function sendPushNotification(userId: string, payload: Notification
       return { success: false };
     }
 
-    await sendFcmNotification({ tokens: player.fcm_tokens, ...payload });
+    const subscriptions = player.fcm_tokens.map(tokenString => {
+        try {
+            return JSON.parse(tokenString);
+        } catch(e) { return null; }
+    }).filter(Boolean);
+
+    await sendFcmNotification({ subscriptions, ...payload });
 
     return { success: true };
   } catch (e) {
@@ -1065,3 +1119,4 @@ export async function sendPushNotification(userId: string, payload: Notification
     return { success: false };
   }
 }
+

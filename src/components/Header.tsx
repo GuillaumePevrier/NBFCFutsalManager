@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { signOut } from "@/app/actions";
 import AuthDialog from "./AuthDialog";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { usePresence } from "@/hooks/usePresence";
+import NotificationToggle from "./NotificationToggle";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -100,6 +102,8 @@ export default function Header({ children }: HeaderProps) {
         {children}
 
         {isLoggedIn && (
+           <>
+            <NotificationToggle />
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" className="relative h-8 w-8 rounded-full btn neon-blue-sm">
@@ -117,6 +121,7 @@ export default function Header({ children }: HeaderProps) {
                     <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Se déconnecter</span></DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
+           </>
         )}
         
         <ThemeToggle />

@@ -20,7 +20,7 @@ export interface Player {
   // Ajout pour le statut de présence
   presence_status?: 'online' | 'offline';
   last_seen?: string; // ISO string
-  fcm_tokens: string[]; // Array of Firebase Cloud Messaging tokens
+  fcm_tokens: string[]; // Array of stringified PushSubscription JSON objects
 }
 
 export interface UserProfileUpdate {
@@ -203,8 +203,19 @@ export interface NotificationPayload {
   data?: Record<string, any>;
 }
 
+// Represents the structure of a Web Push Subscription object
+export const FcmSubscriptionSchema = z.object({
+  endpoint: z.string(),
+  expirationTime: z.number().nullable(),
+  keys: z.object({
+    p256dh: z.string(),
+    auth: z.string(),
+  }),
+});
+export type FcmSubscription = z.infer<typeof FcmSubscriptionSchema>;
+
 export const FcmNotificationPayloadSchema = z.object({
-  tokens: z.array(z.string()).describe('A list of FCM registration tokens.'),
+  subscriptions: z.array(FcmSubscriptionSchema).describe('An array of Web Push subscription objects.'),
   title: z.string().describe('The title of the notification.'),
   body: z.string().describe('The body of the notification.'),
   icon: z.string().optional().describe('URL to an icon for the notification.'),
@@ -212,3 +223,4 @@ export const FcmNotificationPayloadSchema = z.object({
   data: z.record(z.any()).optional().describe('Arbitrary data payload.'),
 });
 export type FcmNotificationPayload = z.infer<typeof FcmNotificationPayloadSchema>;
+

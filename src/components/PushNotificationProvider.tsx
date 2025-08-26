@@ -1,43 +1,34 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { onMessageListener, requestForToken } from '@/lib/firebase';
+import { useEffect } from 'react';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useToast } from '@/hooks/use-toast';
-import { saveFcmToken } from '@/app/actions';
+import { onMessageListener } from '@/lib/firebase';
 import { createClient } from '@/lib/supabase/client';
 
 export default function PushNotificationProvider({ children }: { children: React.ReactNode }) {
+  const { init } = usePushNotifications();
   const { toast } = useToast();
-  const [notification, setNotification] = useState<{ title: string; body: string } | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
-    const handleTokenRequest = async (userId: string) => {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        const token = await requestForToken();
-        if (token) {
-          await saveFcmToken(token);
-        }
-      }
-    };
-
-    const setupNotifications = async (session: any) => {
+    // On initial load, check if the user is logged in and if we should
+    // try to silently re-establish the push subscription.
+    const setupInitialSubscription = async (session: any) => {
         if (session?.user) {
-            handleTokenRequest(session.user.id);
+            // init() will check permissions and subscribe if already granted.
+            await init();
         }
     };
     
-    // Initial check
     supabase?.auth.getSession().then(({ data: { session } }) => {
-        if(session) setupNotifications(session);
+        if(session) setupInitialSubscription(session);
     });
 
-    // Listen for auth changes
     const { data: authListener } = supabase?.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
-        setupNotifications(session);
+        setupInitialSubscription(session);
       }
     }) ?? { data: null };
     
@@ -45,24 +36,20 @@ export default function PushNotificationProvider({ children }: { children: React
         authListener?.subscription.unsubscribe();
     };
 
-  }, [supabase]);
+  }, [init, supabase]);
 
 
   useEffect(() => {
     onMessageListener()
       .then((payload: any) => {
-        if (payload) {
-          setNotification({
-            title: payload.notification.title,
-            body: payload.notification.body,
-          });
+        if (payload?.notification) {
           toast({
               title: payload.notification.title,
               description: payload.notification.body
           })
         }
       })
-      .catch((err) => console.log('failed: ', err));
+      .catch((err) => console.log('Failed to listen for foreground messages: ', err));
   }, [toast]);
 
   return <>{children}</>;

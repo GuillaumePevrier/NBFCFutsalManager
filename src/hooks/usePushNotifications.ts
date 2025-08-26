@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
 import { savePushSubscription, deletePushSubscription } from '@/app/actions';
+import { createClient } from '@/lib/supabase/client';
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -18,66 +19,52 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export function usePushNotifications() {
   const { toast } = useToast();
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const supabase = createClient();
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
-  const [isPushSupported, setIsPushSupported] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
-  
-  useEffect(() => {
-    const checkSupportAndSubscription = async () => {
-      if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
-        setIsPushSupported(true);
-        setPermissionStatus(Notification.permission);
-        try {
-          const swRegistration = await navigator.serviceWorker.ready;
-          const sub = await swRegistration.pushManager.getSubscription();
-          setSubscription(sub);
-          setIsSubscribed(!!sub);
-        } catch (error) {
-          console.error("Error getting service worker or subscription:", error);
-        }
-      }
-    };
-    checkSupportAndSubscription();
-  }, []);
+  const isPushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 
-  const subscribeToPush = useCallback(async () => {
-    // Check for VAPID key availability. This is critical for production.
-    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-      console.error("VAPID public key is not defined. Cannot subscribe.");
+  const init = useCallback(async () => {
+    if (!isPushSupported) return;
+    setPermissionStatus(Notification.permission);
+    try {
+      const swRegistration = await navigator.serviceWorker.ready;
+      const sub = await swRegistration.pushManager.getSubscription();
+      setSubscription(sub);
+      setIsSubscribed(!!sub);
+    } catch (error) {
+      console.error("Error getting service worker or subscription:", error);
+    }
+  }, [isPushSupported]);
+
+  useEffect(() => {
+    init();
+  }, [init]);
+
+  const subscribe = useCallback(async () => {
+    if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY) {
+      console.error("VAPID public key is not defined.");
       toast({ title: "Erreur de configuration", description: "La clé de notification est manquante.", variant: "destructive"});
       return;
     }
 
     if (!isPushSupported) {
-      console.error("Push notifications not supported.");
-      toast({ title: "Erreur", description: "Les notifications ne sont pas supportées sur cet appareil ou navigateur.", variant: "destructive"});
+      toast({ title: "Erreur", description: "Les notifications ne sont pas supportées.", variant: "destructive"});
       return;
     }
-    
-    // Explicitly re-check permission status
-    const currentPermission = Notification.permission;
-    setPermissionStatus(currentPermission);
 
-    if (currentPermission === 'denied') {
-      toast({
-        title: "Permissions bloquées",
-        description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur pour ce site.",
-        variant: "destructive",
-        duration: 10000,
-      });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: "Action requise", description: "Veuillez vous connecter pour activer les notifications.", variant: "destructive"});
       return;
     }
 
     try {
       const swRegistration = await navigator.serviceWorker.ready;
-      
-      const applicationServerKey = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
-      
-      // The subscribe call will trigger the browser's permission prompt if permission is 'default'
       const sub = await swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey,
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY),
       });
 
       const result = await savePushSubscription(sub.toJSON());
@@ -89,36 +76,39 @@ export function usePushNotifications() {
         });
         setSubscription(sub);
         setIsSubscribed(true);
+        setPermissionStatus('granted');
       } else {
         toast({
           title: "Erreur d'enregistrement",
           description: result.error || "L'enregistrement de l'abonnement a échoué.",
           variant: "destructive",
         });
-        await sub.unsubscribe(); // Clean up failed subscription
+        await sub.unsubscribe();
       }
     } catch (error) {
       console.error("Failed to subscribe to push notifications", error);
-      // This will catch if the user clicks "Block" on the permission prompt
-      if (Notification.permission === 'denied') {
+      const newPermission = Notification.permission;
+      setPermissionStatus(newPermission);
+      if (newPermission === 'denied') {
           toast({
-              title: "Activation annulée",
-              description: "Vous avez refusé les notifications. Vous pouvez les réactiver plus tard dans les paramètres du site.",
-              variant: "destructive"
+              title: "Permissions bloquées",
+              description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur.",
+              variant: "destructive",
+              duration: 10000,
           });
       } else {
           toast({
               title: "Erreur d'activation",
-              description: "Une erreur est survenue lors de l'activation des notifications.",
+              description: "Une erreur est survenue.",
               variant: "destructive",
           });
       }
       setIsSubscribed(false);
       setSubscription(null);
     }
-  }, [isPushSupported, toast]);
+  }, [isPushSupported, toast, supabase]);
 
-  const unsubscribeFromPush = useCallback(async () => {
+  const unsubscribe = useCallback(async () => {
     if (!subscription) return;
 
     try {
@@ -126,6 +116,7 @@ export function usePushNotifications() {
       await subscription.unsubscribe();
       setSubscription(null);
       setIsSubscribed(false);
+      setPermissionStatus('prompt'); // The user can be prompted again after unsubscribing
       toast({ title: "Notifications désactivées" });
     } catch (error) {
       console.error("Failed to unsubscribe from push notifications", error);
@@ -139,9 +130,10 @@ export function usePushNotifications() {
 
   return {
     isSubscribed,
-    subscribeToPush,
-    unsubscribeFromPush,
-    isPushSupported,
+    subscribe,
+    unsubscribe,
     permissionStatus,
+    isPushSupported,
+    init,
   };
 }
