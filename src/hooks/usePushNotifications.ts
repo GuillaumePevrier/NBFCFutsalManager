@@ -24,18 +24,17 @@ export function usePushNotifications() {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const isPushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 
 
   const init = useCallback(async () => {
     if (!isPushSupported || !supabase) {
-        setIsInitializing(false);
+        setIsLoading(false);
         return;
     };
     
-    setIsInitializing(true);
     const { data: { session } } = await supabase.auth.getSession();
     
     if (session) {
@@ -54,12 +53,12 @@ export function usePushNotifications() {
           }
       }
     }
-    
-    setIsInitializing(false);
+    setIsLoading(false);
   }, [isPushSupported, supabase]);
 
 
   useEffect(() => {
+    setIsLoading(true);
     init(); // Initial check
     
     if (!supabase) return;
@@ -72,7 +71,7 @@ export function usePushNotifications() {
             setIsSubscribed(false);
             setSubscription(null);
             setPermissionStatus('default');
-            setIsInitializing(false);
+            setIsLoading(false);
         }
     });
 
@@ -143,10 +142,13 @@ export function usePushNotifications() {
       } else {
         toast({
           title: "Erreur d'enregistrement",
-          description: result.error || "L'enregistrement de l'abonnement a échoué. Assurez-vous d'être connecté et réessayez.",
+          description: result.error || "L'enregistrement de l'abonnement a échoué.",
           variant: "destructive",
         });
+        // Important: If saving to DB fails, unsubscribe the user to avoid an inconsistent state
         await sub.unsubscribe();
+        setIsSubscribed(false);
+        setSubscription(null);
       }
     } catch (error: any) {
       console.error("Failed to subscribe to push notifications", error);
@@ -167,16 +169,27 @@ export function usePushNotifications() {
     setIsActionLoading(true);
 
     try {
-      const successfulUnsubscribe = await subscription.unsubscribe();
-      
-      if(successfulUnsubscribe) {
-          await deletePushSubscription(subscription.endpoint);
-          setSubscription(null);
-          setIsSubscribed(false);
-          toast({ title: "Notifications désactivées" });
+      // First, delete the subscription from the database.
+      const deleteResult = await deletePushSubscription(subscription.endpoint);
+
+      if (deleteResult.success) {
+         // If successful, then unsubscribe from the push service.
+         const successfulUnsubscribe = await subscription.unsubscribe();
+         if(successfulUnsubscribe) {
+            setSubscription(null);
+            setIsSubscribed(false);
+            toast({ title: "Notifications désactivées" });
+         } else {
+            // This case is unlikely but we should handle it.
+            // Re-save the subscription to the DB to maintain a consistent state.
+            await savePushSubscription(subscription.toJSON());
+            throw new Error("La désinscription du navigateur a échoué.");
+         }
       } else {
-          throw new Error("La désinscription du navigateur a échoué.");
+          // If deleting from the DB fails, don't unsubscribe from the browser.
+          throw new Error(deleteResult.error || "La suppression en base de données a échoué.");
       }
+      
     } catch (error: any) {
       console.error("Failed to unsubscribe from push notifications", error);
       toast({
@@ -195,7 +208,7 @@ export function usePushNotifications() {
     unsubscribe,
     permissionStatus,
     isPushSupported,
-    isLoading: isInitializing,
+    isLoading,
     isActionLoading,
     init,
   };

@@ -6,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { createClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
-import { BellRing, BellOff } from 'lucide-react';
+import { BellRing, BellOff, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface PlayerSubscription {
-    id: string;
+    id: string; // player id
+    user_id: string | null;
     name: string;
     avatar_url: string;
     isSubscribed: boolean;
@@ -23,61 +24,73 @@ export default function SubscribersList() {
     const [loading, setLoading] = useState(true);
     const supabase = createClient();
 
-    useEffect(() => {
-        const fetchSubscribers = async () => {
-            setLoading(true);
+    const fetchSubscribers = async () => {
+        setLoading(true);
 
-            // 1. Fetch all players
-            const { data: players, error: playersError } = await supabase
-                .from('players')
-                .select('id, user_id, name, avatar_url');
+        const { data: players, error: playersError } = await supabase
+            .from('players')
+            .select('id, user_id, name, avatar_url');
 
-            if (playersError) {
-                console.error("Failed to fetch players:", playersError);
-                setLoading(false);
-                return;
-            }
-
-            // 2. Fetch all subscriptions
-            const { data: subscriptions, error: subsError } = await supabase
-                .from('push_subscriptions')
-                .select('user_id, created_at');
-
-            if (subsError) {
-                console.error("Failed to fetch subscriptions:", subsError);
-                setLoading(false);
-                return;
-            }
-            
-            // 3. Map players to their subscription status
-            const playerSubscriptions = players.map(player => {
-                const userSubs = subscriptions.filter(sub => sub.user_id === player.user_id);
-                const isSubscribed = userSubs.length > 0;
-                // Find the most recent subscription date for a user
-                const mostRecentSub = isSubscribed 
-                    ? userSubs.reduce((latest, current) => new Date(latest.created_at) > new Date(current.created_at) ? latest : current)
-                    : null;
-
-                return {
-                    id: player.id,
-                    name: player.name,
-                    avatar_url: player.avatar_url || '',
-                    isSubscribed,
-                    subscribedAt: mostRecentSub ? mostRecentSub.created_at : null,
-                };
-            }).sort((a, b) => {
-                // Sort by subscribed status first, then by name
-                if (a.isSubscribed !== b.isSubscribed) {
-                    return a.isSubscribed ? -1 : 1;
-                }
-                return a.name.localeCompare(b.name);
-            });
-
-            setSubscribers(playerSubscriptions);
+        if (playersError) {
+            console.error("Failed to fetch players:", playersError);
             setLoading(false);
-        };
+            return;
+        }
 
+        const { data: subscriptions, error: subsError } = await supabase
+            .from('push_subscriptions')
+            .select('user_id, created_at');
+
+        if (subsError) {
+            console.error("Failed to fetch subscriptions:", subsError);
+            setLoading(false);
+            return;
+        }
+        
+        const playerSubscriptions = players.map(player => {
+            const userSubs = subscriptions.filter(sub => sub.user_id === player.user_id);
+            const isSubscribed = userSubs.length > 0;
+            const mostRecentSub = isSubscribed 
+                ? userSubs.reduce((latest, current) => new Date(latest.created_at) > new Date(current.created_at) ? latest : current)
+                : null;
+
+            return {
+                id: player.id,
+                user_id: player.user_id,
+                name: player.name,
+                avatar_url: player.avatar_url || '',
+                isSubscribed,
+                subscribedAt: mostRecentSub ? mostRecentSub.created_at : null,
+            };
+        }).sort((a, b) => {
+            if (a.isSubscribed !== b.isSubscribed) {
+                return a.isSubscribed ? -1 : 1;
+            }
+            return a.name.localeCompare(b.name);
+        });
+
+        setSubscribers(playerSubscriptions);
+        setLoading(false);
+    };
+
+    useEffect(() => {
         fetchSubscribers();
+
+        const channel = supabase.channel('realtime:public:push_subscriptions')
+          .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'push_subscriptions' 
+          }, (payload) => {
+            // Refetch all data on any change
+            fetchSubscribers();
+          })
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [supabase]);
 
     const totalSubscribed = subscribers.filter(s => s.isSubscribed).length;
@@ -103,7 +116,7 @@ export default function SubscribersList() {
                         {loading ? (
                             <TableRow>
                                 <TableCell colSpan={3} className="h-24 text-center">
-                                    Chargement de la liste...
+                                    <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                                 </TableCell>
                             </TableRow>
                         ) : subscribers.length > 0 ? (
