@@ -23,10 +23,15 @@ export function usePushNotifications() {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+  const [isInitializing, setIsInitializing] = useState(true);
   const isPushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 
   const init = useCallback(async () => {
-    if (!isPushSupported) return;
+    setIsInitializing(true);
+    if (!isPushSupported) {
+        setIsInitializing(false);
+        return;
+    };
     setPermissionStatus(Notification.permission);
     try {
       const swRegistration = await navigator.serviceWorker.ready;
@@ -36,6 +41,7 @@ export function usePushNotifications() {
     } catch (error) {
       console.error("Error getting service worker or subscription:", error);
     }
+    setIsInitializing(false);
   }, [isPushSupported]);
 
   useEffect(() => {
@@ -59,7 +65,25 @@ export function usePushNotifications() {
       toast({ title: "Action requise", description: "Veuillez vous connecter pour activer les notifications.", variant: "destructive"});
       return;
     }
-
+    
+    // Request permission if not already granted or denied
+    if (Notification.permission === 'default') {
+        const permission = await Notification.requestPermission();
+        setPermissionStatus(permission);
+        if(permission !== 'granted') {
+            toast({
+                title: permission === 'denied' ? "Permissions refusées" : "Activation annulée",
+                description: permission === 'denied' ? "Vous avez bloqué les notifications." : "Vous n'avez pas accordé la permission.",
+                variant: 'destructive'
+            });
+            return;
+        }
+    } else if (Notification.permission === 'denied') {
+        toast({ title: "Permissions bloquées", description: "Veuillez autoriser les notifications dans les paramètres de votre navigateur.", variant: "destructive"});
+        return;
+    }
+    
+    // If we reach here, permission is granted.
     try {
       const swRegistration = await navigator.serviceWorker.ready;
       const sub = await swRegistration.pushManager.subscribe({
@@ -76,7 +100,6 @@ export function usePushNotifications() {
         });
         setSubscription(sub);
         setIsSubscribed(true);
-        setPermissionStatus('granted');
       } else {
         toast({
           title: "Erreur d'enregistrement",
@@ -87,22 +110,11 @@ export function usePushNotifications() {
       }
     } catch (error) {
       console.error("Failed to subscribe to push notifications", error);
-      const newPermission = Notification.permission;
-      setPermissionStatus(newPermission);
-      if (newPermission === 'denied') {
-          toast({
-              title: "Permissions bloquées",
-              description: "Vous avez bloqué les notifications. Veuillez les autoriser dans les paramètres de votre navigateur.",
-              variant: "destructive",
-              duration: 10000,
-          });
-      } else {
-          toast({
-              title: "Erreur d'activation",
-              description: "Une erreur est survenue.",
-              variant: "destructive",
-          });
-      }
+      toast({
+            title: "Erreur d'activation",
+            description: "Une erreur est survenue.",
+            variant: "destructive",
+      });
       setIsSubscribed(false);
       setSubscription(null);
     }
@@ -116,7 +128,6 @@ export function usePushNotifications() {
       await subscription.unsubscribe();
       setSubscription(null);
       setIsSubscribed(false);
-      setPermissionStatus('prompt'); // The user can be prompted again after unsubscribing
       toast({ title: "Notifications désactivées" });
     } catch (error) {
       console.error("Failed to unsubscribe from push notifications", error);
@@ -134,6 +145,7 @@ export function usePushNotifications() {
     unsubscribe,
     permissionStatus,
     isPushSupported,
+    isInitializing,
     init,
   };
 }

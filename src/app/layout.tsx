@@ -1,3 +1,4 @@
+
 'use client';
 
 import './globals.css';
@@ -10,6 +11,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const logoUrl = "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png";
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
@@ -23,10 +25,9 @@ export default function RootLayout({
         <meta name="msapplication-tap-highlight" content="no" />
         <meta name="theme-color" content="#01182a" />
         
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" href={logoUrl} />
 
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="icon" type="image/png" href={logoUrl} />
         <link rel="manifest" href="/manifest.json" />
 
         <title>NBFC Futsal Manager</title>

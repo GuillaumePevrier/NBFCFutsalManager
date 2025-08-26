@@ -35,7 +35,7 @@ export async function signUp(formData: FormData) {
   }
 
   // Create player profile linked to the new auth user
-  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'fcm_tokens'> = {
+  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'push_subscriptions'> = {
       user_id: authData.user.id,
       name: name,
       email: email,
@@ -47,7 +47,7 @@ export async function signUp(formData: FormData) {
 
   const { error: playerError } = await supabase
     .from('players')
-    .insert({...playerData, fcm_tokens: []});
+    .insert({...playerData, push_subscriptions: []});
 
   if (playerError) {
     console.error("Failed to create player profile after signup:", playerError);
@@ -163,11 +163,12 @@ export async function getCurrentPlayer(): Promise<Player | null> {
 
     if (!user) return null;
 
+    // Use maybeSingle() to prevent error when no profile is found yet.
     const { data, error } = await supabase
         .from('players')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
     
     if (error) {
         console.error("Failed to fetch current player profile:", error);
@@ -203,7 +204,7 @@ export async function createPlayer(formData: FormData) {
   const authUserId = authData.user.id;
   
   // 2. Create player profile linked to the new auth user
-  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'fcm_tokens'> = {
+  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'push_subscriptions'> = {
       user_id: authUserId,
       name: name,
       email: email,
@@ -215,7 +216,7 @@ export async function createPlayer(formData: FormData) {
 
   const { error: playerError } = await supabaseAdmin
     .from('players')
-    .insert({...playerData, fcm_tokens: []});
+    .insert({...playerData, push_subscriptions: []});
 
   if (playerError) {
     console.error("Failed to create player profile:", playerError);
@@ -286,7 +287,7 @@ export async function updatePlayer(formData: FormData) {
   
   // --- Player Profile Update ---
   // Ensure we use a partial type for the update payload
-  const playerData: Partial<Omit<Player, 'id' | 'fcm_tokens'>> = {
+  const playerData: Partial<Omit<Player, 'id' | 'push_subscriptions'>> = {
       name: formData.get('name') as string,
       email: newEmail || null,
       user_id: authUserId, // Update user_id in case it was just created
@@ -996,21 +997,21 @@ export async function savePushSubscription(subscription: FcmSubscription) {
 
     const { data: player, error: playerError } = await supabase
         .from('players')
-        .select('id, fcm_tokens')
+        .select('id, push_subscriptions')
         .eq('user_id', user.id)
         .single();
     
     if (playerError || !player) return { success: false, error: 'Player profile not found' };
 
-    const tokens = player.fcm_tokens || [];
+    const subscriptions = player.push_subscriptions || [];
     const endpoint = subscription.endpoint;
     
     // Check if a subscription with the same endpoint already exists
-    if (!tokens.some(t => JSON.parse(t).endpoint === endpoint)) {
-        const updatedTokens = [...tokens, JSON.stringify(subscription)];
+    if (!subscriptions.some(s => JSON.parse(s).endpoint === endpoint)) {
+        const updatedSubscriptions = [...subscriptions, JSON.stringify(subscription)];
         const { error: updateError } = await supabase
             .from('players')
-            .update({ fcm_tokens: updatedTokens })
+            .update({ push_subscriptions: updatedSubscriptions })
             .eq('id', player.id);
         
         if (updateError) return { success: false, error: updateError.message };
@@ -1026,25 +1027,25 @@ export async function deletePushSubscription(endpoint: string) {
 
     const { data: player, error: playerError } = await supabase
         .from('players')
-        .select('id, fcm_tokens')
+        .select('id, push_subscriptions')
         .eq('user_id', user.id)
         .single();
         
     if (playerError || !player) return { success: false, error: 'Player profile not found' };
 
-    const tokens = player.fcm_tokens || [];
-    const updatedTokens = tokens.filter(t => {
+    const subscriptions = player.push_subscriptions || [];
+    const updatedSubscriptions = subscriptions.filter(s => {
         try {
-            return JSON.parse(t).endpoint !== endpoint;
+            return JSON.parse(s).endpoint !== endpoint;
         } catch (e) {
             return false; // Remove invalid JSON entries
         }
     });
 
-    if (updatedTokens.length < tokens.length) {
+    if (updatedSubscriptions.length < subscriptions.length) {
         const { error: updateError } = await supabase
             .from('players')
-            .update({ fcm_tokens: updatedTokens })
+            .update({ push_subscriptions: updatedSubscriptions })
             .eq('id', player.id);
             
         if (updateError) return { success: false, error: updateError.message };
@@ -1060,19 +1061,19 @@ export async function sendNotificationToAllPlayers(payload: NotificationPayload)
     const supabase = createClient();
     const { data: players, error } = await supabase
       .from('players')
-      .select('fcm_tokens')
-      .not('fcm_tokens', 'is', null);
+      .select('push_subscriptions')
+      .not('push_subscriptions', 'is', null);
 
     if (error) {
       console.error('Error fetching players for notification:', error);
       return { success: false };
     }
 
-    // Since fcm_tokens is an array of JSON strings, we need to parse them
-    const allTokens = players.flatMap(p => {
-        return p.fcm_tokens.map(tokenString => {
+    // Since push_subscriptions is an array of JSON strings, we need to parse them
+    const allSubscriptions = players.flatMap(p => {
+        return p.push_subscriptions.map(subString => {
             try {
-                return JSON.parse(tokenString);
+                return JSON.parse(subString);
             } catch (e) {
                 return null;
             }
@@ -1080,8 +1081,8 @@ export async function sendNotificationToAllPlayers(payload: NotificationPayload)
     });
 
 
-    if (allTokens.length > 0) {
-      await sendFcmNotification({ subscriptions: allTokens, ...payload });
+    if (allSubscriptions.length > 0) {
+      await sendFcmNotification({ subscriptions: allSubscriptions, ...payload });
     }
     
     return { success: true };
@@ -1096,22 +1097,24 @@ export async function sendPushNotification(userId: string, payload: Notification
     const supabase = createClient();
     const { data: player, error } = await supabase
       .from('players')
-      .select('fcm_tokens')
+      .select('push_subscriptions')
       .eq('user_id', userId)
       .single();
 
-    if (error || !player || !player.fcm_tokens || player.fcm_tokens.length === 0) {
-      console.error('Error fetching player or no FCM tokens for user:', userId, error);
+    if (error || !player || !player.push_subscriptions || player.push_subscriptions.length === 0) {
+      console.error('Error fetching player or no push subscriptions for user:', userId, error);
       return { success: false };
     }
 
-    const subscriptions = player.fcm_tokens.map(tokenString => {
+    const subscriptions = player.push_subscriptions.map(subString => {
         try {
-            return JSON.parse(tokenString);
+            return JSON.parse(subString);
         } catch(e) { return null; }
     }).filter(Boolean);
 
-    await sendFcmNotification({ subscriptions, ...payload });
+    if (subscriptions.length > 0) {
+      await sendFcmNotification({ subscriptions, ...payload });
+    }
 
     return { success: true };
   } catch (e) {
@@ -1119,4 +1122,3 @@ export async function sendPushNotification(userId: string, payload: Notification
     return { success: false };
   }
 }
-

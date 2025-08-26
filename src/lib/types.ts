@@ -20,7 +20,7 @@ export interface Player {
   // Ajout pour le statut de présence
   presence_status?: 'online' | 'offline';
   last_seen?: string; // ISO string
-  fcm_tokens: string[]; // Array of stringified PushSubscription JSON objects
+  push_subscriptions: string[]; // Array of stringified PushSubscription JSON objects
 }
 
 export interface UserProfileUpdate {
@@ -223,4 +223,3 @@ export const FcmNotificationPayloadSchema = z.object({
   data: z.record(z.any()).optional().describe('Arbitrary data payload.'),
 });
 export type FcmNotificationPayload = z.infer<typeof FcmNotificationPayloadSchema>;
-

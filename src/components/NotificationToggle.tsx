@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Bell, BellOff, BellRing } from "lucide-react";
+import { Bell, BellOff, BellRing, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import {
@@ -17,7 +17,8 @@ export default function NotificationToggle() {
         subscribe,
         unsubscribe,
         permissionStatus,
-        isPushSupported
+        isPushSupported,
+        isInitializing
     } = usePushNotifications();
 
     if (!isPushSupported) {
@@ -43,6 +44,9 @@ export default function NotificationToggle() {
     }
 
     const renderIcon = () => {
+        if (isInitializing) {
+            return <Loader2 className="animate-spin" />;
+        }
         if (permissionStatus === 'denied') {
             return <BellOff className="text-destructive" />;
         }
@@ -60,7 +64,7 @@ export default function NotificationToggle() {
                         variant="outline" 
                         size="icon" 
                         onClick={handleClick}
-                        disabled={permissionStatus === 'denied'}
+                        disabled={permissionStatus === 'denied' || isInitializing}
                         className="h-8 w-8 btn neon-blue-sm"
                     >
                        {renderIcon()}
@@ -73,4 +77,3 @@ export default function NotificationToggle() {
         </TooltipProvider>
     );
 }
-
