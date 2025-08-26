@@ -35,6 +35,8 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
   
   let title: string | null = null;
   let body: string | null = null;
+  
+  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}`;
 
   // --- Goal Notification ---
   if (newScore.homeScore > oldScore.homeScore) {
@@ -45,12 +47,11 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
     body = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`;
   }
   if (title && body) {
-    await sendNotificationToAllPlayers({
-      title,
-      body,
-      icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
-      tag: `match-goal-${newData.id}`,
-      data: { url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}` }
+    await sendNotificationToAllPlayers({ 
+        title, 
+        body,
+        tag: `goal-${newData.id}`,
+        data: { url }
     });
   }
 
@@ -61,9 +62,8 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
     await sendNotificationToAllPlayers({
       title: `Convocation pour le match`,
       body: `Répondez au sondage pour le match contre ${opponent} le ${new Date(newData.details.date).toLocaleDateString('fr-FR')}.`,
-      icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
-      tag: `match-poll-${newData.id}`,
-      data: { url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}` }
+      tag: `poll-${newData.id}`,
+      data: { url }
     });
   }
 }
@@ -101,8 +101,7 @@ async function handleNewMessage(newMessage: Message) {
     const notificationPayload = {
         title: `Nouveau message de ${senderName}`,
         body: newMessage.content,
-        icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
-        tag: newMessage.channel_id, // Tag groups notifications for the same chat
+        tag: `chat-${newMessage.channel_id}`,
         data: {
             url: `${process.env.NEXT_PUBLIC_BASE_URL}/chat/${newMessage.channel_id}`
         }

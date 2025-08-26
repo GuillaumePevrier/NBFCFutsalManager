@@ -18,7 +18,8 @@ export default function NotificationToggle() {
         unsubscribe,
         permissionStatus,
         isPushSupported,
-        isInitializing
+        isLoading,
+        isActionLoading
     } = usePushNotifications();
 
     if (!isPushSupported) {
@@ -26,6 +27,7 @@ export default function NotificationToggle() {
     }
 
     const handleClick = () => {
+        if (isActionLoading || isLoading) return;
         if (isSubscribed) {
             unsubscribe();
         } else {
@@ -34,6 +36,9 @@ export default function NotificationToggle() {
     }
     
     const getTooltipContent = () => {
+        if (isLoading) {
+            return "Vérification...";
+        }
         if (permissionStatus === 'denied') {
             return "Notifications bloquées par le navigateur";
         }
@@ -44,7 +49,7 @@ export default function NotificationToggle() {
     }
 
     const renderIcon = () => {
-        if (isInitializing) {
+        if (isLoading || isActionLoading) {
             return <Loader2 className="animate-spin" />;
         }
         if (permissionStatus === 'denied') {
@@ -64,7 +69,7 @@ export default function NotificationToggle() {
                         variant="outline" 
                         size="icon" 
                         onClick={handleClick}
-                        disabled={permissionStatus === 'denied' || isInitializing}
+                        disabled={permissionStatus === 'denied' || isLoading || isActionLoading}
                         className="h-8 w-8 btn neon-blue-sm"
                     >
                        {renderIcon()}

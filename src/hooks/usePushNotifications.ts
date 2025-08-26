@@ -23,67 +23,79 @@ export function usePushNotifications() {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // General loading state for initialization
+  const [isActionLoading, setIsActionLoading] = useState(false); // Specific loading for subscribe/unsubscribe actions
   const isPushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 
   const init = useCallback(async () => {
-    setIsInitializing(true);
+    setIsLoading(true);
     if (!isPushSupported) {
-        setIsInitializing(false);
+        setIsLoading(false);
         return;
     };
+    
     setPermissionStatus(Notification.permission);
-    try {
-      const swRegistration = await navigator.serviceWorker.ready;
-      const sub = await swRegistration.pushManager.getSubscription();
-      setSubscription(sub);
-      setIsSubscribed(!!sub);
-    } catch (error) {
-      console.error("Error getting service worker or subscription:", error);
+    
+    // Only try to get subscription if permission is already granted
+    if (Notification.permission === 'granted') {
+        try {
+          const swRegistration = await navigator.serviceWorker.ready;
+          const sub = await swRegistration.pushManager.getSubscription();
+          setSubscription(sub);
+          setIsSubscribed(!!sub);
+        } catch (error) {
+          console.error("Error getting service worker or subscription:", error);
+          setIsSubscribed(false);
+          setSubscription(null);
+        }
     }
-    setIsInitializing(false);
+    
+    setIsLoading(false);
   }, [isPushSupported]);
 
+  // Run init once on component mount
   useEffect(() => {
     init();
   }, [init]);
 
   const subscribe = useCallback(async () => {
+    setIsActionLoading(true);
     if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY) {
       console.error("VAPID public key is not defined.");
       toast({ title: "Erreur de configuration", description: "La clé de notification est manquante.", variant: "destructive"});
+      setIsActionLoading(false);
       return;
     }
 
     if (!isPushSupported) {
       toast({ title: "Erreur", description: "Les notifications ne sont pas supportées.", variant: "destructive"});
+       setIsActionLoading(false);
       return;
     }
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({ title: "Action requise", description: "Veuillez vous connecter pour activer les notifications.", variant: "destructive"});
+       setIsActionLoading(false);
       return;
     }
     
-    // Request permission if not already granted or denied
-    if (Notification.permission === 'default') {
-        const permission = await Notification.requestPermission();
+    let permission = Notification.permission;
+    if (permission === 'default') {
+        permission = await Notification.requestPermission();
         setPermissionStatus(permission);
-        if(permission !== 'granted') {
-            toast({
-                title: permission === 'denied' ? "Permissions refusées" : "Activation annulée",
-                description: permission === 'denied' ? "Vous avez bloqué les notifications." : "Vous n'avez pas accordé la permission.",
-                variant: 'destructive'
-            });
-            return;
-        }
-    } else if (Notification.permission === 'denied') {
-        toast({ title: "Permissions bloquées", description: "Veuillez autoriser les notifications dans les paramètres de votre navigateur.", variant: "destructive"});
+    }
+
+    if (permission !== 'granted') {
+        toast({
+            title: permission === 'denied' ? "Permissions refusées" : "Activation annulée",
+            description: permission === 'denied' ? "Vous avez bloqué les notifications." : "Vous n'avez pas accordé la permission.",
+            variant: 'destructive'
+        });
+        setIsActionLoading(false);
         return;
     }
     
-    // If we reach here, permission is granted.
     try {
       const swRegistration = await navigator.serviceWorker.ready;
       const sub = await swRegistration.pushManager.subscribe({
@@ -117,11 +129,14 @@ export function usePushNotifications() {
       });
       setIsSubscribed(false);
       setSubscription(null);
+    } finally {
+        setIsActionLoading(false);
     }
   }, [isPushSupported, toast, supabase]);
 
   const unsubscribe = useCallback(async () => {
     if (!subscription) return;
+    setIsActionLoading(true);
 
     try {
       await deletePushSubscription(subscription.endpoint);
@@ -136,6 +151,8 @@ export function usePushNotifications() {
         description: "La désactivation des notifications a échoué.",
         variant: "destructive",
       });
+    } finally {
+        setIsActionLoading(false);
     }
   }, [subscription, toast]);
 
@@ -145,7 +162,8 @@ export function usePushNotifications() {
     unsubscribe,
     permissionStatus,
     isPushSupported,
-    isInitializing,
+    isLoading, // Use this for the initial check
+    isActionLoading, // Use this for click actions
     init,
   };
 }
