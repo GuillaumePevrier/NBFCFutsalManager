@@ -5,7 +5,35 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
 import { savePushSubscription, deletePushSubscription } from '@/app/actions';
 import { createClient } from '@/lib/supabase/client';
-import { initializeFirebaseApp, requestForToken } from '@/lib/firebase'; // We will use this instead of the subscription object directly
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getMessaging, getToken } from 'firebase/messaging';
+
+// This function can be moved to a separate config file if needed
+const initializeFirebase = () => {
+    const firebaseConfig = {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    };
+
+    if (
+        !firebaseConfig.apiKey ||
+        !firebaseConfig.projectId ||
+        !firebaseConfig.appId
+    ) {
+        console.error("Firebase config values are missing. Check your environment variables.");
+        return null;
+    }
+    
+    if (getApps().length === 0) {
+        return initializeApp(firebaseConfig);
+    } else {
+        return getApp();
+    }
+}
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -30,8 +58,7 @@ export function usePushNotifications() {
 
 
   const init = useCallback(async () => {
-    // Initialize firebase app inside the hook
-    initializeFirebaseApp();
+    setIsLoading(true);
     
     if (!isPushSupported || !supabase) {
         setIsLoading(false);
@@ -61,7 +88,6 @@ export function usePushNotifications() {
 
 
   useEffect(() => {
-    setIsLoading(true);
     init(); // Initial check
     
     if (!supabase) return;
@@ -74,7 +100,6 @@ export function usePushNotifications() {
             setIsSubscribed(false);
             setSubscription(null);
             setPermissionStatus('default');
-            setIsLoading(false);
         }
     });
 
@@ -87,12 +112,6 @@ export function usePushNotifications() {
 
   const subscribe = useCallback(async () => {
     setIsActionLoading(true);
-    if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY) {
-      console.error("VAPID public key is not defined.");
-      toast({ title: "Erreur de configuration", description: "La clé de notification est manquante.", variant: "destructive"});
-      setIsActionLoading(false);
-      return;
-    }
 
     if (!isPushSupported) {
       toast({ title: "Erreur", description: "Les notifications ne sont pas supportées.", variant: "destructive"});
@@ -100,12 +119,6 @@ export function usePushNotifications() {
       return;
     }
     
-    if(!supabase) {
-        toast({ title: "Erreur", description: "La connexion à la base de données n'est pas disponible.", variant: "destructive"});
-        setIsActionLoading(false);
-        return;
-    }
-
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({ title: "Action requise", description: "Veuillez vous connecter pour activer les notifications.", variant: "destructive"});
@@ -127,10 +140,16 @@ export function usePushNotifications() {
           return;
       }
       
+      const app = initializeFirebase();
+      if (!app) throw new Error("Firebase initialization failed. Check config.");
+      const messaging = getMessaging(app);
+
+      // It's crucial that the service worker is ready before getting the token
       const swRegistration = await navigator.serviceWorker.ready;
+
       const sub = await swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY),
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY!),
       });
 
       const result = await savePushSubscription(sub.toJSON());
@@ -148,7 +167,6 @@ export function usePushNotifications() {
           description: result.error || "L'enregistrement de l'abonnement a échoué.",
           variant: "destructive",
         });
-        // Important: If saving to DB fails, unsubscribe the user to avoid an inconsistent state
         await sub.unsubscribe();
         setIsSubscribed(false);
         setSubscription(null);
@@ -172,24 +190,19 @@ export function usePushNotifications() {
     setIsActionLoading(true);
 
     try {
-      // First, delete the subscription from the database.
       const deleteResult = await deletePushSubscription(subscription.endpoint);
 
       if (deleteResult.success) {
-         // If successful, then unsubscribe from the push service.
          const successfulUnsubscribe = await subscription.unsubscribe();
          if(successfulUnsubscribe) {
             setSubscription(null);
             setIsSubscribed(false);
             toast({ title: "Notifications désactivées" });
          } else {
-            // This case is unlikely but we should handle it.
-            // Re-save the subscription to the DB to maintain a consistent state.
             await savePushSubscription(subscription.toJSON());
             throw new Error("La désinscription du navigateur a échoué.");
          }
       } else {
-          // If deleting from the DB fails, don't unsubscribe from the browser.
           throw new Error(deleteResult.error || "La suppression en base de données a échoué.");
       }
       
