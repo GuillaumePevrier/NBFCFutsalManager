@@ -2,9 +2,9 @@
 
 ## Descri problème sur Vercel
 
-NBFC Futsal Manager est une et interactive conçue pour aider les coachs du Noya FC à gérer leurs tactiques, leurs équipes et leurs de futsal. Elle offre une plateforme ntralisée pour , la communication avec les joueurs et le des matchs en temps réel.
+NBFC  est une et interactive conçue pour aider les coachs du Noya FC à gérer leurs tactiques, leurs équipes et leurs de futsal. Elle offre une plateforme ntralisée pour , la communication avec les joueurs et le des matchs en temps réel.
 
- l'application une nce que ce soit sur un ordinateur de bureau ou sur le terrain depu one.
+ l'application une nce que ce soit sur un ordinateur de bureau rrain depu one.
 
 -   **Tableau Tactique * : Un terrain de futsal SVG où les peuvent fragments, la date durègne de SNEF ou pasglisser-déposer des (joueurs) pour définir des stratégies compositions.
 -   pour le match, organisez les titulaires et les remplaçants sur un banc de touche dédié.
