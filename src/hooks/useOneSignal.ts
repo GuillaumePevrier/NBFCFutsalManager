@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import OneSignal from 'react-onesignal';
 import { saveOneSignalId } from '@/app/actions';
 import { createClient } from '@/lib/supabase/client';
@@ -11,6 +12,8 @@ export function useOneSignal() {
   const [isOneSignalInitialized, setIsOneSignalInitialized] = useState(false);
   const supabase = createClient();
   const { toast } = useToast();
+  const onSubscriptionChangeRef = useRef<((subscribed: boolean) => void) | null>(null);
+
 
   const getSubscriptionStatus = useCallback(async () => {
     const isUserSubscribed = await OneSignal.isPushNotificationsEnabled();
@@ -28,6 +31,11 @@ export function useOneSignal() {
     
     setIsSubscribed(subscribed);
   }, [supabase]);
+  
+  // Store the function in a ref to keep it stable for useEffect dependencies
+  useEffect(() => {
+    onSubscriptionChangeRef.current = onSubscriptionChange;
+  }, [onSubscriptionChange]);
 
   useEffect(() => {
     const initOneSignal = async () => {
@@ -49,7 +57,11 @@ export function useOneSignal() {
       getSubscriptionStatus();
       
       // Add event listener for subscription changes
-      OneSignal.on('subscriptionChange', onSubscriptionChange);
+      OneSignal.on('subscriptionChange', (subscribed) => {
+          if(onSubscriptionChangeRef.current) {
+              onSubscriptionChangeRef.current(subscribed);
+          }
+      });
     };
 
     // Only run on client-side
@@ -57,12 +69,7 @@ export function useOneSignal() {
       initOneSignal();
     }
     
-    return () => {
-       if (typeof window !== 'undefined') {
-         OneSignal.off('subscriptionChange', onSubscriptionChange);
-       }
-    }
-  }, [isOneSignalInitialized, getSubscriptionStatus, onSubscriptionChange]);
+  }, [isOneSignalInitialized, getSubscriptionStatus]);
 
   // Handle user login/logout to link OneSignal subscription to Supabase user
   useEffect(() => {
