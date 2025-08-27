@@ -1,10 +1,10 @@
-
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { Player, Opponent, Match, Training, Channel, Message, UserProfileUpdate, NotificationPayload, PushSubscription } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { sendNotificationFlow } from '@/ai/flows/send-notification-flow';
 
 
 // Auth Actions
@@ -34,7 +34,7 @@ export async function signUp(formData: FormData) {
   }
 
   // Create player profile linked to the new auth user
-  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'push_subscriptions'> = {
+  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'onesignal_id'> = {
       user_id: authData.user.id,
       name: name,
       email: email,
@@ -46,7 +46,7 @@ export async function signUp(formData: FormData) {
 
   const { error: playerError } = await supabase
     .from('players')
-    .insert({...playerData, push_subscriptions: []});
+    .insert({...playerData, onesignal_id: null});
 
   if (playerError) {
     console.error("Failed to create player profile after signup:", playerError);
@@ -203,7 +203,7 @@ export async function createPlayer(formData: FormData) {
   const authUserId = authData.user.id;
   
   // 2. Create player profile linked to the new auth user
-  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'push_subscriptions'> = {
+  const playerData: Omit<Player, 'id' | 'goals' | 'fouls' | 'points' | 'presence_status' | 'last_seen' | 'onesignal_id'> = {
       user_id: authUserId,
       name: name,
       email: email,
@@ -215,7 +215,7 @@ export async function createPlayer(formData: FormData) {
 
   const { error: playerError } = await supabaseAdmin
     .from('players')
-    .insert({...playerData, push_subscriptions: []});
+    .insert({...playerData, onesignal_id: null});
 
   if (playerError) {
     console.error("Failed to create player profile:", playerError);
@@ -286,7 +286,7 @@ export async function updatePlayer(formData: FormData) {
   
   // --- Player Profile Update ---
   // Ensure we use a partial type for the update payload
-  const playerData: Partial<Omit<Player, 'id' | 'push_subscriptions'>> = {
+  const playerData: Partial<Omit<Player, 'id' | 'onesignal_id'>> = {
       name: formData.get('name') as string,
       email: newEmail || null,
       user_id: authUserId, // Update user_id in case it was just created
@@ -988,31 +988,120 @@ export async function validateAllUsers(): Promise<{ success: boolean, error?: an
 }
 
 
-// Notification Functions - Placeholders
+// #region OneSignal Notification Functions
+
 export async function sendNotificationToAllPlayers(payload: NotificationPayload): Promise<{ success: boolean }> {
-  console.log('sendNotificationToAllPlayers called (placeholder)', payload);
-  return { success: true };
+  try {
+    const supabase = createClient();
+    // 1. Get all players who have a OneSignal ID
+    const { data: players, error } = await supabase
+      .from('players')
+      .select('onesignal_id')
+      .not('onesignal_id', 'is', null);
+
+    if (error) {
+      console.error('Failed to fetch players for notification:', error);
+      return { success: false };
+    }
+
+    const onesignalIds = players.map(p => p.onesignal_id!);
+    if (onesignalIds.length === 0) {
+      console.log('No players subscribed to notifications.');
+      return { success: true };
+    }
+
+    // 2. Call the Genkit flow to send the notification
+    await sendNotificationFlow({
+      ...payload,
+      onesignalIds: onesignalIds,
+    });
+    return { success: true };
+
+  } catch (e) {
+    console.error('Error in sendNotificationToAllPlayers:', e);
+    return { success: false };
+  }
 }
 
 export async function sendPushNotification(userId: string, payload: NotificationPayload): Promise<{ success: boolean }> {
-   console.log(`sendPushNotification to ${userId} called (placeholder)`, payload);
-   return { success: true };
+   try {
+    const supabase = createClient();
+    // 1. Get the player's OneSignal ID
+    const { data: player, error } = await supabase
+        .from('players')
+        .select('onesignal_id')
+        .eq('user_id', userId)
+        .single();
+    
+    if (error || !player || !player.onesignal_id) {
+        console.error(`Failed to find OneSignal ID for user ${userId}:`, error);
+        return { success: false };
+    }
+    
+    // 2. Call the Genkit flow
+    await sendNotificationFlow({
+        ...payload,
+        onesignalIds: [player.onesignal_id],
+    });
+
+    return { success: true };
+
+  } catch (e) {
+    console.error(`Error in sendPushNotification to ${userId}:`, e);
+    return { success: false };
+  }
 }
 
 export async function sendNotificationToSelectedPlayers(
     userIds: string[], 
     payload: NotificationPayload
 ): Promise<{ success: boolean }> {
-  console.log(`sendNotificationToSelectedPlayers to ${userIds.join(', ')} called (placeholder)`, payload);
+  try {
+    const supabase = createClient();
+    // 1. Get all selected players who have a OneSignal ID
+    const { data: players, error } = await supabase
+      .from('players')
+      .select('onesignal_id')
+      .in('user_id', userIds)
+      .not('onesignal_id', 'is', null);
+
+    if (error) {
+      console.error('Failed to fetch selected players for notification:', error);
+      return { success: false };
+    }
+    
+    const onesignalIds = players.map(p => p.onesignal_id!);
+    if (onesignalIds.length === 0) {
+        console.log('None of the selected players are subscribed to notifications.');
+        return { success: true };
+    }
+
+    // 2. Call the Genkit flow
+    await sendNotificationFlow({
+      ...payload,
+      onesignalIds: onesignalIds,
+    });
+
+    return { success: true };
+
+  } catch (e) {
+    console.error(`Error in sendNotificationToSelectedPlayers to ${userIds.join(', ')}:`, e);
+    return { success: false };
+  }
+}
+
+export async function saveOneSignalId(userId: string, onesignalId: string | null) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('players')
+    .update({ onesignal_id: onesignalId })
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Failed to save OneSignal ID:', error);
+    return { success: false, error };
+  }
   return { success: true };
 }
 
-export async function savePushSubscription(subscription: PushSubscription) {
-    console.log('savePushSubscription called (placeholder)', subscription);
-    return { success: true };
-}
-
-export async function deletePushSubscription(endpoint: string) {
-    console.log('deletePushSubscription called (placeholder)', endpoint);
-    return { success: true };
-}
+// #endregion

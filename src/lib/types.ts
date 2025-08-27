@@ -1,4 +1,3 @@
-
       
 import { z } from 'zod';
 
@@ -20,6 +19,7 @@ export interface Player {
   // Ajout pour le statut de présence
   presence_status?: 'online' | 'offline';
   last_seen?: string; // ISO string
+  onesignal_id?: string | null;
 }
 
 export interface UserProfileUpdate {

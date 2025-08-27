@@ -1,26 +1,31 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Bell, Send } from "lucide-react";
+import { ArrowLeft, Bell, Send, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { Role } from "@/lib/types";
+import type { Role, Player } from "@/lib/types";
 import Header from "@/components/Header";
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import SubscribersList from '@/components/SubscribersList';
+import { getPlayers } from '@/app/actions';
 
 
 export default function NotificationsAdminPage() {
     const [role, setRole] = useState<Role>('player');
     const [loading, setLoading] = useState(true);
+    const [players, setPlayers] = useState<Player[]>([]);
     const supabase = createClient();
     const router = useRouter();
 
-     useEffect(() => {
+    const fetchPlayers = async () => {
+        const playersData = await getPlayers();
+        setPlayers(playersData);
+    };
+
+    useEffect(() => {
         const checkRoleAndProtect = async () => {
             setLoading(true);
             const { data: { session } } = await supabase.auth.getSession();
@@ -31,6 +36,7 @@ export default function NotificationsAdminPage() {
                 router.push('/');
                 return;
             }
+            await fetchPlayers();
             setLoading(false);
         };
         checkRoleAndProtect();
@@ -42,9 +48,17 @@ export default function NotificationsAdminPage() {
                 router.push('/');
             }
         });
+        
+        // Listen for changes in players table to update subscription status
+        const playerChannel = supabase.channel('public:players')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
+                fetchPlayers();
+            })
+            .subscribe();
 
         return () => {
             authListener?.subscription.unsubscribe();
+            supabase.removeChannel(playerChannel);
         };
     }, [supabase, router]);
     
@@ -87,7 +101,7 @@ export default function NotificationsAdminPage() {
                         </Link>
                     </Card>
 
-                    <SubscribersList />
+                    <SubscribersList players={players} />
 
                 </div>
             </main>

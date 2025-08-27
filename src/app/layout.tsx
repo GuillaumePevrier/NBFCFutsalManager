@@ -1,9 +1,9 @@
-
 'use client';
 
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/ThemeProvider';
+import PushNotificationProvider from '@/components/PushNotificationProvider';
 
 export default function RootLayout({
   children,
@@ -44,7 +44,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-          {children}
+          <PushNotificationProvider>
+            {children}
+          </PushNotificationProvider>
           <Toaster />
         </ThemeProvider>
       </body>
