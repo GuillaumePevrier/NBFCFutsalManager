@@ -14,25 +14,32 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 // Function to safely initialize Firebase
-function initializeFirebaseApp() {
+export function initializeFirebaseApp() {
     if (
         !firebaseConfig.apiKey ||
         !firebaseConfig.projectId ||
         !firebaseConfig.appId
     ) {
-        console.error("Firebase config values are missing. Check your environment variables.");
+        // This will now be primarily a warning for developers during build/dev time.
+        // The runtime check is implicitly handled by not calling this function
+        // until the variables are available.
+        console.warn("Firebase config values are missing. Ensure they are set in your environment.");
         return null;
     }
     return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 }
 
-const app = initializeFirebaseApp();
-const messaging = (app && typeof window !== 'undefined' && 'PushManager' in window) ? getMessaging(app) : null;
-
-export { app, messaging };
+export const getFirebaseMessaging = () => {
+  const app = getApps().length > 0 ? getApp() : null;
+  if (app && typeof window !== 'undefined' && 'PushManager' in window) {
+    return getMessaging(app);
+  }
+  return null;
+}
 
 
 export const requestForToken = async () => {
+  const messaging = getFirebaseMessaging();
   if (!messaging) {
     console.log("Firebase Messaging is not available in this browser.");
     return null;
@@ -59,6 +66,7 @@ export const requestForToken = async () => {
 };
 
 export const onMessageListener = () => {
+    const messaging = getFirebaseMessaging();
     if (!messaging) {
         return new Promise((resolve) => resolve(null));
     }

@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
 import { savePushSubscription, deletePushSubscription } from '@/app/actions';
 import { createClient } from '@/lib/supabase/client';
-import { requestForToken } from '@/lib/firebase'; // We will use this instead of the subscription object directly
+import { initializeFirebaseApp, requestForToken } from '@/lib/firebase'; // We will use this instead of the subscription object directly
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -30,6 +30,9 @@ export function usePushNotifications() {
 
 
   const init = useCallback(async () => {
+    // Initialize firebase app inside the hook
+    initializeFirebaseApp();
+    
     if (!isPushSupported || !supabase) {
         setIsLoading(false);
         return;

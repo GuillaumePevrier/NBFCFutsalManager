@@ -22,19 +22,22 @@ export default function PushNotificationProvider({ children }: { children: React
         }
     };
     
-    supabase?.auth.getSession().then(({ data: { session } }) => {
-        if(session) setupInitialSubscription(session);
-    });
+    // Only attempt to initialize if supabase client is available
+    if (supabase) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if(session) setupInitialSubscription(session);
+        });
 
-    const { data: authListener } = supabase?.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
-        setupInitialSubscription(session);
-      }
-    }) ?? { data: null };
-    
-    return () => {
-        authListener?.subscription.unsubscribe();
-    };
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN') {
+            setupInitialSubscription(session);
+          }
+        });
+        
+        return () => {
+            authListener?.subscription.unsubscribe();
+        };
+    }
 
   }, [init, supabase]);
 
