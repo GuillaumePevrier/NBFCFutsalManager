@@ -6,7 +6,7 @@ import { useToast } from './use-toast';
 import { savePushSubscription, deletePushSubscription } from '@/app/actions';
 import { createClient } from '@/lib/supabase/client';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getMessaging, getToken } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 // This function can be moved to a separate config file if needed
 const initializeFirebase = () => {
@@ -109,6 +109,25 @@ export function usePushNotifications() {
 
   }, [init, supabase]);
 
+  // Listen for foreground messages when user is subscribed
+  useEffect(() => {
+    if (isSubscribed) {
+        const app = initializeFirebase();
+        if (app) {
+            const messaging = getMessaging(app);
+            const unsubscribe = onMessage(messaging, (payload) => {
+                 if (payload?.notification) {
+                    toast({
+                        title: payload.notification.title,
+                        description: payload.notification.body
+                    })
+                }
+            });
+            return () => unsubscribe();
+        }
+    }
+  }, [isSubscribed, toast]);
+
 
   const subscribe = useCallback(async () => {
     setIsActionLoading(true);
@@ -140,10 +159,6 @@ export function usePushNotifications() {
           return;
       }
       
-      const app = initializeFirebase();
-      if (!app) throw new Error("Firebase initialization failed. Check config.");
-      const messaging = getMessaging(app);
-
       // It's crucial that the service worker is ready before getting the token
       const swRegistration = await navigator.serviceWorker.ready;
 
@@ -190,15 +205,18 @@ export function usePushNotifications() {
     setIsActionLoading(true);
 
     try {
+      // First, delete the subscription from our DB
       const deleteResult = await deletePushSubscription(subscription.endpoint);
 
       if (deleteResult.success) {
+         // Then, unsubscribe from the browser's push service
          const successfulUnsubscribe = await subscription.unsubscribe();
          if(successfulUnsubscribe) {
             setSubscription(null);
             setIsSubscribed(false);
             toast({ title: "Notifications désactivées" });
          } else {
+            // If browser unsubscribe fails, re-save to DB to keep state consistent
             await savePushSubscription(subscription.toJSON());
             throw new Error("La désinscription du navigateur a échoué.");
          }

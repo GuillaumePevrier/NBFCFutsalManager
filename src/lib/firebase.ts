@@ -19,32 +19,11 @@ export const getFirebaseConfig = () => {
     if (
         !firebaseConfig.apiKey ||
         !firebaseConfig.projectId ||
+        !firebaseConfig.messagingSenderId ||
         !firebaseConfig.appId
     ) {
         console.error("Firebase config values are missing. Check your environment variables.");
         return null;
     }
     return firebaseConfig;
-};
-
-// A helper to initialize app if not already initialized
-export const initializeFirebaseApp = (): FirebaseApp | null => {
-    const config = getFirebaseConfig();
-    if (!config) return null;
-    return getApps().length > 0 ? getApp() : initializeApp(config);
-}
-
-
-export const onMessageListener = () => {
-    // We ensure firebase is initialized before trying to get messaging
-    const app = initializeFirebaseApp();
-    if (!app) {
-        return new Promise((resolve) => resolve(null));
-    }
-    const messaging = getMessaging(app);
-    return new Promise((resolve) => {
-        onMessage(messaging, (payload) => {
-            resolve(payload);
-        });
-    });
 };

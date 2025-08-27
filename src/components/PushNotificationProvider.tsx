@@ -3,13 +3,10 @@
 
 import { useEffect } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useToast } from '@/hooks/use-toast';
-import { onMessageListener } from '@/lib/firebase';
 import { createClient } from '@/lib/supabase/client';
 
 export default function PushNotificationProvider({ children }: { children: React.ReactNode }) {
   const { init } = usePushNotifications();
-  const { toast } = useToast();
   const supabase = createClient();
 
   useEffect(() => {
@@ -40,20 +37,9 @@ export default function PushNotificationProvider({ children }: { children: React
     }
 
   }, [init, supabase]);
-
-
-  useEffect(() => {
-    onMessageListener()
-      .then((payload: any) => {
-        if (payload?.notification) {
-          toast({
-              title: payload.notification.title,
-              description: payload.notification.body
-          })
-        }
-      })
-      .catch((err) => console.log('Failed to listen for foreground messages: ', err));
-  }, [toast]);
+  
+  // The onMessageListener logic is now handled inside usePushNotifications
+  // to ensure it only runs when firebase is correctly initialized and a subscription exists.
 
   return <>{children}</>;
 }
