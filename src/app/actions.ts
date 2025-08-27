@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
@@ -1090,17 +1091,31 @@ export async function sendNotificationToSelectedPlayers(
   }
 }
 
-export async function saveOneSignalId(userId: string, onesignalId: string | null) {
+export async function saveOneSignalId(onesignalId: string | null) {
   const supabase = createClient();
+  
+  // Get the current authenticated user from the session
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error('User not authenticated. Cannot save OneSignal ID.');
+    return { success: false, error: 'User not authenticated' };
+  }
+  
+  // Use the user's ID to update their specific player profile
   const { error } = await supabase
     .from('players')
     .update({ onesignal_id: onesignalId })
-    .eq('user_id', userId);
+    .eq('user_id', user.id);
 
   if (error) {
     console.error('Failed to save OneSignal ID:', error);
     return { success: false, error };
   }
+  
+  // Revalidate the path for admin notifications to reflect the change
+  revalidatePath('/admin/notifications');
+  
   return { success: true };
 }
 
