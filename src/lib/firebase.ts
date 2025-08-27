@@ -4,8 +4,8 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getMessaging, onMessage, isSupported } from 'firebase/messaging';
 
-// This function centralizes Firebase app initialization and service worker registration.
-export const initializeFirebaseApp = async (): Promise<FirebaseApp | null> => {
+// This function now returns the config object or null
+function getFirebaseConfig() {
     const firebaseConfig = {
         apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
         authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -14,8 +14,8 @@ export const initializeFirebaseApp = async (): Promise<FirebaseApp | null> => {
         messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
         appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     };
-
-    // Check if all required config values are present
+    
+    // Check if all required config values are present on the client
     if (
         !firebaseConfig.apiKey ||
         !firebaseConfig.projectId ||
@@ -25,35 +25,29 @@ export const initializeFirebaseApp = async (): Promise<FirebaseApp | null> => {
         console.error("Firebase config values are missing. Check your environment variables.");
         return null;
     }
-    
-    // Initialize Firebase app if it doesn't exist
-    const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    return firebaseConfig;
+}
 
-    // Register Service Worker for FCM
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-            console.log('FCM Service Worker registered successfully:', registration);
-        } catch (error) {
-            console.error('FCM Service Worker registration failed:', error);
-            // We don't return null here, as the app can still run without push notifications
-        }
-    }
 
-    return app;
+// This function centralizes Firebase app initialization.
+export const initializeFirebaseApp = (): FirebaseApp | null => {
+    const config = getFirebaseConfig();
+    if (!config) return null;
+    return getApps().length > 0 ? getApp() : initializeApp(config);
 };
 
 // This function sets up the foreground message listener.
 // It should only be called when a subscription is active.
-export const onMessageListener = (callback: (payload: any) => void) => {
-    return isSupported().then(supported => {
-        if (supported) {
-            const app = getApp(); // Assume app is already initialized
+export const onMessageListener = async (callback: (payload: any) => void) => {
+    const supported = await isSupported();
+    if (supported) {
+        const app = initializeFirebaseApp();
+        if (app) {
             const messaging = getMessaging(app);
             return onMessage(messaging, (payload) => {
                 callback(payload);
             });
         }
-        return () => {}; // Return an empty unsubscribe function if not supported
-    });
+    }
+    return null; // Return null if not supported or app fails to init
 };

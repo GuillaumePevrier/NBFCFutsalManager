@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
 import { savePushSubscription, deletePushSubscription } from '@/app/actions';
 import { createClient } from '@/lib/supabase/client';
-import { getMessaging, getToken } from 'firebase/messaging';
 import { initializeFirebaseApp, onMessageListener } from '@/lib/firebase';
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -41,9 +40,6 @@ export function usePushNotifications() {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (session) {
-      // Initialize Firebase and register SW
-      await initializeFirebaseApp();
-
       setPermissionStatus(Notification.permission);
       
       if (Notification.permission === 'granted') {
@@ -97,7 +93,7 @@ export function usePushNotifications() {
                 })
             }
         }).then(unsub => {
-            unsubscribe = unsub;
+            if(unsub) unsubscribe = unsub;
         });
     }
     return () => {
@@ -136,11 +132,10 @@ export function usePushNotifications() {
           return;
       }
       
-      const app = await initializeFirebaseApp();
+      const app = initializeFirebaseApp();
       if (!app) {
-          throw new Error("L'initialisation de Firebase a échoué.");
+          throw new Error("L'initialisation de Firebase a échoué. Vérifiez vos variables d'environnement.");
       }
-      const messaging = getMessaging(app);
 
       // It's crucial that the service worker is ready before getting the token
       const swRegistration = await navigator.serviceWorker.ready;
