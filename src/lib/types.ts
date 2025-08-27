@@ -200,6 +200,7 @@ export interface NotificationPayload {
   icon?: string;
   tag?: string;
   data?: Record<string, any>;
+  url?: string; // Add url for OneSignal compatibility
 }
 
 // Represents the structure of a Web Push Subscription object
@@ -212,14 +213,3 @@ export const PushSubscriptionSchema = z.object({
   }),
 });
 export type PushSubscription = z.infer<typeof PushSubscriptionSchema>;
-
-
-export const FcmNotificationPayloadSchema = z.object({
-  subscriptions: z.array(PushSubscriptionSchema).describe('An array of Web Push subscription objects.'),
-  title: z.string().describe('The title of the notification.'),
-  body: z.string().describe('The body of the notification.'),
-  icon: z.string().optional().describe('URL to an icon for the notification.'),
-  tag: z.string().optional().describe('A tag to group notifications.'),
-  data: z.record(z.any()).optional().describe('Arbitrary data payload.'),
-});
-export type FcmNotificationPayload = z.infer<typeof FcmNotificationPayloadSchema>;

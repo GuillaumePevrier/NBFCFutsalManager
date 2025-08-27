@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -75,9 +74,7 @@ export default function SendNotificationPage() {
         const payload = {
             title: formData.get('title') as string,
             body: formData.get('body') as string,
-            data: {
-                url: formData.get('url') as string || process.env.NEXT_PUBLIC_BASE_URL,
-            }
+            url: formData.get('url') as string || process.env.NEXT_PUBLIC_BASE_URL,
         };
 
         if (!payload.title || !payload.body) {
