@@ -15,15 +15,15 @@ const firebaseConfig: FirebaseOptions = {
 
 // Function to safely initialize Firebase
 function initializeFirebaseApp() {
-    // Check if all necessary keys are present
     if (
-        firebaseConfig.apiKey &&
-        firebaseConfig.projectId &&
-        firebaseConfig.appId
+        !firebaseConfig.apiKey ||
+        !firebaseConfig.projectId ||
+        !firebaseConfig.appId
     ) {
-        return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+        console.error("Firebase config values are missing. Check your environment variables.");
+        return null;
     }
-    return null;
+    return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 }
 
 const app = initializeFirebaseApp();
@@ -39,7 +39,12 @@ export const requestForToken = async () => {
   }
   
   try {
-    const currentToken = await getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY });
+    const swRegistration = await navigator.serviceWorker.ready;
+    const currentToken = await getToken(messaging, { 
+        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+        serviceWorkerRegistration: swRegistration
+    });
+
     if (currentToken) {
       console.log('FCM Token:', currentToken);
       return currentToken;
