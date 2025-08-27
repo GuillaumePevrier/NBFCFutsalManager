@@ -5,35 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
 import { savePushSubscription, deletePushSubscription } from '@/app/actions';
 import { createClient } from '@/lib/supabase/client';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-
-// This function can be moved to a separate config file if needed
-const initializeFirebase = () => {
-    const firebaseConfig = {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    };
-
-    if (
-        !firebaseConfig.apiKey ||
-        !firebaseConfig.projectId ||
-        !firebaseConfig.appId
-    ) {
-        console.error("Firebase config values are missing. Check your environment variables.");
-        return null;
-    }
-    
-    if (getApps().length === 0) {
-        return initializeApp(firebaseConfig);
-    } else {
-        return getApp();
-    }
-}
+import { getMessaging, getToken } from 'firebase/messaging';
+import { initializeFirebaseApp, onMessageListener } from '@/lib/firebase';
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -68,6 +41,9 @@ export function usePushNotifications() {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (session) {
+      // Initialize Firebase and register SW
+      await initializeFirebaseApp();
+
       setPermissionStatus(Notification.permission);
       
       if (Notification.permission === 'granted') {
@@ -111,21 +87,22 @@ export function usePushNotifications() {
 
   // Listen for foreground messages when user is subscribed
   useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
     if (isSubscribed) {
-        const app = initializeFirebase();
-        if (app) {
-            const messaging = getMessaging(app);
-            const unsubscribe = onMessage(messaging, (payload) => {
-                 if (payload?.notification) {
-                    toast({
-                        title: payload.notification.title,
-                        description: payload.notification.body
-                    })
-                }
-            });
-            return () => unsubscribe();
-        }
+        onMessageListener((payload) => {
+             if (payload?.notification) {
+                toast({
+                    title: payload.notification.title,
+                    description: payload.notification.body
+                })
+            }
+        }).then(unsub => {
+            unsubscribe = unsub;
+        });
     }
+    return () => {
+        if(unsubscribe) unsubscribe();
+    };
   }, [isSubscribed, toast]);
 
 
@@ -159,6 +136,12 @@ export function usePushNotifications() {
           return;
       }
       
+      const app = await initializeFirebaseApp();
+      if (!app) {
+          throw new Error("L'initialisation de Firebase a échoué.");
+      }
+      const messaging = getMessaging(app);
+
       // It's crucial that the service worker is ready before getting the token
       const swRegistration = await navigator.serviceWorker.ready;
 

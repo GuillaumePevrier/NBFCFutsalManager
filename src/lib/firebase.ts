@@ -2,11 +2,10 @@
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getMessaging, onMessage } from 'firebase/messaging';
+import { getMessaging, onMessage, isSupported } from 'firebase/messaging';
 
-// This function is now simplified and only returns the config
-// It's up to the caller to handle initialization
-export const getFirebaseConfig = () => {
+// This function centralizes Firebase app initialization and service worker registration.
+export const initializeFirebaseApp = async (): Promise<FirebaseApp | null> => {
     const firebaseConfig = {
         apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
         authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -16,6 +15,7 @@ export const getFirebaseConfig = () => {
         appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     };
 
+    // Check if all required config values are present
     if (
         !firebaseConfig.apiKey ||
         !firebaseConfig.projectId ||
@@ -25,5 +25,35 @@ export const getFirebaseConfig = () => {
         console.error("Firebase config values are missing. Check your environment variables.");
         return null;
     }
-    return firebaseConfig;
+    
+    // Initialize Firebase app if it doesn't exist
+    const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+    // Register Service Worker for FCM
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('FCM Service Worker registered successfully:', registration);
+        } catch (error) {
+            console.error('FCM Service Worker registration failed:', error);
+            // We don't return null here, as the app can still run without push notifications
+        }
+    }
+
+    return app;
+};
+
+// This function sets up the foreground message listener.
+// It should only be called when a subscription is active.
+export const onMessageListener = (callback: (payload: any) => void) => {
+    return isSupported().then(supported => {
+        if (supported) {
+            const app = getApp(); // Assume app is already initialized
+            const messaging = getMessaging(app);
+            return onMessage(messaging, (payload) => {
+                callback(payload);
+            });
+        }
+        return () => {}; // Return an empty unsubscribe function if not supported
+    });
 };

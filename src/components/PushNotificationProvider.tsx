@@ -10,36 +10,17 @@ export default function PushNotificationProvider({ children }: { children: React
   const supabase = createClient();
 
   useEffect(() => {
-    // On initial load, check if the user is logged in and if we should
-    // try to silently re-establish the push subscription.
-    const setupInitialSubscription = async (session: any) => {
-        if (session?.user) {
-            // init() will check permissions and subscribe if already granted.
-            await init();
-        }
-    };
+    // This effect now simply ensures that the initialization logic
+    // in usePushNotifications runs when the user's auth state is known.
     
     // Only attempt to initialize if supabase client is available
     if (supabase) {
         supabase.auth.getSession().then(({ data: { session } }) => {
-            if(session) setupInitialSubscription(session);
+            if(session) init(); // init if already logged in
         });
-
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_IN') {
-            setupInitialSubscription(session);
-          }
-        });
-        
-        return () => {
-            authListener?.subscription.unsubscribe();
-        };
     }
 
   }, [init, supabase]);
   
-  // The onMessageListener logic is now handled inside usePushNotifications
-  // to ensure it only runs when firebase is correctly initialized and a subscription exists.
-
   return <>{children}</>;
 }
