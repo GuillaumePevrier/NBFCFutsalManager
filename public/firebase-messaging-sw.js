@@ -1,5 +1,5 @@
 
-// Import and initialize the Firebase SDK
+// Import and initialize Firebase SDK
 // It is safe to import and initialize Firebase here because this code is executed in a service worker
 // context, where there is no DOM.
 importScripts("https://www.gstatic.com/firebasejs/9.2.0/firebase-app-compat.js");
