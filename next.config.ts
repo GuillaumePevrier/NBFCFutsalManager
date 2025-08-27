@@ -6,7 +6,6 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  // We let our app handle the FCM service worker registration
 });
 
 

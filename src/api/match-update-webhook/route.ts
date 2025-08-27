@@ -47,7 +47,12 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
     body = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`;
   }
   if (title && body) {
-    await sendNotificationToAllPlayers({ title, body });
+    await sendNotificationToAllPlayers({ 
+        title, 
+        body,
+        tag: `goal-${newData.id}`,
+        data: { url }
+    });
   }
 
   // --- Poll Started Notification ---
@@ -57,6 +62,8 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
     await sendNotificationToAllPlayers({
       title: `Convocation pour le match`,
       body: `Répondez au sondage pour le match contre ${opponent} le ${new Date(newData.details.date).toLocaleDateString('fr-FR')}.`,
+      tag: `poll-${newData.id}`,
+      data: { url }
     });
   }
 }
@@ -94,12 +101,15 @@ async function handleNewMessage(newMessage: Message) {
     const notificationPayload = {
         title: `Nouveau message de ${senderName}`,
         body: newMessage.content,
+        tag: `chat-${newMessage.channel_id}`,
+        data: {
+            url: `${process.env.NEXT_PUBLIC_BASE_URL}/chat/${newMessage.channel_id}`
+        }
     };
 
     for (const participant of participants) {
         console.log(`Sending notification to user ${participant.user_id}`);
-        // This function is now a placeholder
-        await sendPushNotification({ userId: participant.user_id, ...notificationPayload});
+        await sendPushNotification(participant.user_id, notificationPayload);
     }
 }
 

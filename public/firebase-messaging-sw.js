@@ -1,56 +1,69 @@
-
-// Import and initialize Firebase SDK
-// It is safe to import and initialize Firebase here because this code is executed in a service worker
-// context, where there is no DOM.
-importScripts("https://www.gstatic.com/firebasejs/9.2.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/9.2.0/firebase-messaging-compat.js");
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAiAcWx8HkKBsSWbd8Hu6w0Ksyts6ZspDo",
-    authDomain: "futsaltactics-board.firebaseapp.com",
-    projectId: "futsaltactics-board",
-    storageBucket: "futsaltactics-board.appspot.com",
-    messagingSenderId: "711611587508",
-    appId: "1:711611587508:web:c94371117105d11e01b0e1"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage(function(payload) {
-  console.log('Received background message ', payload);
-  // Customize notification here
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: payload.notification.icon || '/icon-192x192.png', // Default icon
-    tag: payload.notification.tag,
-    data: payload.data, // Pass along data for click handling
-  };
-
-  return self.registration.showNotification(notificationTitle,
-    notificationOptions);
-});
-
-// Added event listener for notification click
-self.addEventListener('notificationclick', function(event) {
-  console.log('On notification click: ', event.notification);
-  event.notification.close();
-
-  const urlToOpen = event.notification.data?.url || '/';
-  
-  event.waitUntil(
-    clients.matchAll({
-      type: "window"
-    }).then(function(clientList) {
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i];
-        if (client.url == urlToOpen && 'focus' in client)
-          return client.focus();
-      }
-      if (clients.openWindow)
-        return clients.openWindow(urlToOpen);
-    })
-  );
-});
+{
+  "name": "nextn",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack -p 9002",
+    "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@genkit-ai/googleai": "^1.14.1",
+    "@genkit-ai/next": "^1.14.1",
+    "@hookform/resolvers": "^4.1.3",
+    "@radix-ui/react-accordion": "^1.2.3",
+    "@radix-ui/react-alert-dialog": "^1.1.6",
+    "@radix-ui/react-avatar": "^1.1.3",
+    "@radix-ui/react-checkbox": "^1.1.4",
+    "@radix-ui/react-collapsible": "^1.1.11",
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-dropdown-menu": "^2.1.6",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-menubar": "^1.1.6",
+    "@radix-ui/react-popover": "^1.1.6",
+    "@radix-ui/react-progress": "^1.1.2",
+    "@radix-ui/react-radio-group": "^1.2.3",
+    "@radix-ui/react-scroll-area": "^1.2.3",
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-separator": "^1.1.2",
+    "@radix-ui/react-slider": "^1.2.3",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.1.3",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "@radix-ui/react-toast": "^1.2.6",
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "@supabase/ssr": "^0.5.1",
+    "@supabase/supabase-js": "^2.45.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^11.5.7",
+    "genkit": "^1.14.1",
+    "lucide-react": "^0.475.0",
+    "nanoid": "^5.0.7",
+    "next": "15.3.3",
+    "next-pwa": "^5.6.0",
+    "next-themes": "^0.3.0",
+    "patch-package": "^8.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.2",
+    "recharts": "^2.15.1",
+    "tailwind-merge": "^3.0.1",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "genkit-cli": "^1.14.1",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}

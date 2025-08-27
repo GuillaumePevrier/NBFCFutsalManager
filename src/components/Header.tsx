@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, ShieldCheck, Users, Home, Shield, Trophy, Footprints, MessageSquare, Bell, UserCircle } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Users, Home, Shield, Trophy, Footprints, MessageSquare, UserCircle } from "lucide-react";
 import Image from "next/image";
 import type { Role, Player } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -16,7 +16,6 @@ import { signOut } from "@/app/actions";
 import AuthDialog from "./AuthDialog";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { usePresence } from "@/hooks/usePresence";
-import NotificationToggle from "./NotificationToggle";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -103,7 +102,6 @@ export default function Header({ children }: HeaderProps) {
 
         {isLoggedIn && (
            <>
-            <NotificationToggle />
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" className="relative h-8 w-8 rounded-full btn neon-blue-sm">

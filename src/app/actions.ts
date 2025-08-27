@@ -1,12 +1,10 @@
 
-      
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { Player, Opponent, Match, Training, Channel, Message, UserProfileUpdate, NotificationPayload, PushSubscription } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { sendFcmNotification } from '@/ai/flows/send-fcm-notification';
 
 
 // Auth Actions
@@ -990,140 +988,31 @@ export async function validateAllUsers(): Promise<{ success: boolean, error?: an
 }
 
 
-// FCM Token Management & Push Subscriptions
-export async function savePushSubscription(subscription: PushSubscription) {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'User not authenticated' };
-    
-    // "Clean before write" approach:
-    // 1. Delete any existing subscriptions for this specific endpoint.
-    // This prevents conflicts if a user unsubscribes and resubscribes quickly,
-    // or if a subscription is somehow orphaned.
-    const { error: deleteError } = await supabase
-      .from('push_subscriptions')
-      .delete()
-      .eq('endpoint', subscription.endpoint);
-
-    if (deleteError) {
-        console.error("Failed to clear old push subscription:", deleteError);
-        // Non-fatal, we can still try to insert.
-    }
-    
-    // 2. Insert the new, clean subscription.
-    const { error: insertError } = await supabase.from('push_subscriptions').insert({
-      user_id: user.id,
-      endpoint: subscription.endpoint,
-      keys: subscription.keys,
-    });
-
-    if (insertError) {
-        console.error("Failed to save push subscription:", insertError);
-        return { success: false, error: insertError.message };
-    }
-
-    return { success: true };
-}
-
-export async function deletePushSubscription(endpoint: string) {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'User not authenticated' };
-
-    // We only need the endpoint to uniquely identify a subscription to delete it.
-    // A user might be logged out but the subscription still exists in the browser.
-    const { error } = await supabase
-        .from('push_subscriptions')
-        .delete()
-        .eq('endpoint', endpoint);
-        
-    if (error) {
-        console.error("Failed to delete push subscription:", error);
-        return { success: false, error: error.message };
-    }
-    
-    return { success: true };
-}
-
-
-// Notification Functions
+// Notification Functions - Placeholders
 export async function sendNotificationToAllPlayers(payload: NotificationPayload): Promise<{ success: boolean }> {
-  try {
-    const supabase = createClient();
-    // Select only the 'endpoint' which is the token needed for FCM
-    const { data: subscriptions, error } = await supabase
-      .from('push_subscriptions')
-      .select('endpoint');
-
-    if (error) {
-      console.error('Error fetching subscriptions for notification:', error);
-      return { success: false };
-    }
-
-    if (subscriptions && subscriptions.length > 0) {
-      const tokens = subscriptions.map(s => s.endpoint);
-      await sendFcmNotification({ tokens, ...payload });
-    }
-    
-    return { success: true };
-  } catch (e) {
-    console.error('Failed to send notifications to all players:', e);
-    return { success: false };
-  }
+  console.log('sendNotificationToAllPlayers called (placeholder)', payload);
+  return { success: true };
 }
 
 export async function sendPushNotification(userId: string, payload: NotificationPayload): Promise<{ success: boolean }> {
-   try {
-    const supabase = createClient();
-    const { data: subscriptions, error } = await supabase
-      .from('push_subscriptions')
-      .select('endpoint')
-      .eq('user_id', userId);
-
-    if (error || !subscriptions || subscriptions.length === 0) {
-      console.error('Error fetching player or no push subscriptions for user:', userId, error);
-      return { success: false };
-    }
-
-    if (subscriptions.length > 0) {
-        const tokens = subscriptions.map(s => s.endpoint);
-        await sendFcmNotification({ tokens, ...payload });
-    }
-
-    return { success: true };
-  } catch (e) {
-    console.error(`Failed to send push notification to user ${userId}:`, e);
-    return { success: false };
-  }
+   console.log(`sendPushNotification to ${userId} called (placeholder)`, payload);
+   return { success: true };
 }
 
 export async function sendNotificationToSelectedPlayers(
     userIds: string[], 
     payload: NotificationPayload
 ): Promise<{ success: boolean }> {
-  try {
-    const supabase = createClient();
-    
-    const { data: subscriptions, error } = await supabase
-      .from('push_subscriptions')
-      .select('endpoint')
-      .in('user_id', userIds);
-
-    if (error) {
-      console.error('Error fetching subscriptions for selected players:', error);
-      return { success: false };
-    }
-
-    if (subscriptions && subscriptions.length > 0) {
-        const tokens = subscriptions.map(s => s.endpoint);
-        await sendFcmNotification({ tokens, ...payload });
-    }
-    
-    return { success: true };
-  } catch (e) {
-    console.error('Failed to send notifications to selected players:', e);
-    return { success: false };
-  }
+  console.log(`sendNotificationToSelectedPlayers to ${userIds.join(', ')} called (placeholder)`, payload);
+  return { success: true };
 }
 
-    
+export async function savePushSubscription(subscription: PushSubscription) {
+    console.log('savePushSubscription called (placeholder)', subscription);
+    return { success: true };
+}
+
+export async function deletePushSubscription(endpoint: string) {
+    console.log('deletePushSubscription called (placeholder)', endpoint);
+    return { success: true };
+}
