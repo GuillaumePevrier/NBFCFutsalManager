@@ -1,31 +1,32 @@
 {
+  "theme_color": "#01182a",
+  "background_color": "#01182a",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
   "name": "NBFC Futsal Manager",
   "short_name": "NBFC Manager",
   "description": "Application de gestion de tactique et de match pour le NBFC Futsal.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#01182a",
-  "theme_color": "#fd5156",
   "icons": [
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-256x256.png",
-      "sizes": "256x256",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+      {
+          "src": "/logo-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+      },
+      {
+          "src": "/logo-256.png",
+          "sizes": "256x256",
+          "type": "image/png"
+      },
+      {
+          "src": "/logo-384.png",
+          "sizes": "384x384",
+          "type": "image/png"
+      },
+      {
+          "src": "/logo-512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+      }
   ]
 }
