@@ -2,80 +2,101 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import OneSignal from 'react-onesignal';
 import { saveOneSignalId } from '@/app/actions';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from './use-toast';
 
+// Déclare OneSignal pour TypeScript car il est chargé depuis un script externe
+declare const window: any;
+
 export function useOneSignal() {
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const supabase = createClient();
   const { toast } = useToast();
   
-  // Utiliser une référence pour s'assurer que l'initialisation ne se produit qu'une seule fois.
-  const isInitialized = useRef(false);
+  // Utiliser une référence pour stocker l'ID de l'utilisateur actuel
+  const currentUserIdRef = useRef<string | null>(null);
 
-  // Fonction pour mettre à jour la BDD, appelée par l'événement `subscriptionChange`
-  const onSubscriptionChange = useCallback(async (subscribed: boolean) => {
-    console.log("OneSignal Subscription changed:", subscribed);
-    const { data: { user } } = await supabase.auth.getUser();
+  // Mise à jour de l'état d'abonnement local
+  const updateSubscriptionStatus = useCallback(async () => {
+    if (window.OneSignal) {
+      const isEnabled = window.OneSignal.Notifications.permission;
+      setIsSubscribed(isEnabled);
+    }
+  }, []);
 
-    if (user) {
-      // OneSignal.getUserId() retourne null si l'utilisateur n'est pas abonné
-      const onesignalId = await OneSignal.getUserId();
-      await saveOneSignalId(user.id, onesignalId);
+  // Logique pour sauvegarder l'ID OneSignal dans la base de données
+  const syncSubscription = useCallback(async () => {
+    const onesignalId = await window.OneSignal.User.getOnesignalId();
+    if (currentUserIdRef.current) {
+        await saveOneSignalId(onesignalId);
+    }
+  }, []);
+
+  // Initialisation de OneSignal et gestion des événements
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || !window.OneSignal) {
+        return;
     }
     
-    setIsSubscribed(subscribed);
-  }, [supabase.auth]);
+    // Fonction d'initialisation asynchrone
+    const init = async () => {
+        // Prévenir la ré-initialisation
+        if (isInitialized) return;
 
+        await window.OneSignal.init({
+            appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!,
+            allowLocalhostAsSecureOrigin: true,
+        });
 
-  useEffect(() => {
-    if (isInitialized.current || !process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID) {
-      return;
-    }
-
-    const initOneSignal = async () => {
-      isInitialized.current = true;
-      
-      await OneSignal.init({
-        appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!,
-        allowLocalhostAsSecureOrigin: true,
-        notifyButton: { 
-            enable: false,
+        setIsInitialized(true);
+        console.log('OneSignal Initialized.');
+        
+        // Mettre à jour le statut initial
+        updateSubscriptionStatus();
+        
+        // Si l'utilisateur est déjà abonné, synchroniser son ID
+        if (window.OneSignal.Notifications.permission) {
+            syncSubscription();
         }
-      });
-      
-      console.log('OneSignal initialized.');
 
-      // Après l'init, on vérifie l'état actuel et on met à jour notre state React
-      const isCurrentlySubscribed = await OneSignal.isPushNotificationsEnabled();
-      setIsSubscribed(isCurrentlySubscribed);
-      
-      // On attache l'écouteur d'événement pour les changements futurs
-      OneSignal.on('subscriptionChange', onSubscriptionChange);
+        // Écouter les changements de permission
+        window.OneSignal.Notifications.addEventListener('permissionChange', (permission: boolean) => {
+            console.log("OneSignal Permission changed:", permission);
+            setIsSubscribed(permission);
+            if(permission) {
+                syncSubscription();
+            } else {
+                // L'utilisateur s'est désabonné, on efface son ID
+                saveOneSignalId(null);
+            }
+        });
     };
+    
+    // OneSignal est chargé via un script, on attend qu'il soit prêt
+    window.OneSignal.push(init);
 
-    if (typeof window !== 'undefined') {
-      initOneSignal();
-    }
+  }, [isInitialized, updateSubscriptionStatus, syncSubscription]);
 
-    // Le nettoyage se fait via la fonction retournée par `OneSignal.on`
-    return () => {
-        // La librairie react-onesignal ne fournit pas de méthode de nettoyage explicite pour `off`.
-        // La gestion se fait au niveau du cycle de vie du composant.
-    };
-  }, [onSubscriptionChange]);
-
-  // Associer/Dissocier l'utilisateur externe lors de la connexion/déconnexion
+  // Gérer la connexion et la déconnexion de l'utilisateur
   useEffect(() => {
     const handleAuthChange = async (event: string, session: any) => {
-        if (!isInitialized.current) return;
+        if (!isInitialized) return;
 
-        if (event === 'SIGNED_IN' && session?.user) {
-            await OneSignal.setExternalUserId(session.user.id);
+        const userId = session?.user?.id || null;
+        currentUserIdRef.current = userId;
+
+        if (event === 'SIGNED_IN' && userId) {
+            console.log(`User ${userId} signed in. Logging in to OneSignal.`);
+            await window.OneSignal.login(userId);
+            // Après connexion, synchroniser l'ID si l'utilisateur est déjà abonné
+            if (window.OneSignal.Notifications.permission) {
+                syncSubscription();
+            }
         } else if (event === 'SIGNED_OUT') {
-            await OneSignal.removeExternalUserId();
+            console.log('User signed out. Logging out from OneSignal.');
+            await window.OneSignal.logout();
         }
     };
     
@@ -83,29 +104,31 @@ export function useOneSignal() {
         handleAuthChange(event, session);
     });
 
+    // Gérer l'état initial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        handleAuthChange('INITIAL_STATE', session);
+    });
+
     return () => {
         subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, [isInitialized, supabase.auth, syncSubscription]);
 
-  // La fonction que le bouton "cloche" appellera
+  // Fonction appelée par le clic sur la cloche
   const handleSubscription = async () => {
-    if (!isInitialized.current) {
-        toast({ title: "OneSignal non prêt", description: "Veuillez patienter quelques instants.", variant: "destructive"});
+    if (!isInitialized) {
+        toast({ title: "OneSignal n'est pas prêt", description: "Veuillez patienter quelques instants.", variant: "destructive"});
         return;
     }
 
     try {
-        const isEnabled = await OneSignal.isPushNotificationsEnabled();
-        if (isEnabled) {
-          // Pour désactiver, l'utilisateur doit utiliser les paramètres du navigateur.
-          // On peut simuler la désactivation dans notre UI.
-          await OneSignal.setSubscription(false);
-          onSubscriptionChange(false);
-          toast({ title: "Notifications désactivées", description: "Vous pouvez réactiver les notifications via les paramètres de votre navigateur."});
+        if (isSubscribed) {
+            // La désactivation se fait via les paramètres du navigateur, on ne peut pas la forcer.
+            // On peut informer l'utilisateur.
+            toast({ title: "Déjà abonné", description: "Pour vous désabonner, veuillez utiliser les paramètres de notifications de votre navigateur."});
         } else {
-          // L'activation est gérée par le prompt natif ou le slidedown de OneSignal
-          await OneSignal.setSubscription(true);
+            // Affiche le prompt natif pour demander l'autorisation
+            await window.OneSignal.Notifications.requestPermission();
         }
     } catch(e) {
         console.error("Error with OneSignal subscription:", e);
