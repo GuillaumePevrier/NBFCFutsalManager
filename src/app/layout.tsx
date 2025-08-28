@@ -1,11 +1,10 @@
+
 'use client';
 
 import './globals.css';
 import Script from 'next/script';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { useOneSignal } from '@/hooks/useOneSignal';
-
 
 export default function RootLayout({
   children,
@@ -14,9 +13,6 @@ export default function RootLayout({
 }>) {
   const logoUrl = "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png";
   
-  // Initialise le hook OneSignal au niveau de la racine de l'application
-  useOneSignal();
-
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
@@ -46,6 +42,22 @@ export default function RootLayout({
         <Script
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
           strategy="afterInteractive"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.OneSignalDeferred = window.OneSignalDeferred || [];
+              OneSignalDeferred.push(async function(OneSignal) {
+                if (window.__OS_INIT__) return;
+                window.__OS_INIT__ = true;
+                
+                await OneSignal.init({
+                  appId: "fc0ca62b-b752-4d15-bd5b-90b0a0b06d4a",
+                });
+                OneSignal.isInitialized = true;
+              });
+            `,
+          }}
         />
       </head>
       <body className="font-body antialiased min-h-screen">
