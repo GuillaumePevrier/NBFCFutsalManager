@@ -15,8 +15,6 @@ import { signOut } from "@/app/actions";
 import AuthDialog from "./AuthDialog";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { usePresence } from "@/hooks/usePresence";
-import { useOneSignal } from "@/hooks/useOneSignal";
-import { cn } from "@/lib/utils";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -30,7 +28,6 @@ export default function Header({ children }: HeaderProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<Player | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const { isSubscribed, handleSubscription } = useOneSignal();
   
   // Initialize presence tracking for the current user
   usePresence(currentUser?.user_id);
@@ -104,9 +101,6 @@ export default function Header({ children }: HeaderProps) {
 
         {isLoggedIn && (
            <>
-            <Button variant="ghost" size="icon" onClick={handleSubscription} className="h-8 w-8 btn neon-blue-sm">
-              <Bell className={cn("transition-colors", isSubscribed ? "text-green-500 fill-green-500/20" : "text-muted-foreground")} />
-            </Button>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" className="relative h-8 w-8 rounded-full btn neon-blue-sm">

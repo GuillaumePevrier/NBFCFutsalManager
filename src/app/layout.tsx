@@ -4,6 +4,8 @@ import './globals.css';
 import Script from 'next/script';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { useOneSignal } from '@/hooks/useOneSignal';
+
 
 export default function RootLayout({
   children,
@@ -11,6 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const logoUrl = "https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png";
+  
+  // Initialise le hook OneSignal au niveau de la racine de l'application
+  useOneSignal();
+
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
@@ -39,7 +45,7 @@ export default function RootLayout({
         
         <Script
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
       </head>
       <body className="font-body antialiased min-h-screen">
