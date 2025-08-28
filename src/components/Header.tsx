@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ import { signOut } from "@/app/actions";
 import AuthDialog from "./AuthDialog";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { usePresence } from "@/hooks/usePresence";
+import { useOneSignal } from "@/hooks/useOneSignal";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -28,6 +31,9 @@ export default function Header({ children }: HeaderProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<Player | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  
+  // Use the custom OneSignal hook
+  const { isSubscribed, handleSubscription } = useOneSignal();
   
   // Initialize presence tracking for the current user
   usePresence(currentUser?.user_id);
@@ -101,6 +107,21 @@ export default function Header({ children }: HeaderProps) {
 
         {isLoggedIn && (
            <>
+            {/* Custom Notification Bell */}
+            <Button 
+                variant="outline" 
+                size="icon" 
+                className={cn(
+                    "h-8 w-8 btn",
+                    isSubscribed ? "neon-green-sm" : "neon-red-sm"
+                )}
+                onClick={handleSubscription}
+                title={isSubscribed ? "Désactiver les notifications" : "Activer les notifications"}
+            >
+                <Bell className={cn("h-5 w-5", isSubscribed ? "fill-green-500 text-green-500" : "fill-red-500 text-red-500")} />
+            </Button>
+
+
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" className="relative h-8 w-8 rounded-full btn neon-blue-sm">

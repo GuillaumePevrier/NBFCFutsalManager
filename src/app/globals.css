@@ -95,6 +95,22 @@ body {
     box-shadow: 0 0 10px hsl(212 96% 48% / 0.7);
   }
 
+  .neon-green-sm {
+    transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out;
+  }
+  .neon-green-sm:hover, .neon-green-sm:focus-visible {
+    border-color: hsl(120 96% 48% / 0.8);
+    box-shadow: 0 0 10px hsl(120 96% 48% / 0.7);
+  }
+
+  .neon-red-sm {
+    transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out;
+  }
+  .neon-red-sm:hover, .neon-red-sm:focus-visible {
+    border-color: hsl(0 96% 48% / 0.8);
+    box-shadow: 0 0 10px hsl(0 96% 48% / 0.7);
+  }
+
   /* Remove default hover background from ghost/outline buttons to favor neon effect */
   .btn.btn-ghost:hover, .btn.btn-outline:hover {
     background-color: transparent;

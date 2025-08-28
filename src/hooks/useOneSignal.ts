@@ -1,85 +1,108 @@
+
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { saveOneSignalId } from '@/app/actions';
+import { useToast } from './use-toast';
 
-// Déclare OneSignal pour TypeScript car il est chargé depuis un script externe
 declare const window: any;
 
 export function useOneSignal() {
   const supabase = createClient();
+  const { toast } = useToast();
   const initialized = useRef(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  
+  const onSubscriptionChange = useCallback(async (isSubscribed: boolean) => {
+    setIsSubscribed(isSubscribed);
+    const {data} = await window.OneSignal.User.getIds();
+    const onesignalId = data?.onesignalId;
+    
+    console.log(`OneSignal subscription changed: ${isSubscribed}, ID: ${onesignalId}`);
+    
+    await saveOneSignalId(isSubscribed ? onesignalId : null);
+  }, []);
+
 
   useEffect(() => {
-    if (initialized.current) {
-        return;
-    }
+    const handleAuthChange = async (event: string, session: any) => {
+      const user = session?.user;
 
-    const initOneSignal = async (userId?: string) => {
-        console.log("Initializing OneSignal...");
+      if ((event === 'SIGNED_IN' || (event === 'INITIAL_STATE' && user)) && !initialized.current) {
+        initialized.current = true;
+        
+        console.log("Initializing OneSignal for user:", user.id);
         
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function(OneSignal: any) {
-            if (window.__OS_INIT__) return;
-            window.__OS_INIT__ = true;
+          if (window.__OS_INIT_DONE__) return;
+          window.__OS_INIT_DONE__ = true;
 
-            await OneSignal.init({
-                appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!,
-                allowLocalhostAsSecureOrigin: true,
-                // Le notifyButton est activé par défaut via la cloche
-            });
-            
-            console.log("OneSignal initialized.");
+          await OneSignal.init({
+              appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!,
+              allowLocalhostAsSecureOrigin: true,
+          });
 
-            // Associer l'utilisateur Supabase à l'utilisateur OneSignal
-            if (userId) {
-                console.log(`Logging in to OneSignal with external_user_id: ${userId}`);
-                await OneSignal.login(userId);
-            }
+          // Set external user id
+          await OneSignal.login(user.id);
+          
+          // Add listener for subscription changes
+          OneSignal.Notifications.addEventListener('change', onSubscriptionChange);
 
-            // Gérer les changements d'abonnement
-            OneSignal.Notifications.addEventListener('change', async () => {
-                console.log("OneSignal Notifications permission changed.");
-                const onesignalId = OneSignal.User.onesignalId;
-                const isSubscribed = OneSignal.Notifications.permission;
-                console.log(`Subscription status: ${isSubscribed}, OneSignal ID: ${onesignalId}`);
-                await saveOneSignalId(isSubscribed ? onesignalId : null);
-            });
-            
-            // Si l'utilisateur est déjà abonné au chargement de la page, on sauvegarde son ID
-            if (OneSignal.Notifications.permission && OneSignal.User.onesignalId) {
-                console.log("User is already subscribed, syncing ID.");
-                await saveOneSignalId(OneSignal.User.onesignalId);
-            }
+          // Initial check
+          const currentPermission = OneSignal.Notifications.permission;
+          setIsSubscribed(currentPermission);
         });
-    };
 
-    const handleAuthChange = async (event: string, session: any) => {
-        const user = session?.user;
-        if (event === 'SIGNED_IN' || (event === 'INITIAL_STATE' && user)) {
-            if (!initialized.current) {
-                initialized.current = true;
-                await initOneSignal(user.id);
-            }
-        } else if (event === 'SIGNED_OUT') {
-            if (window.OneSignal) {
-                console.log("Logging out from OneSignal.");
-                window.OneSignal.logout();
-            }
-            initialized.current = false;
+      } else if (event === 'SIGNED_OUT') {
+        if (window.OneSignal) {
+          console.log("Logging out from OneSignal.");
+          window.OneSignal.logout();
         }
+        initialized.current = false;
+        setIsSubscribed(false);
+        if(window.OneSignal?.Notifications) {
+          window.OneSignal.Notifications.removeEventListener('change', onSubscriptionChange);
+        }
+      }
     };
 
-    supabase?.auth.getSession().then(({ data: { session } }) => {
-        handleAuthChange('INITIAL_STATE', session);
-    });
+    const init = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        await handleAuthChange('INITIAL_STATE', session);
+    }
+    init();
 
-    const { data: authListener } = supabase?.auth.onAuthStateChange(handleAuthChange) ?? { data: { subscription: null } };
+    const { data: authListener } = supabase.auth.onAuthStateChange(handleAuthChange);
 
     return () => {
         authListener?.subscription?.unsubscribe();
+        if(window.OneSignal?.Notifications) {
+          window.OneSignal.Notifications.removeEventListener('change', onSubscriptionChange);
+        }
     };
+  }, [supabase, onSubscriptionChange]);
 
-  }, [supabase]);
+  const handleSubscription = async () => {
+    if (!window.OneSignal) {
+      toast({ title: "Erreur", description: "OneSignal n'est pas prêt.", variant: "destructive" });
+      return;
+    }
+
+    try {
+        if (isSubscribed) {
+            await window.OneSignal.User.pushSubscription.optOut();
+            toast({ title: "Notifications désactivées", description: "Vous ne recevrez plus de notifications." });
+        } else {
+            await window.OneSignal.Notifications.requestPermission();
+            // The 'change' event listener will handle the success case
+        }
+    } catch(e) {
+        console.error("Error with OneSignal subscription:", e);
+        toast({ title: "Erreur", description: "Impossible de modifier votre abonnement aux notifications.", variant: "destructive" });
+    }
+  };
+
+  return { isSubscribed, handleSubscription };
 }
