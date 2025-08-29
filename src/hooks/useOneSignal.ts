@@ -18,16 +18,25 @@ export function useOneSignal() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // This function will be called when the OneSignal subscription state changes
   const onSubscriptionChange = useCallback(async () => {
     setIsLoading(true);
+    if (!window.OneSignal || !window.OneSignal.Notifications) {
+        setIsLoading(false);
+        return;
+    }
+    
     const permission = window.OneSignal.Notifications.permission;
     const subscribed = permission === 'granted';
     setIsSubscribed(subscribed);
 
     if (currentUserId) {
         const onesignalId = subscribed ? window.OneSignal.User.PushSubscription.id : null;
-        await saveOneSignalId(onesignalId);
+        if(onesignalId) {
+             await saveOneSignalId(onesignalId);
+        } else {
+            // If not subscribed, we might still need to clear the ID in the database
+            await saveOneSignalId(null);
+        }
     }
     setIsLoading(false);
   }, [currentUserId]);
