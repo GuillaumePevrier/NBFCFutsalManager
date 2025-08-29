@@ -1005,7 +1005,7 @@ export async function sendNotificationToAllPlayers(payload: NotificationPayload)
       return { success: false };
     }
 
-    const onesignalIds = players.map(p => p.onesignal_id!);
+    const onesignalIds = players.map(p => p.onesignal_id!).filter(id => id); // filter out null/undefined
     if (onesignalIds.length === 0) {
       console.log('No players subscribed to notifications.');
       return { success: true };
@@ -1071,7 +1071,7 @@ export async function sendNotificationToSelectedPlayers(
       return { success: false };
     }
     
-    const onesignalIds = players.map(p => p.onesignal_id!);
+    const onesignalIds = players.map(p => p.onesignal_id!).filter(id => id);
     if (onesignalIds.length === 0) {
         console.log('None of the selected players are subscribed to notifications.');
         return { success: true };

@@ -2,7 +2,7 @@
 // src/app/api/match-update-webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Match, Message, Player } from '@/lib/types';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { sendPushNotification, sendNotificationToAllPlayers } from '@/app/actions';
 
 type EventType = 'INSERT' | 'UPDATE' | 'DELETE';
@@ -29,6 +29,7 @@ type WebhookPayload = MatchWebhookPayload | MessageWebhookPayload;
 // ========== Notification Logic ==========
 
 async function handleMatchUpdate(oldData: Match, newData: Match) {
+  const supabase = createAdminClient();
   const opponent = newData.details.opponent || 'Adversaire';
   const oldScore = oldData.scoreboard;
   const newScore = newData.scoreboard;
@@ -41,7 +42,6 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
 
   // --- Goal Notification ---
   if (newScore.homeScore > oldScore.homeScore && newData.details.lastScorerId) {
-      const supabase = createClient();
       const { data: scorer } = await supabase
         .from('players')
         .select('name')
@@ -59,6 +59,17 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
       title = `BUT POUR NBFC FUTSAL !`;
       body = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
       icon = 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png';
+      
+      // Reset lastScorerId after sending notification
+      const { error: updateError } = await supabase
+        .from('matches')
+        .update({ details: { ...newData.details, lastScorerId: undefined } })
+        .eq('id', newData.id);
+        
+      if (updateError) {
+        console.error("Failed to reset lastScorerId:", updateError);
+      }
+
   } else if (newScore.awayScore > oldScore.awayScore) {
     title = `But pour ${opponent} !`;
     body = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`;
@@ -70,7 +81,7 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
         body,
         icon,
         tag: `goal-${newData.id}`,
-        data: { url }
+        url: url
     });
   }
 
@@ -82,7 +93,7 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
       title: `Convocation pour le match`,
       body: `Répondez au sondage pour le match contre ${opponent} le ${new Date(newData.details.date).toLocaleDateString('fr-FR')}.`,
       tag: `poll-${newData.id}`,
-      data: { url }
+      url: url
     });
   }
 }
@@ -121,13 +132,10 @@ async function handleNewMessage(newMessage: Message) {
         title: `Nouveau message de ${senderName}`,
         body: newMessage.content,
         tag: `chat-${newMessage.channel_id}`,
-        data: {
-            url: `${process.env.NEXT_PUBLIC_BASE_URL}/chat/${newMessage.channel_id}`
-        }
+        url: `${process.env.NEXT_PUBLIC_BASE_URL}/chat/${newMessage.channel_id}`
     };
 
     for (const participant of participants) {
-        console.log(`Sending notification to user ${participant.user_id}`);
         await sendPushNotification(participant.user_id, notificationPayload);
     }
 }

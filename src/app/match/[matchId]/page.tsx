@@ -440,38 +440,83 @@ export default function MatchPage() {
       updateMatchData({ ...match, scoreboard });
   };
   
-  const handleStatUpdate = async (type: 'goal' | 'foul', player: Player) => {
+  const handleGoalScored = async (scorer: Player) => {
       if (!match) return;
-      const { success } = await updatePlayerStats({
-        playerId: player.id,
-        goals: type === 'goal' ? 1 : 0,
-        fouls: type === 'foul' ? 1 : 0,
+      
+      // 1. Update player stats
+      await updatePlayerStats({ playerId: scorer.id, goals: 1 });
+
+      // 2. Prepare the match update payload
+      const updatedScoreboard = {
+          ...match.scoreboard,
+          homeScore: match.scoreboard.homeScore + 1
+      };
+      const updatedDetails = {
+          ...match.details,
+          lastScorerId: scorer.id // Set the last scorer for the webhook
+      };
+      
+      // 3. Update the match in the database
+      updateMatchData({
+          ...match,
+          scoreboard: updatedScoreboard,
+          details: updatedDetails
       });
 
-      if (success) {
-        // Optimistically update player stats in local state to show on token
-         setMatch(currentMatch => {
-            if (!currentMatch) return null;
-
-            const updatePlayerInList = (p: PlayerPosition) => {
-                if (p.id === player.id) {
-                    return {
-                        ...p,
-                        goals: (p.goals || 0) + (type === 'goal' ? 1 : 0),
-                        fouls: (p.fouls || 0) + (type === 'foul' ? 1 : 0),
-                    }
-                }
-                return p;
-            }
-
-            return {
-                ...currentMatch,
-                team: currentMatch.team.map(updatePlayerInList),
-                substitutes: currentMatch.substitutes.map(updatePlayerInList),
-            }
-         });
-      }
+      // 4. Optimistically update local state for immediate UI feedback
+      setMatch(currentMatch => {
+          if (!currentMatch) return null;
+          const updatePlayerInList = (p: PlayerPosition) => {
+              if (p.id === scorer.id) {
+                  return { ...p, goals: (p.goals || 0) + 1 };
+              }
+              return p;
+          };
+          return {
+              ...currentMatch,
+              scoreboard: updatedScoreboard,
+              details: updatedDetails,
+              team: currentMatch.team.map(updatePlayerInList),
+              substitutes: currentMatch.substitutes.map(updatePlayerInList),
+          };
+      });
+      
+      toast({ title: "But !", description: `${scorer.name} a marqué.` });
   };
+
+  const handleFoulCommitted = async (player: Player) => {
+    if (!match) return;
+    // 1. Update player stats
+    await updatePlayerStats({ playerId: player.id, fouls: 1 });
+
+    // 2. Prepare match update
+    const updatedScoreboard = {
+        ...match.scoreboard,
+        homeFouls: Math.min(5, match.scoreboard.homeFouls + 1)
+    };
+
+    // 3. Update DB
+    updateMatchData({ ...match, scoreboard: updatedScoreboard });
+
+    // 4. Optimistically update local state
+    setMatch(currentMatch => {
+        if (!currentMatch) return null;
+        const updatePlayerInList = (p: PlayerPosition) => {
+            if (p.id === player.id) {
+                return { ...p, fouls: (p.fouls || 0) + 1 };
+            }
+            return p;
+        };
+        return {
+            ...currentMatch,
+            scoreboard: updatedScoreboard,
+            team: currentMatch.team.map(updatePlayerInList),
+            substitutes: currentMatch.substitutes.map(updatePlayerInList),
+        };
+    });
+     toast({ title: "Faute", description: `Faute commise par ${player.name}.` });
+  };
+
 
   const handleTacticSequencesChange = (sequences: TacticSequence[]) => {
     if (!match) return;
@@ -500,9 +545,10 @@ export default function MatchPage() {
         <div className="flex-grow flex flex-col items-center justify-start p-2 md:p-4 lg:p-6 relative gap-4">
           <Scoreboard 
             scoreboard={match.scoreboard}
-            onScoreboardChange={handleScoreboardChange}
-            onStatUpdate={handleStatUpdate}
             details={match.details}
+            onScoreboardChange={handleScoreboardChange}
+            onGoalScored={handleGoalScored}
+            onFoulCommitted={handleFoulCommitted}
             isCoach={role === 'coach'}
             playersOnField={match.team}
           />

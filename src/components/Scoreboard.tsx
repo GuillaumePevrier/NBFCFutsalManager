@@ -14,12 +14,21 @@ interface ScoreboardProps {
   scoreboard: ScoreboardType;
   details: MatchDetails;
   onScoreboardChange: (scoreboard: ScoreboardType) => void;
-  onStatUpdate: (type: 'goal' | 'foul', player: Player) => void;
+  onGoalScored: (player: Player) => void;
+  onFoulCommitted: (player: Player) => void;
   isCoach: boolean;
   playersOnField: PlayerPosition[];
 }
 
-const Scoreboard = ({ scoreboard, details, onScoreboardChange, onStatUpdate, isCoach, playersOnField }: ScoreboardProps) => {
+const Scoreboard = ({ 
+    scoreboard, 
+    details, 
+    onScoreboardChange, 
+    onGoalScored,
+    onFoulCommitted,
+    isCoach, 
+    playersOnField 
+}: ScoreboardProps) => {
   const { toast } = useToast();
   const [localTime, setLocalTime] = useState(scoreboard.time);
   const periodDuration = (details.matchType === '25min' ? 25 : 20) * 60;
@@ -55,51 +64,39 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, onStatUpdate, isC
     const secs = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
-  const handleStatChange = (team: 'home' | 'away', type: 'goal' | 'foul', delta: number) => {
+  
+  const handleStatChange = (team: 'home' | 'away', type: 'score' | 'foul', delta: number) => {
     if (!isCoach) return;
     
-    if ((type === 'goal' || type === 'foul') && delta > 0 && team === 'home') {
-        setDialogState({ open: true, type, team });
-    } else {
-        // For away team or decreasing stats, update directly
-        const scoreKey = type === 'goal' ? (team === 'home' ? 'homeScore' : 'awayScore') : null;
-        const foulKey = type === 'foul' ? (team === 'home' ? 'homeFouls' : 'awayFouls') : null;
-
-        let updatedScoreboard = { ...scoreboard, time: localTime };
-        
-        if (scoreKey) {
-            const oldScore = updatedScoreboard[scoreKey];
-            updatedScoreboard = {...updatedScoreboard, [scoreKey]: Math.max(0, oldScore + delta) };
-        }
-        if (foulKey) {
-            const oldFouls = updatedScoreboard[foulKey];
-             updatedScoreboard = {...updatedScoreboard, [foulKey]: Math.max(0, Math.min(5, oldFouls + delta)) };
-        }
-        onScoreboardChange(updatedScoreboard);
+    if (type === 'score' && delta > 0 && team === 'home') {
+        setDialogState({ open: true, type: 'goal', team });
+        return;
     }
+     if (type === 'foul' && delta > 0 && team === 'home') {
+        setDialogState({ open: true, type: 'foul', team });
+        return;
+    }
+
+    let updatedScoreboard = { ...scoreboard, time: localTime };
+    if (type === 'score') {
+        const key = team === 'home' ? 'homeScore' : 'awayScore';
+        updatedScoreboard[key] = Math.max(0, updatedScoreboard[key] + delta);
+    } else if (type === 'foul') {
+        const key = team === 'home' ? 'homeFouls' : 'awayFouls';
+        updatedScoreboard[key] = Math.max(0, Math.min(5, updatedScoreboard[key] + delta));
+    }
+    onScoreboardChange(updatedScoreboard);
   };
 
-  const handlePlayerSelected = async (player: Player) => {
+  const handlePlayerSelected = (player: Player) => {
     const { type } = dialogState;
     setDialogState({ ...dialogState, open: false });
 
-    let updatedScoreboard = { ...scoreboard, time: localTime };
-
     if (type === 'goal') {
-        updatedScoreboard.homeScore += 1;
-        // Temporarily store the scorer's ID in the details to be picked up by the webhook
-        const updatedDetails = { ...details, lastScorerId: player.id };
-        toast({ title: "But !", description: `${player.name} a marqué.` });
-        // Pass the updated details along with the scoreboard change
-         onScoreboardChange({ ...updatedScoreboard, details: updatedDetails } as any);
+        onGoalScored(player);
     } else if (type === 'foul') {
-        updatedScoreboard.homeFouls = Math.min(5, updatedScoreboard.homeFouls + 1);
-        toast({ title: "Faute", description: `Faute commise par ${player.name}.` });
-        onScoreboardChange(updatedScoreboard);
+        onFoulCommitted(player);
     }
-
-    onStatUpdate(type, player);
   };
 
 
@@ -196,9 +193,9 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, onStatUpdate, isC
             <FoulDisplay count={scoreboard.homeFouls} isFullScreen={isFullScreen} />
             {isCoach && isFullScreen && (
                 <div className="flex items-center gap-4 mt-4">
-                    <Button onClick={() => handleStatChange('home', 'goal', -1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Minus/></Button>
+                    <Button onClick={() => handleStatChange('home', 'score', -1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Minus/></Button>
                     <span className="text-lg w-20 text-center font-semibold">Score</span>
-                    <Button onClick={() => handleStatChange('home', 'goal', 1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Plus/></Button>
+                    <Button onClick={() => handleStatChange('home', 'score', 1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Plus/></Button>
                 </div>
             )}
              {isCoach && isFullScreen && (
@@ -242,9 +239,9 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, onStatUpdate, isC
             <FoulDisplay count={scoreboard.awayFouls} isFullScreen={isFullScreen} />
             {isCoach && isFullScreen && (
                 <div className="flex items-center gap-4 mt-4">
-                    <Button onClick={() => handleStatChange('away', 'goal', -1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Minus/></Button>
+                    <Button onClick={() => handleStatChange('away', 'score', -1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Minus/></Button>
                     <span className="text-lg w-20 text-center font-semibold">Score</span>
-                    <Button onClick={() => handleStatChange('away', 'goal', 1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Plus/></Button>
+                    <Button onClick={() => handleStatChange('away', 'score', 1)} size="lg" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-16 w-16 text-2xl"><Plus/></Button>
                 </div>
             )}
              {isCoach && isFullScreen && (
@@ -295,9 +292,9 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, onStatUpdate, isC
                         {/* Left Controls (Home) */}
                         <div className="flex flex-col items-center gap-2">
                             <div className="flex items-center gap-1">
-                            <Button onClick={() => handleStatChange('home', 'goal', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                            <Button onClick={() => handleStatChange('home', 'score', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
                                 <span className="text-xs w-10 text-center">Score</span>
-                            <Button onClick={() => handleStatChange('home', 'goal', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                            <Button onClick={() => handleStatChange('home', 'score', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
                             </div>
                             <div className="flex items-center gap-1">
                             <Button onClick={() => handleStatChange('home', 'foul', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
@@ -323,9 +320,9 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, onStatUpdate, isC
                         {/* Right Controls (Away) */}
                         <div className="flex flex-col items-center gap-2">
                             <div className="flex items-center gap-1">
-                                <Button onClick={() => handleStatChange('away', 'goal', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
+                                <Button onClick={() => handleStatChange('away', 'score', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
                                 <span className="text-xs w-10 text-center">Score</span>
-                                <Button onClick={() => handleStatChange('away', 'goal', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
+                                <Button onClick={() => handleStatChange('away', 'score', 1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Plus/></Button>
                             </div>
                             <div className="flex items-center gap-1">
                                 <Button onClick={() => handleStatChange('away', 'foul', -1)} size="sm" variant="outline" className="text-white border-neutral-600 hover:bg-neutral-700 h-8 w-8 p-0"><Minus/></Button>
