@@ -991,34 +991,6 @@ export async function validateAllUsers(): Promise<{ success: boolean, error?: an
 
 // #region OneSignal Notification Functions
 
-export async function sendGoalNotification(payload: { matchId: string; homeTeam: string; awayTeam: string; score: string; }): Promise<{ success: boolean }> {
-  const supabase = createClient();
-  const { data: players, error } = await supabase
-      .from('players')
-      .select('onesignal_id')
-      .not('onesignal_id', 'is', null);
-
-  if (error || !players) {
-    console.error('Failed to fetch players for goal notification:', error);
-    return { success: false };
-  }
-  const onesignalIds = players.map(p => p.onesignal_id!).filter(id => id);
-  if (onesignalIds.length === 0) return { success: true };
-
-  const notification = {
-      title: "⚽ BUT MARQUÉ !",
-      body: `${payload.homeTeam} vs ${payload.awayTeam} → Nouveau score : ${payload.score}`,
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${payload.matchId}`,
-      icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
-      tag: `goal-${payload.matchId}`,
-      onesignalIds: onesignalIds
-  };
-  
-  await sendNotificationFlow(notification);
-  return { success: true };
-}
-
-
 export async function sendNotificationToAllPlayers(payload: NotificationPayload): Promise<{ success: boolean }> {
   try {
     const supabase = createClient();

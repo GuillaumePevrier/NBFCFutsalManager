@@ -17,33 +17,30 @@ import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import MatchPollComponent from '@/components/MatchPoll';
 import JerseyWasherSelector from '@/components/JerseyWasherSelector';
-import { updateJerseyWasher, updatePlayerStats, incrementPlayerPoints, sendGoalNotification } from '@/app/actions';
+import { updateJerseyWasher, updatePlayerStats, incrementPlayerPoints, sendNotificationToAllPlayers } from '@/app/actions';
 import TacticBoard from '@/components/TacticBoard';
 import { nanoid } from 'nanoid';
 
-const MAX_ON_FIELD = 5;
-const POINTS_FOR_AVAILABILITY = 10;
-
-
-// Component to listen for Realtime Goal events from pg_notify
+// Component to listen for Realtime Goal events
 const RealtimeGoalListener = ({ matchId }: { matchId: string }) => {
     const supabase = createClient();
 
     useEffect(() => {
         const channel = supabase
-            .channel('goal_scored_channel')
+            .channel(`match-updates-${matchId}`)
             .on('postgres_changes', 
                 { 
-                    event: '*', 
+                    event: 'UPDATE', 
                     schema: 'public', 
                     table: 'matches', 
                     filter: `id=eq.${matchId}` 
                 }, 
                 async (payload: any) => {
-                     if (payload.eventType === 'UPDATE' && payload.new.scoreboard.homeScore > payload.old.scoreboard.homeScore) {
+                     // Check if a goal was scored for the home team
+                     if (payload.new?.scoreboard?.homeScore > payload.old?.scoreboard?.homeScore) {
                         console.log("Goal detected via Realtime!", payload.new);
                         
-                        const scorerId = payload.new.details.lastScorerId;
+                        const scorerId = payload.new.details?.lastScorerId;
                         if (!scorerId) return;
 
                         const { data: scorer } = await supabase.from('players').select('name').eq('id', scorerId).single();
@@ -65,8 +62,11 @@ const RealtimeGoalListener = ({ matchId }: { matchId: string }) => {
                             url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${matchId}`
                         });
                         
-                        // Reset lastScorerId after sending
-                        await supabase.from('matches').update({ details: { ...payload.new.details, lastScorerId: null } }).eq('id', matchId);
+                        // Reset lastScorerId after sending to prevent re-sending on other updates
+                        const { error } = await supabase.from('matches').update({ details: { ...payload.new.details, lastScorerId: null } }).eq('id', matchId);
+                         if(error) {
+                             console.error("Failed to reset lastScorerId", error);
+                         }
                     }
                 }
             )
@@ -512,8 +512,7 @@ export default function MatchPage() {
         lastScorerId: scorer.id, // Set the last scorer ID for the trigger to use
     };
 
-    // 3. Update the match in the database. The pg_notify trigger will fire after this.
-    // The Realtime listener will then pick it up and send the notification.
+    // 3. Update the match in the database. The Realtime listener will then pick it up.
     updateMatchData({
         ...match,
         scoreboard: updatedScoreboard,
