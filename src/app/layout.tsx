@@ -54,7 +54,6 @@ export default function RootLayout({
                 await OneSignal.init({
                   appId: "fc0ca62b-b752-4d15-bd5b-90b0a0b06d4a",
                 });
-                OneSignal.isInitialized = true;
               });
             `,
           }}
