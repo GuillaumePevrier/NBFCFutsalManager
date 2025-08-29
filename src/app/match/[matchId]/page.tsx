@@ -17,12 +17,68 @@ import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import MatchPollComponent from '@/components/MatchPoll';
 import JerseyWasherSelector from '@/components/JerseyWasherSelector';
-import { updateJerseyWasher, updatePlayerStats, incrementPlayerPoints } from '@/app/actions';
+import { updateJerseyWasher, updatePlayerStats, incrementPlayerPoints, sendGoalNotification } from '@/app/actions';
 import TacticBoard from '@/components/TacticBoard';
 import { nanoid } from 'nanoid';
 
 const MAX_ON_FIELD = 5;
 const POINTS_FOR_AVAILABILITY = 10;
+
+
+// Component to listen for Realtime Goal events from pg_notify
+const RealtimeGoalListener = ({ matchId }: { matchId: string }) => {
+    const supabase = createClient();
+
+    useEffect(() => {
+        const channel = supabase
+            .channel('goal_scored_channel')
+            .on('postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'matches', 
+                    filter: `id=eq.${matchId}` 
+                }, 
+                async (payload: any) => {
+                     if (payload.eventType === 'UPDATE' && payload.new.scoreboard.homeScore > payload.old.scoreboard.homeScore) {
+                        console.log("Goal detected via Realtime!", payload.new);
+                        
+                        const scorerId = payload.new.details.lastScorerId;
+                        if (!scorerId) return;
+
+                        const { data: scorer } = await supabase.from('players').select('name').eq('id', scorerId).single();
+                        if (!scorer) return;
+
+                        const funnyMessages = [
+                            `Quel canon de ${scorer.name} ! Le gardien n'a rien vu passer.`,
+                            `${scorer.name} vient de nettoyer la lucarne ! Quel but !`,
+                            `GOOOOAL ! ${scorer.name} envoie le ballon au fond des filets !`,
+                            `Et c'est le buuuut ! Magnifique action de ${scorer.name}.`,
+                        ];
+                        const body = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
+
+                        await sendNotificationToAllPlayers({
+                            title: `BUT POUR NBFC FUTSAL !`,
+                            body: body,
+                            icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+                            tag: `goal-${matchId}`,
+                            url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${matchId}`
+                        });
+                        
+                        // Reset lastScorerId after sending
+                        await supabase.from('matches').update({ details: { ...payload.new.details, lastScorerId: null } }).eq('id', matchId);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [supabase, matchId]);
+
+    return null; // This component does not render anything
+};
 
 
 // Function to ensure a match object has default values for new fields
@@ -441,48 +497,32 @@ export default function MatchPage() {
   };
   
   const handleGoalScored = async (scorer: Player) => {
-      if (!match) return;
-      
-      // 1. Update player stats
-      await updatePlayerStats({ playerId: scorer.id, goals: 1 });
+    if (!match) return;
 
-      // 2. Prepare the match update payload
-      const updatedScoreboard = {
-          ...match.scoreboard,
-          homeScore: match.scoreboard.homeScore + 1
-      };
-      const updatedDetails = {
-          ...match.details,
-          lastScorerId: scorer.id // Set the last scorer for the webhook
-      };
-      
-      // 3. Update the match in the database
-      updateMatchData({
-          ...match,
-          scoreboard: updatedScoreboard,
-          details: updatedDetails
-      });
+    // 1. Update player stats first
+    await updatePlayerStats({ playerId: scorer.id, goals: 1 });
 
-      // 4. Optimistically update local state for immediate UI feedback
-      setMatch(currentMatch => {
-          if (!currentMatch) return null;
-          const updatePlayerInList = (p: PlayerPosition) => {
-              if (p.id === scorer.id) {
-                  return { ...p, goals: (p.goals || 0) + 1 };
-              }
-              return p;
-          };
-          return {
-              ...currentMatch,
-              scoreboard: updatedScoreboard,
-              details: updatedDetails,
-              team: currentMatch.team.map(updatePlayerInList),
-              substitutes: currentMatch.substitutes.map(updatePlayerInList),
-          };
-      });
-      
-      toast({ title: "But !", description: `${scorer.name} a marqué.` });
+    // 2. Prepare the match update payload with scoreboard change AND lastScorerId
+    const updatedScoreboard = {
+        ...match.scoreboard,
+        homeScore: match.scoreboard.homeScore + 1,
+    };
+    const updatedDetails = {
+        ...match.details,
+        lastScorerId: scorer.id, // Set the last scorer ID for the trigger to use
+    };
+
+    // 3. Update the match in the database. The pg_notify trigger will fire after this.
+    // The Realtime listener will then pick it up and send the notification.
+    updateMatchData({
+        ...match,
+        scoreboard: updatedScoreboard,
+        details: updatedDetails,
+    });
+
+    toast({ title: "But !", description: `${scorer.name} a marqué.` });
   };
+
 
   const handleFoulCommitted = async (player: Player) => {
     if (!match) return;
@@ -534,6 +574,7 @@ export default function MatchPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
+       <RealtimeGoalListener matchId={matchId} />
        <Header onAuthClick={() => setIsAuthOpen(true)}>
             <Button variant="outline" size="sm" onClick={() => router.push('/matches')}>
                 <Trophy className="mr-2 h-4 w-4"/>

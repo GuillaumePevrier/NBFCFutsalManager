@@ -69,10 +69,18 @@ const Scoreboard = ({
     if (!isCoach) return;
     
     if (type === 'score' && delta > 0 && team === 'home') {
+        if (playersOnField.length === 0) {
+            toast({ title: "Action impossible", description: "Ajoutez des joueurs sur le terrain avant d'attribuer un but.", variant: "destructive"});
+            return;
+        }
         setDialogState({ open: true, type: 'goal', team });
         return;
     }
      if (type === 'foul' && delta > 0 && team === 'home') {
+        if (playersOnField.length === 0) {
+            toast({ title: "Action impossible", description: "Ajoutez des joueurs sur le terrain avant d'attribuer une faute.", variant: "destructive"});
+            return;
+        }
         setDialogState({ open: true, type: 'foul', team });
         return;
     }
