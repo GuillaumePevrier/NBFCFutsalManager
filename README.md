@@ -6,7 +6,7 @@ NBFC  est conçue pour aider les coachs du Noya FC à gérer leurs tactiques, le
 
  l'application une nce que sur un ordinateur de bureau rrain depu one.
 
--   **Tableau où les, la date durègne de SNEF ou pasglisser-déposer des (joueurs) des compositions.
+-   **Tableau où les de SNEF ou pasglisser-déposer des (joueurs) des compositions.
 -   pour le match, organisez les titulaires et les remplaçants sur un banc de touche dédié.
 -   **Suivi de Match en Direct** : score, (temps arrêté ou continu), gestion des fautes et des périodes.
 -   **Synchronisation en Temps Réel** : , toutes les (positions des joueurs, score, chronomètre, fautes) sont instantanément sur les appareils connectés. Les spectateurs voient les mises à jour en direct.
