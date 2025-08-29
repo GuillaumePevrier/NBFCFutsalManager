@@ -9,7 +9,7 @@ NBFC  est conçue pour aider les coachs du Noya FC à gérer leurs tactiques, le
 -   **Tableau où les de SNEF ou pasglisser-déposer des (joueurs) des compositions.
 -   pour le match, organisez les titulaires et les remplaçants sur un banc de touche dédié.
 -   **Suivi de Match en Direct** : score, (temps arrêté ou continu), gestion des fautes et des périodes.
--   **Synchronisation en Temps Réel** : , toutes les (positions des joueurs, score, chronomètre, fautes) sont instantanément sur les appareils connectés. Les spectateurs voient les mises à jour en direct.
+-   **Sy , toutes les des joueurs, score, chronomètre, fautes) sont instantanément sur les appareils connectés. Les spectateurs voient les mises à jour en direct.
 -   **Notifications   : Un système de notification push puissant pour tenir les joueurs et les supporters informés. Les notifications sont envoyées automatiquement à chaque but marqué.
 -   **Gestion des Matchs** : Planifiez les matchs à venir en définissant l'adversaire, la date, l'heure et le lieu.
 -   **Accès par Rôle (Coach/Visiteur)** : Les coachs, authentifiés via **Supabase Auth**, disposent de pleins pouvoirs d'édition. Les joueurs et les visiteurs ont un accès en lecture seule, leur permettant de suivre le match en direct sans pouvoir altérer les données.
