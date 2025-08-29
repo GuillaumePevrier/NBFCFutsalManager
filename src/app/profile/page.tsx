@@ -10,13 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, KeyRound, User, Save, UserCircle } from "lucide-react";
+import { Loader2, KeyRound, User, Save, UserCircle, Bell } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import type { Player, UserProfileUpdate } from '@/lib/types';
 import { getCurrentPlayer, updateUserProfile, updateUserAuth } from '@/app/actions';
 import Header from '@/components/Header';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import NotificationButton from '@/components/NotificationButton';
 
 const profileSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères."),
@@ -202,9 +203,13 @@ export default function ProfilePage() {
                         <Card className="bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2"><KeyRound/> Compte & Sécurité</CardTitle>
-                                <CardDescription>Modifiez votre email ou votre mot de passe.</CardDescription>
+                                <CardDescription>Modifiez votre email, votre mot de passe et gérez vos notifications.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label>Notifications</Label>
+                                    <NotificationButton />
+                                </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email de connexion</Label>
                                     <Input id="email" type="email" {...registerAuth('email')} placeholder={player.email || "email@exemple.com"} />
