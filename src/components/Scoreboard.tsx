@@ -88,13 +88,17 @@ const Scoreboard = ({ scoreboard, details, onScoreboardChange, onStatUpdate, isC
 
     if (type === 'goal') {
         updatedScoreboard.homeScore += 1;
+        // Temporarily store the scorer's ID in the details to be picked up by the webhook
+        const updatedDetails = { ...details, lastScorerId: player.id };
         toast({ title: "But !", description: `${player.name} a marqué.` });
+        // Pass the updated details along with the scoreboard change
+         onScoreboardChange({ ...updatedScoreboard, details: updatedDetails } as any);
     } else if (type === 'foul') {
         updatedScoreboard.homeFouls = Math.min(5, updatedScoreboard.homeFouls + 1);
         toast({ title: "Faute", description: `Faute commise par ${player.name}.` });
+        onScoreboardChange(updatedScoreboard);
     }
 
-    onScoreboardChange(updatedScoreboard);
     onStatUpdate(type, player);
   };
 

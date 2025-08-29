@@ -1,3 +1,4 @@
+
       
 import { z } from 'zod';
 
@@ -63,6 +64,7 @@ export interface MatchDetails {
   matchday?: number; // e.g. 1, 2, 3 for league matches
   jerseyWasherPlayerId?: string; // uuid of the player assigned to wash jerseys
   poll: MatchPoll; // Poll is now nested within details
+  lastScorerId?: string; // uuid of the last player who scored
 }
 
 export interface Scoreboard {

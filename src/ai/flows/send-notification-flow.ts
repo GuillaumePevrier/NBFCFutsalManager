@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for sending notifications via OneSignal.
@@ -13,6 +14,7 @@ const NotificationInputSchema = z.object({
   title: z.string().describe("The title of the notification."),
   body: z.string().describe("The main content/body of the notification."),
   url: z.string().optional().describe("An optional URL to open when the notification is clicked."),
+  icon: z.string().optional().describe("An optional URL for a custom notification icon."),
   tag: z.string().optional().describe("A tag to group notifications."),
 });
 
@@ -45,6 +47,8 @@ export const sendNotificationFlow = ai.defineFlow(
       headings: { en: payload.title },
       contents: { en: payload.body },
       web_url: payload.url,
+      chrome_web_icon: payload.icon,
+      firefox_icon: payload.icon,
       // You can add more OneSignal options here if needed
       // web_push_topic: payload.tag 
     };
