@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -24,7 +25,6 @@ export function useOneSignal() {
     };
     setIsLoading(true);
     try {
-      // CORRECTED: Use the 'permission' property instead of 'getPermission()' method
       const permission = window.OneSignal.Notifications.permission;
       setIsSubscribed(permission === 'granted');
     } catch (error) {
@@ -60,7 +60,7 @@ export function useOneSignal() {
     });
 
     return () => authListener.subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   useEffect(() => {
     if (onesignalInitialized.current) return;
@@ -76,13 +76,15 @@ export function useOneSignal() {
         console.log("OneSignal subscription changed.");
         await updateSubscriptionStatus();
         const onesignalId = OneSignal.User.PushSubscription.id;
-        await saveOneSignalId(onesignalId || null);
+        if (currentUserId) {
+            await saveOneSignalId(onesignalId || null);
+        }
       };
       
       OneSignal.Notifications.addEventListener('change', onSubscriptionChange);
       updateSubscriptionStatus();
     });
-  }, [updateSubscriptionStatus]);
+  }, [updateSubscriptionStatus, currentUserId]);
 
 
   const handleSubscription = async () => {
@@ -106,6 +108,7 @@ export function useOneSignal() {
         toast({ title: "Erreur", description: "Impossible de modifier votre abonnement.", variant: "destructive" });
     } finally {
         setIsProcessing(false);
+        updateSubscriptionStatus();
     }
   };
 

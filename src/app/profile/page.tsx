@@ -10,14 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, KeyRound, User, Save, UserCircle, Bell } from "lucide-react";
+import { Loader2, KeyRound, User, Save, UserCircle } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import type { Player, UserProfileUpdate } from '@/lib/types';
 import { getCurrentPlayer, updateUserProfile, updateUserAuth } from '@/app/actions';
 import Header from '@/components/Header';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import NotificationButton from '@/components/NotificationButton';
+import NotificationBell from '@/components/NotificationBell';
 
 const profileSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères."),
@@ -208,7 +208,10 @@ export default function ProfilePage() {
                             <CardContent className="space-y-6">
                                 <div className="space-y-2">
                                     <Label>Notifications</Label>
-                                    <NotificationButton />
+                                    <div className="flex items-center gap-4 p-2 bg-background/50 rounded-lg">
+                                       <NotificationBell />
+                                       <p className="text-sm text-muted-foreground">Cliquez sur la cloche pour activer ou désactiver les notifications push sur cet appareil.</p>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email de connexion</Label>
@@ -239,4 +242,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-
