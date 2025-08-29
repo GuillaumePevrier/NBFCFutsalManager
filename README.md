@@ -2,7 +2,7 @@
 
 ## Descri problème sur Vercel
 
-NBFC  est conçue pour aider les coachs du Noya FC à gérer leurs tactiques, leurs équipes et leurs . Elle offre une plateforme ntralisée pour , la communication avec les joueurs et le des matchs en l.
+NBFC  est conçue pour aider les coachs du Noya FC à gérer leurs tactiques, leurs équipes et leurs . Elle une plateforme ntralisée pour , la communication avec les joueurs et le des matchs en l.
 
  l'application une nce que sur un ordinateur de bureau rrain depu one.
 
