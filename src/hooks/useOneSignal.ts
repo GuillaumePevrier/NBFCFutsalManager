@@ -23,8 +23,7 @@ export function useOneSignal() {
     if (!window.OneSignal) return;
     
     setIsLoading(true);
-    const permission = window.OneSignal.Notifications.permission;
-    const subscribed = permission === 'granted';
+    const subscribed = window.OneSignal.Notifications.permission;
     setIsSubscribed(subscribed);
 
     if (currentUserId) {
@@ -37,7 +36,7 @@ export function useOneSignal() {
   }, [currentUserId]);
 
   const initializeOneSignal = useCallback(() => {
-    if (onesignalInitialized.current || !window.OneSignalDeferred) return;
+    if (typeof window === 'undefined' || !window.OneSignalDeferred || onesignalInitialized.current) return;
     
     onesignalInitialized.current = true;
     
@@ -72,11 +71,9 @@ export function useOneSignal() {
   }, [supabase.auth]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
     initializeOneSignal();
     
-    window.OneSignalDeferred.push(function() {
+    window.OneSignalDeferred?.push(function() {
       onSubscriptionChange();
     });
 
@@ -98,11 +95,9 @@ export function useOneSignal() {
     const permission = window.OneSignal.Notifications.permission;
 
     try {
-      if (permission === 'granted') {
+      if (permission) {
         await window.OneSignal.User.PushSubscription.optOut();
         toast({ title: "Notifications désactivées", description: "Vous ne recevrez plus de notifications." });
-      } else if (permission === 'denied') {
-        toast({ title: "Notifications bloquées", description: "Veuillez autoriser les notifications dans les paramètres de votre navigateur.", variant: "destructive" });
       } else {
         await window.OneSignal.Notifications.requestPermission();
       }
@@ -110,7 +105,8 @@ export function useOneSignal() {
       console.error("Error with OneSignal subscription:", error);
       toast({ title: "Erreur", description: "Impossible de modifier votre abonnement.", variant: "destructive" });
     } finally {
-      setIsProcessing(false);
+        // The 'change' event listener will handle UI updates, so we just set processing to false.
+        setIsProcessing(false);
     }
   };
 

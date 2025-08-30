@@ -1,8 +1,8 @@
 
 // src/app/api/match-update-webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import type { Match, Message, Player } from '@/lib/types';
-import { createClient, createAdminClient } from '@/lib/supabase/server';
+import type { Match, Message } from '@/lib/types';
+import { createClient } from '@/lib/supabase/server';
 import { sendPushNotification, sendNotificationToAllPlayers } from '@/app/actions';
 
 type EventType = 'INSERT' | 'UPDATE' | 'DELETE';
@@ -31,6 +31,40 @@ type WebhookPayload = MatchWebhookPayload | MessageWebhookPayload;
 async function handleMatchUpdate(oldData: Match, newData: Match) {
   const opponent = newData.details.opponent || 'Adversaire';
   const url = `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}`;
+  const supabase = createClient(); // Use for DB queries
+
+  // --- Goal Notification ---
+  if (newData.scoreboard.homeScore > oldData.scoreboard.homeScore) {
+      const scorerId = newData.details?.lastScorerId;
+      
+      if (scorerId) {
+          const { data: scorer } = await supabase.from('players').select('name').eq('id', scorerId).single();
+          const scorerName = scorer?.name || 'Un joueur';
+
+          const funnyMessages = [
+              `Quel canon de ${scorerName} ! Le gardien n'a rien vu passer.`,
+              `${scorerName} vient de nettoyer la lucarne ! Quel but !`,
+              `GOOOOAL ! ${scorerName} envoie le ballon au fond des filets !`,
+              `Et c'est le buuuut ! Magnifique action de ${scorerName}.`,
+          ];
+          const body = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
+
+          await sendNotificationToAllPlayers({
+              title: `BUT POUR NBFC FUTSAL ! (${newData.scoreboard.homeScore} - ${newData.scoreboard.awayScore})`,
+              body: body,
+              icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+              tag: `goal-${newData.id}`,
+              url: url,
+          });
+
+          // Reset lastScorerId after sending to prevent re-sending on other updates
+          await supabase
+            .from('matches')
+            .update({ details: { ...newData.details, lastScorerId: null } })
+            .eq('id', newData.id);
+      }
+  }
+
 
   // --- Poll Started Notification ---
   const oldPollStatus = oldData.details?.poll?.status;
@@ -43,9 +77,6 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
       url: url
     });
   }
-  
-  // NOTE: Goal notification logic has been moved to a Realtime listener
-  // using pg_notify as requested by the user.
 }
 
 

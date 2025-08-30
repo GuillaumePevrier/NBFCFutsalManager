@@ -17,69 +17,9 @@ import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import MatchPollComponent from '@/components/MatchPoll';
 import JerseyWasherSelector from '@/components/JerseyWasherSelector';
-import { updateJerseyWasher, updatePlayerStats, incrementPlayerPoints, sendNotificationToAllPlayers } from '@/app/actions';
+import { updateJerseyWasher, updatePlayerStats, incrementPlayerPoints } from '@/app/actions';
 import TacticBoard from '@/components/TacticBoard';
 import { nanoid } from 'nanoid';
-
-// Component to listen for Realtime Goal events
-const RealtimeGoalListener = ({ matchId }: { matchId: string }) => {
-    const supabase = createClient();
-
-    useEffect(() => {
-        const channel = supabase
-            .channel(`match-updates-${matchId}`)
-            .on('postgres_changes', 
-                { 
-                    event: 'UPDATE', 
-                    schema: 'public', 
-                    table: 'matches', 
-                    filter: `id=eq.${matchId}` 
-                }, 
-                async (payload: any) => {
-                     // Check if a goal was scored for the home team
-                     if (payload.new?.scoreboard?.homeScore > payload.old?.scoreboard?.homeScore) {
-                        console.log("Goal detected via Realtime!", payload.new);
-                        
-                        const scorerId = payload.new.details?.lastScorerId;
-                        if (!scorerId) return;
-
-                        const { data: scorer } = await supabase.from('players').select('name').eq('id', scorerId).single();
-                        if (!scorer) return;
-
-                        const funnyMessages = [
-                            `Quel canon de ${scorer.name} ! Le gardien n'a rien vu passer.`,
-                            `${scorer.name} vient de nettoyer la lucarne ! Quel but !`,
-                            `GOOOOAL ! ${scorer.name} envoie le ballon au fond des filets !`,
-                            `Et c'est le buuuut ! Magnifique action de ${scorer.name}.`,
-                        ];
-                        const body = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
-
-                        await sendNotificationToAllPlayers({
-                            title: `BUT POUR NBFC FUTSAL !`,
-                            body: body,
-                            icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
-                            tag: `goal-${matchId}`,
-                            url: `${process.env.NEXT_PUBLIC_BASE_URL}/match/${matchId}`
-                        });
-                        
-                        // Reset lastScorerId after sending to prevent re-sending on other updates
-                        const { error } = await supabase.from('matches').update({ details: { ...payload.new.details, lastScorerId: null } }).eq('id', matchId);
-                         if(error) {
-                             console.error("Failed to reset lastScorerId", error);
-                         }
-                    }
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [supabase, matchId]);
-
-    return null; // This component does not render anything
-};
-
 
 // Function to ensure a match object has default values for new fields
 const ensureMatchDefaults = (match: Match): Match => {
@@ -246,7 +186,7 @@ export default function MatchPage() {
         position: { x: 50, y: 85 }
     };
 
-    if (newTeam.length < MAX_ON_FIELD) {
+    if (newTeam.length < 5) {
       newTeam.push(playerWithPosition);
     } else {
       const subIndex = newSubstitutes.length;
@@ -361,7 +301,7 @@ export default function MatchPage() {
         changed = true;
     }
     else if (y >= 0 && match.substitutes.some(p => p.id === draggedPlayer.id)) {
-        if (match.team.length < MAX_ON_FIELD) {
+        if (match.team.length < 5) {
             newSubstitutes = newSubstitutes.filter(p => p.id !== draggedPlayer.id);
             newTeam.push({ ...draggedPlayer, position: { ...draggedPlayer.position, y: Math.max(0, draggedPlayer.position.y) } });
             changed = true;
@@ -432,6 +372,7 @@ export default function MatchPage() {
     if (!player) return;
 
     const currentAvailability = match.details.poll.availabilities.find(a => a.playerId === playerId);
+    const POINTS_FOR_AVAILABILITY = 10;
 
     if (newStatus === 'available' && currentAvailability?.status !== 'available') {
         const result = await incrementPlayerPoints(playerId, POINTS_FOR_AVAILABILITY);
@@ -512,7 +453,7 @@ export default function MatchPage() {
         lastScorerId: scorer.id, // Set the last scorer ID for the trigger to use
     };
 
-    // 3. Update the match in the database. The Realtime listener will then pick it up.
+    // 3. Update the match in the database. The Webhook will then pick it up.
     updateMatchData({
         ...match,
         scoreboard: updatedScoreboard,
@@ -573,7 +514,6 @@ export default function MatchPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-       <RealtimeGoalListener matchId={matchId} />
        <Header onAuthClick={() => setIsAuthOpen(true)}>
             <Button variant="outline" size="sm" onClick={() => router.push('/matches')}>
                 <Trophy className="mr-2 h-4 w-4"/>
