@@ -40,6 +40,9 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
       if (scorerId) {
           const { data: scorer } = await supabase.from('players').select('name').eq('id', scorerId).single();
           const scorerName = scorer?.name || 'Un joueur';
+          
+          // Debug log recommended by user
+          console.log("Notification envoyée pour :", scorerName);
 
           const funnyMessages = [
               `Quel canon de ${scorerName} ! Le gardien n'a rien vu passer.`,
