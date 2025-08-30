@@ -37,4 +37,16 @@ L'application est construite sur un socle de technologies modernes, choisies pou
 - 
     -   Bien que le nom suggère une IA, nous utilisons Genkit comme un "orchestrateur" de tâches backend sécurisées.
     -   Un **Flow Genkit** (`send-onesignal-notification`) est défini côté serveur. Il contient la logique pour appeler l'API de OneSignal avec la clé secrète (REST API Key).
-    -   Cela permet de ne jamais exposer les clés secrètes côté client, renforçant ainsi la sécurité de l'application. Le composant `Scoreboard` appelle ce flow lorsqu'un but est marqué.z
+    -   Cela permet de ne jamais exposer les clés secrètes côté client, renforçant ainsi la sécurité de l'application. Le composant `Scoreboard` appelle ce flow lorsqu'un but est marqué.z Étape 1 : Ajouter tous les fichiers modifiés
+
+git add .
+
+Étape 2 : Créer la sauvegarde (commit) avec votre message
+
+git commit -m "Webhook"
+
+Étape 3 : Pousser les changements sur la branche master de GitHub
+
+git push origin master
+
+Une fois ces trois commandes exécutées, votre code sera en sécurité sur votre compte GitHub.
