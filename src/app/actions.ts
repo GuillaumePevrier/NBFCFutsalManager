@@ -991,10 +991,17 @@ export async function validateAllUsers(): Promise<{ success: boolean, error?: an
 
 // #region OneSignal Notification Functions
 
-export async function sendNotificationToAllPlayers(payload: NotificationPayload): Promise<{ success: boolean }> {
+/**
+ * Sends a notification to all subscribed players.
+ * Handles chunking for large numbers of subscribers.
+ * @param payload The notification content.
+ * @returns An object indicating success, the number of subscribers targeted, and an optional error message.
+ */
+export async function sendNotificationToAllPlayers(payload: NotificationPayload): Promise<{ success: boolean; sent: number; error?: string; }> {
   try {
     const supabase = createClient();
-    // 1. Get all players who have a OneSignal ID
+    
+    // 1. Get all players who have a OneSignal ID.
     const { data: players, error } = await supabase
       .from('players')
       .select('onesignal_id')
@@ -1002,26 +1009,45 @@ export async function sendNotificationToAllPlayers(payload: NotificationPayload)
 
     if (error) {
       console.error('Failed to fetch players for notification:', error);
-      return { success: false };
+      return { success: false, sent: 0, error: "Failed to fetch players." };
     }
 
-    const onesignalIds = players.map(p => p.onesignal_id!).filter(id => id); // filter out null/undefined
+    const onesignalIds = players.map(p => p.onesignal_id!).filter(Boolean); // Filter out null/undefined/empty strings.
+    console.log(`[sendNotificationToAllPlayers] Found ${onesignalIds.length} subscribed players.`);
+
     if (onesignalIds.length === 0) {
-      console.log('No players subscribed to notifications.');
-      return { success: true };
+      console.log('[sendNotificationToAllPlayers] No players subscribed to notifications.');
+      return { success: true, sent: 0 }; // It's a success, just no one to send to.
     }
 
-    // 2. Call the Genkit flow to send the notification
-    const result = await sendNotificationFlow({
-      ...payload,
-      onesignalIds: onesignalIds,
-    });
+    // OneSignal recommends a limit of 2000 player IDs per API call.
+    const CHUNK_SIZE = 2000;
+    let allRequestsSuccessful = true;
+    let totalSent = 0;
+
+    for (let i = 0; i < onesignalIds.length; i += CHUNK_SIZE) {
+        const chunk = onesignalIds.slice(i, i + CHUNK_SIZE);
+        console.log(`[sendNotificationToAllPlayers] Sending notification to chunk ${i / CHUNK_SIZE + 1} with ${chunk.length} IDs.`);
+
+        const result = await sendNotificationFlow({
+            ...payload,
+            onesignalIds: chunk,
+        });
+
+        if (!result.success) {
+            console.error(`[sendNotificationToAllPlayers] Failed to send notification for chunk ${i / CHUNK_SIZE + 1}:`, result.error);
+            allRequestsSuccessful = false;
+        } else {
+            totalSent += chunk.length;
+        }
+    }
     
-    return { success: result.success };
+    return { success: allRequestsSuccessful, sent: totalSent, error: allRequestsSuccessful ? undefined : "One or more batches failed to send." };
 
   } catch (e) {
-    console.error('Error in sendNotificationToAllPlayers:', e);
-    return { success: false };
+    console.error('[sendNotificationToAllPlayers] An unexpected error occurred:', e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
+    return { success: false, sent: 0, error: errorMessage };
   }
 }
 

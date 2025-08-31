@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -75,14 +74,22 @@ export default function NotificationsAdminPage() {
         });
 
         if (result.success) {
-            toast({
-                title: "Notification de test envoyée",
-                description: "Les abonnés devraient la recevoir d'une seconde à l'autre."
-            });
+            if (result.sent > 0) {
+                 toast({
+                    title: "Notification de test envoyée",
+                    description: `Le message a été envoyé à ${result.sent} abonné(s).`
+                });
+            } else {
+                 toast({
+                    title: "Envoi réussi, mais...",
+                    description: "Aucun joueur n'est actuellement abonné aux notifications.",
+                    variant: "default" // Using default as it's not a critical error
+                });
+            }
         } else {
              toast({
-                title: "Erreur",
-                description: "La notification de test n'a pas pu être envoyée.",
+                title: "Erreur d'envoi",
+                description: result.error || "La notification de test n'a pas pu être envoyée.",
                 variant: "destructive"
             });
         }
