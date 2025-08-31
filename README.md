@@ -40,13 +40,7 @@ L'application est construite sur un socle de technologies modernes, choisies pou
     -   Cela permet de ne jamais exposer les clés secrètes côté client, renforçant ainsi la sécurité de l'application. Le composant `Scoreboard` appelle ce flow lorsqu'un but est marqué.z Étape 1 : Ajouter tous les fichiers modifiés
 
 git add .
-
-Étape 2 : Créer la sauvegarde (commit) avec votre message
-
-git commit -m "Webhook"
-
-Étape 3 : Pousser les changements sur la branche master de GitHub
-
+git commit -m ""
 git push origin master
 
 Une fois ces trois commandes exécutées, votre code sera en sécurité sur votre compte GitHub.
