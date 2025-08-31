@@ -1,24 +1,28 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Bell, Send, Loader2 } from "lucide-react";
+import { Card, CardDescription, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { ArrowLeft, Bell, Send, Loader2, TestTube2 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Role, Player } from "@/lib/types";
 import Header from "@/components/Header";
 import { useRouter } from 'next/navigation';
 import SubscribersList from '@/components/SubscribersList';
-import { getPlayers } from '@/app/actions';
+import { getPlayers, sendNotificationToAllPlayers } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function NotificationsAdminPage() {
     const [role, setRole] = useState<Role>('player');
     const [loading, setLoading] = useState(true);
     const [players, setPlayers] = useState<Player[]>([]);
+    const [isSendingTest, setIsSendingTest] = useState(false);
     const supabase = createClient();
     const router = useRouter();
+    const { toast } = useToast();
 
     const fetchPlayers = async () => {
         const playersData = await getPlayers();
@@ -61,6 +65,29 @@ export default function NotificationsAdminPage() {
             supabase.removeChannel(playerChannel);
         };
     }, [supabase, router]);
+
+    const handleSendTestNotification = async () => {
+        setIsSendingTest(true);
+        const result = await sendNotificationToAllPlayers({
+            title: "Notification de Test 🚀",
+            body: "Si vous recevez ceci, les notifications fonctionnent parfaitement !",
+            url: `${process.env.NEXT_PUBLIC_BASE_URL}`
+        });
+
+        if (result.success) {
+            toast({
+                title: "Notification de test envoyée",
+                description: "Les abonnés devraient la recevoir d'une seconde à l'autre."
+            });
+        } else {
+             toast({
+                title: "Erreur",
+                description: "La notification de test n'a pas pu être envoyée.",
+                variant: "destructive"
+            });
+        }
+        setIsSendingTest(false);
+    }
     
     if(loading) {
         return (
@@ -90,16 +117,32 @@ export default function NotificationsAdminPage() {
                         Tableau de bord des Notifications
                     </h1>
 
-                     <Card className="hover:border-primary/50 transition-colors">
-                        <Link href="/admin/notifications/send">
+                     <div className="grid md:grid-cols-2 gap-6">
+                        <Card className="hover:border-primary/50 transition-colors">
+                            <Link href="/admin/notifications/send">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-3"><Send />Envoyer une Notification</CardTitle>
+                                    <CardDescription>
+                                        Rédigez un message et envoyez-le à tous les joueurs ou à une sélection spécifique.
+                                    </CardDescription>
+                                </CardHeader>
+                            </Link>
+                        </Card>
+                        <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-3"><Send />Envoyer une Notification</CardTitle>
+                                <CardTitle className="flex items-center gap-3"><TestTube2 />Test de Notification</CardTitle>
                                 <CardDescription>
-                                    Rédigez un message et envoyez-le à tous les joueurs ou à une sélection spécifique.
+                                    Envoyez une notification de test à tous les abonnés pour vérifier le système.
                                 </CardDescription>
                             </CardHeader>
-                        </Link>
-                    </Card>
+                             <CardFooter>
+                                <Button onClick={handleSendTestNotification} disabled={isSendingTest} className="w-full">
+                                    {isSendingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
+                                    Envoyer un test
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                     </div>
 
                     <SubscribersList players={players} />
 

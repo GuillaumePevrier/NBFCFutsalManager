@@ -1012,11 +1012,12 @@ export async function sendNotificationToAllPlayers(payload: NotificationPayload)
     }
 
     // 2. Call the Genkit flow to send the notification
-    await sendNotificationFlow({
+    const result = await sendNotificationFlow({
       ...payload,
       onesignalIds: onesignalIds,
     });
-    return { success: true };
+    
+    return { success: result.success };
 
   } catch (e) {
     console.error('Error in sendNotificationToAllPlayers:', e);
@@ -1040,12 +1041,12 @@ export async function sendPushNotification(userId: string, payload: Notification
     }
     
     // 2. Call the Genkit flow
-    await sendNotificationFlow({
+    const result = await sendNotificationFlow({
         ...payload,
         onesignalIds: [player.onesignal_id],
     });
 
-    return { success: true };
+    return { success: result.success };
 
   } catch (e) {
     console.error(`Error in sendPushNotification to ${userId}:`, e);
@@ -1078,12 +1079,12 @@ export async function sendNotificationToSelectedPlayers(
     }
 
     // 2. Call the Genkit flow
-    await sendNotificationFlow({
+    const result = await sendNotificationFlow({
       ...payload,
       onesignalIds: onesignalIds,
     });
 
-    return { success: true };
+    return { success: result.success };
 
   } catch (e) {
     console.error(`Error in sendNotificationToSelectedPlayers to ${userIds.join(', ')}:`, e);
