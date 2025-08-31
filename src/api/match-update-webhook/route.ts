@@ -32,40 +32,53 @@ async function handleMatchUpdate(oldData: Match, newData: Match) {
   const opponent = newData.details.opponent || 'Adversaire';
   const url = `${process.env.NEXT_PUBLIC_BASE_URL}/match/${newData.id}`;
   const supabase = createClient(); // Use for DB queries
+  const oldScore = oldData.scoreboard;
+  const newScore = newData.scoreboard;
 
-  // --- Goal Notification ---
-  if (newData.scoreboard.homeScore > oldData.scoreboard.homeScore) {
+  // --- Goal Notification for Home Team ---
+  if (newScore.homeScore > oldScore.homeScore) {
       const scorerId = newData.details?.lastScorerId;
+      let body: string;
       
       if (scorerId) {
           const { data: scorer } = await supabase.from('players').select('name').eq('id', scorerId).single();
           const scorerName = scorer?.name || 'Un joueur';
-          
-          // Debug log recommended by user
           console.log("Notification envoyée pour :", scorerName);
-
           const funnyMessages = [
               `Quel canon de ${scorerName} ! Le gardien n'a rien vu passer.`,
               `${scorerName} vient de nettoyer la lucarne ! Quel but !`,
               `GOOOOAL ! ${scorerName} envoie le ballon au fond des filets !`,
               `Et c'est le buuuut ! Magnifique action de ${scorerName}.`,
           ];
-          const body = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
-
-          await sendNotificationToAllPlayers({
-              title: `BUT POUR NBFC FUTSAL ! (${newData.scoreboard.homeScore} - ${newData.scoreboard.awayScore})`,
-              body: body,
-              icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
-              tag: `goal-${newData.id}`,
-              url: url,
-          });
-
-          // Reset lastScorerId after sending to prevent re-sending on other updates
-          await supabase
-            .from('matches')
-            .update({ details: { ...newData.details, lastScorerId: null } })
-            .eq('id', newData.id);
+          body = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
+      } else {
+          body = `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore} contre ${opponent}.`;
       }
+
+      await sendNotificationToAllPlayers({
+          title: `BUT POUR NBFC FUTSAL ! (${newScore.homeScore} - ${newScore.awayScore})`,
+          body: body,
+          icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+          tag: `goal-${newData.id}`,
+          url: url,
+      });
+
+      // Reset lastScorerId after sending to prevent re-sending on other updates
+      await supabase
+        .from('matches')
+        .update({ details: { ...newData.details, lastScorerId: null } })
+        .eq('id', newData.id);
+  }
+
+  // --- Goal Notification for Away Team ---
+   if (newScore.awayScore > oldScore.awayScore) {
+     await sendNotificationToAllPlayers({
+          title: `But pour ${opponent} ! (${newScore.homeScore} - ${newScore.awayScore})`,
+          body: `Le score est maintenant de ${newScore.homeScore} - ${newScore.awayScore}.`,
+          icon: 'https://futsal.noyalbrecefc.com/wp-content/uploads/2024/07/logo@2x-1.png',
+          tag: `goal-${newData.id}`,
+          url: url,
+      });
   }
 
 

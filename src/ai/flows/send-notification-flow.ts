@@ -16,6 +16,7 @@ const NotificationInputSchema = z.object({
   url: z.string().optional().describe("An optional URL to open when the notification is clicked."),
   icon: z.string().optional().describe("An optional URL for a custom notification icon."),
   tag: z.string().optional().describe("A tag to group notifications."),
+  data: z.record(z.any()).optional().describe("An optional object for custom data."),
 });
 
 // Define the output schema for our flow
@@ -46,7 +47,8 @@ export const sendNotificationFlow = ai.defineFlow(
       include_player_ids: payload.onesignalIds,
       headings: { en: payload.title },
       contents: { en: payload.body },
-      web_url: payload.url,
+      web_url: payload.url, // Correct field for the URL
+      data: payload.data, // Pass custom data
       chrome_web_icon: payload.icon,
       firefox_icon: payload.icon,
       // You can add more OneSignal options here if needed
