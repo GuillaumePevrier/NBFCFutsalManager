@@ -38,26 +38,6 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap" rel="stylesheet" />
-        
-        <Script
-          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
-          strategy="afterInteractive"
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.OneSignalDeferred = window.OneSignalDeferred || [];
-              OneSignalDeferred.push(async function(OneSignal) {
-                if (window.__OS_INIT__) return;
-                window.__OS_INIT__ = true;
-                
-                await OneSignal.init({
-                  appId: "fc0ca62b-b752-4d15-bd5b-90b0a0b06d4a",
-                });
-              });
-            `,
-          }}
-        />
       </head>
       <body className="font-body antialiased min-h-screen">
         <ThemeProvider
@@ -69,6 +49,21 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
+         <Script
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          strategy="afterInteractive"
+          onLoad={() => {
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            window.OneSignalDeferred.push(function(OneSignal) {
+              if (window.__OS_INIT__) return;
+              window.__OS_INIT__ = true;
+              
+              OneSignal.init({
+                appId: "fc0ca62b-b752-4d15-bd5b-90b0a0b06d4a",
+              });
+            });
+          }}
+        />
       </body>
     </html>
   );
